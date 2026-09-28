@@ -154,40 +154,48 @@ internal static class JointActionExpander
             }
             catch (JointPendingActionChoiceException pending)
             {
+                JointPendingChoiceFrame frame = pending.Frame;
+                if (frame.SourceAction != item.Candidate.Action
+                    || frame.OwnerActor != item.Candidate.Action.Actor)
+                {
+                    throw new InvalidOperationException(
+                        "联合选择帧的 owner 或 SourceAction 与探测动作不一致。",
+                        pending);
+                }
                 if (item.Depth >= MaximumNestedChoiceDepth)
                 {
                     throw new InvalidOperationException(
                         $"联合动作选择深度超过 {MaximumNestedChoiceDepth}：" +
-                        $"Actor {pending.Actor} source={pending.SourceId}。",
+                        $"Actor {frame.OwnerActor} source={frame.SourceId}。",
                         pending);
                 }
                 IReadOnlyList<PlanCardChoice> branches = CardChoiceSupport.BuildChoices(
-                    pending.Spec,
+                    frame.Spec,
                     static _ => string.Empty,
                     maxPileBranches: 32,
                     maxHandBranches: 32);
                 if (branches.Count == 0)
                     throw new InvalidOperationException(
-                        $"联合动作选择没有合法分支：Actor {pending.Actor} source={pending.SourceId}。",
+                        $"联合动作选择没有合法分支：Actor {frame.OwnerActor} source={frame.SourceId}。",
                         pending);
                 foreach (PlanCardChoice branch in branches)
                 {
                     PlanCardChoice owned = branch with
                     {
-                        Actor = pending.Actor,
-                        SourceId = pending.SourceId,
+                        Actor = frame.OwnerActor,
+                        SourceId = frame.SourceId,
                     };
-                    PlanAction expanded = pending.Placement switch
+                    PlanAction expanded = frame.Placement switch
                     {
                         JointPendingChoicePlacement.Primary when item.Candidate.Action.Choice == null
                             => item.Candidate.Action with { Choice = owned },
                         JointPendingChoicePlacement.Primary
                             => throw new InvalidOperationException(
-                                $"联合动作重复请求主选择：Actor {pending.Actor} source={pending.SourceId}。",
+                                $"联合动作重复请求主选择：Actor {frame.OwnerActor} source={frame.SourceId}。",
                                 pending),
                         JointPendingChoicePlacement.Nested
                             => AppendNestedChoice(item.Candidate.Action, owned),
-                        _ => throw new ArgumentOutOfRangeException(nameof(pending.Placement)),
+                        _ => throw new ArgumentOutOfRangeException(nameof(frame.Placement)),
                     };
                     open.Enqueue((item.Candidate with { Action = expanded }, item.Depth + 1));
                 }

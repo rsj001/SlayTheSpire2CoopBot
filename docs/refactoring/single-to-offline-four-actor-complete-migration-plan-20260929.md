@@ -16,7 +16,7 @@
 | F3 完整卡牌与目标 | 进行中 | F3a/F3b 已接入目标/实例身份、基础及动态嵌套选择；F3c 已接入同回合 fixed-prefix 请求并通过 BFS/DFS；opening/cycle/cross-turn 仍待完成 |
 | F4 完整药水 | 进行中 | F4a/F4b 已完成 2/4 Actor 独立槽位/目标、九类手动选择与 Entropic Brew 生成；Smart/强制/药量/战略成本等政策待完成 |
 | F5 Power/遗物/球/宠物/角色资源 | 已完成 | F5a-F5e：根元数据、Power/全队/Hook、遗物触发/消耗、五角色资源、真实召唤所有权及第三方拒绝边界均有动态证据 |
-| F6 选择与嵌套 continuation | 未开始 | - |
+| F6 选择与嵌套 continuation | 进行中 | F6a 已引入携带 OwnerActor/SourceAction 的联合选择帧并通过动态嵌套严格回放；回合边界与多 Actor pending owner 待补 |
 | F7 联合回合与敌方生命周期 | 未开始 | - |
 | F8 联合终局目标 | 未开始 | - |
 | F9 联合 Beam/BFWS | 未开始 | - |
@@ -252,6 +252,13 @@
 - 同名候选按实例匹配；
 - 选择失败不会污染兄弟分支；
 - 单人选择续执行合同逐位保持。
+
+执行拆分：
+
+- F6a（已完成）：新增不可变 `JointPendingChoiceFrame`，明确保存 `OwnerActor`、完整 `SourceAction`、source/spec 与主/嵌套 placement；联合 expander 在生成分支前严格核对 frame owner/source action。Havoc → Second Wind → Defend 动态嵌套严格回放 `runId=78cfa14e6d98479fa14d2104166c5b95` Passed。
+- F6b（待完成）：回合开始、EndTurn、自动/重复出牌和遗物选择 continuation。
+- F6c（待完成）：多 Actor 同时 pending 时的唯一 owner、原序消费与兄弟分支失败隔离。
+- F6d（待完成）：同名实例跨动作身份与单人续执行等价哨兵，关闭 F-ISSUE-006。
 
 ### F7：完整联合回合和敌方生命周期
 

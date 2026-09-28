@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F6a：联合选择帧（2026-09-29）
+
+- `JointPendingChoiceFrame` 保存 OwnerActor、完整 SourceAction、source/spec 与主/嵌套 placement；expander 在产生分支前要求 frame 的 owner 和 SourceAction 与当前探测动作逐值一致。
+- `COOP-JOINT-REPLAY`：Havoc → Second Wind → Defend 动态嵌套选择及严格回放同状态，`runId=78cfa14e6d98479fa14d2104166c5b95`，Passed，实例已删除；Release 构建 0 警告/0 错误。
+- 未覆盖回合开始/EndTurn 独立 continuation、多 Actor 同时 pending、跨动作同名实例或 Linux/可见 Steam。
+
 ## 离线四 Actor 完整迁移 F5e：第三方 subscriber 边界（2026-09-29）
 
 - 通过生产 `PredictionModHookSubscriberCapture.ValidateSubscriber` 路径验证：只覆写战斗外 hook 的 subscriber 放行；映射为未知来源且覆写 `AfterCardPlayed` 的 subscriber 抛 `PredictionUnsupportedException`，消息包含类型与 `coop-combat` scope。

@@ -58,7 +58,7 @@ internal sealed partial class UnattendedTestRunner
             {
                 runner.SetStage("coop_joint_replay");
                 AssertCoopJointReplay(scenario.CombatState);
-                runner._completedChecks.Add("JointReplay:ActorCard:StateIdentity:ChoiceCandidate:DynamicNestedChoice:Target:EndTurn:SearchReplaySameState:Potion:StrictSnapshot");
+                runner._completedChecks.Add("JointReplay:ActorCard:StateIdentity:ChoiceCandidate:ChoiceFrameOwnerSource:DynamicNestedChoice:Target:EndTurn:SearchReplaySameState:Potion:StrictSnapshot");
             }
             if (request.ScenarioId is "COOP-JOINT-ORACLE" or "COOP-JOINT-FOUR-ACTOR")
             {

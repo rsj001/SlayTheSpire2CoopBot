@@ -6,17 +6,23 @@ using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver;
 
-internal sealed class JointPendingActionChoiceException(
-    CombatActorId actor,
+internal sealed record JointPendingChoiceFrame(
+    CombatActorId OwnerActor,
+    PlanAction SourceAction,
     string sourceId,
     CardChoiceSpec spec,
-    JointPendingChoicePlacement placement = JointPendingChoicePlacement.Nested) : InvalidOperationException(
-        $"联合动作等待选择：Actor {actor} source={sourceId} effect={spec.Effect}。")
+    JointPendingChoicePlacement Placement = JointPendingChoicePlacement.Nested)
 {
-    internal CombatActorId Actor { get; } = actor;
     internal string SourceId { get; } = sourceId;
     internal CardChoiceSpec Spec { get; } = spec;
-    internal JointPendingChoicePlacement Placement { get; } = placement;
+}
+
+internal sealed class JointPendingActionChoiceException(JointPendingChoiceFrame frame)
+    : InvalidOperationException(
+        $"联合动作等待选择：Actor {frame.OwnerActor} source={frame.SourceId} " +
+        $"action={frame.SourceAction.Kind} effect={frame.Spec.Effect}。")
+{
+    internal JointPendingChoiceFrame Frame { get; } = frame;
 }
 
 internal enum JointPendingChoicePlacement
@@ -146,7 +152,11 @@ internal static class JointActionTransition
             ?? throw new InvalidOperationException(
                 $"联合动作挂起但没有选择请求：Actor {action.Actor} card={action.CardId}。");
         CardChoiceSpec spec = TurnStartChoiceSupport.BuildSpec(simulator, player, request);
-        return new JointPendingActionChoiceException(action.Actor, request.SourceId, spec);
+        return new JointPendingActionChoiceException(new(
+            action.Actor,
+            action,
+            request.SourceId,
+            spec));
     }
 
     private static JointTurnState ApplyPotion(
@@ -181,11 +191,12 @@ internal static class JointActionTransition
             }
             if (PotionChoiceSupport.RequiresChoice(potion) && action.Choice == null)
             {
-                throw new JointPendingActionChoiceException(
+                throw new JointPendingActionChoiceException(new(
                     action.Actor,
+                    action,
                     potion.Id.Entry,
                     PotionChoiceSupport.GetSpec(simulator, potion),
-                    JointPendingChoicePlacement.Primary);
+                    JointPendingChoicePlacement.Primary));
             }
             if (!PotionExecutionSupport.Complete(
                     simulator, combat, potion, target, action.Choice,
