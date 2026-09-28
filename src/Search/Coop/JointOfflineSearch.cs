@@ -7,7 +7,16 @@ internal sealed record JointOfflineSearchResult(
     JointCombatSnapshot Snapshot,
     JointObjectiveScore Score,
     IReadOnlyList<PlanAction> Actions,
-    int ExpandedStates);
+    int ExpandedStates)
+{
+    internal JointSearchTermination Termination { get; init; } = JointSearchTermination.Completed;
+}
+
+internal enum JointSearchTermination
+{
+    Completed,
+    StateBudget,
+}
 
 internal sealed record JointOfflineSearchRequest(
     IReadOnlyList<PlanAction> FixedPrefix,
@@ -76,6 +85,89 @@ internal static class JointOfflineSearch
             }
         }
         return best ?? throw new InvalidOperationException("联合 BFS 没有到达终局或回合屏障。");
+    }
+
+    /// <summary>
+    /// Bounded production-oriented member. Expansion is layer-ordered and candidate admission is
+    /// deterministic; all Actors share the same state budget and transposition set.
+    /// </summary>
+    internal static JointOfflineSearchResult SolveBeam(
+        CombatRootSnapshot root,
+        JointOfflineSearchRequest request,
+        int beamWidth,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateRequest(root, request);
+        if (beamWidth <= 0)
+            throw new ArgumentOutOfRangeException(nameof(beamWidth));
+        List<Node> frontier = [ReplayFixedPrefix(root, request)];
+        HashSet<StateFingerprint> seen = [];
+        JointOfflineSearchResult? best = null;
+        int expanded = 0;
+        bool budgetReached = false;
+        while (frontier.Count > 0 && !budgetReached)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            List<(Node Node, JointCombatSnapshot Snapshot, JointObjectiveScore Score)> next = [];
+            foreach (Node node in frontier)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (expanded >= request.MaximumStates)
+                {
+                    budgetReached = true;
+                    break;
+                }
+                expanded++;
+                JointCombatSnapshot snapshot = JointCombatSnapshot.Capture(root, node.Simulator, node.Turns);
+                if (!seen.Add(snapshot.StateKey))
+                    continue;
+                if (IsBoundary(node, request.MaximumActions))
+                {
+                    if (request.EffectivePotionPolicy.IsBoundaryEligible(node.Actions))
+                        best = SelectBetter(root, best, snapshot, node.Actions, expanded);
+                    continue;
+                }
+                foreach (JointActionCandidate candidate in JointActionExpander.Expand(
+                             node.Simulator,
+                             node.Turns))
+                {
+                    if (!request.EffectivePotionPolicy.Allows(candidate.Action, node.Actions))
+                        continue;
+                    CombatPredictionSimulator child = node.Simulator.Fork();
+                    ForkableSet<uint> deaths = node.ProcessedEnemyDeaths.Fork();
+                    JointTurnState turns = JointActionTransition.Apply(
+                        child,
+                        node.Turns,
+                        candidate.Action,
+                        deaths);
+                    PlanAction[] actions = [.. node.Actions, candidate.Action];
+                    Node childNode = new(child, deaths, turns, actions);
+                    JointCombatSnapshot childSnapshot = JointCombatSnapshot.Capture(root, child, turns);
+                    JointObjectiveScore score = JointObjective.Capture(root, childSnapshot, actions);
+                    next.Add((childNode, childSnapshot, score));
+                }
+            }
+            frontier = next
+                .OrderByDescending(static item => item.Score, JointObjectiveScoreComparer.Instance)
+                .ThenBy(static item => item.Node.Actions, JointActionSequenceComparer.Instance)
+                .Take(beamWidth)
+                .Select(static item => item.Node)
+                .ToList();
+        }
+        if (best is null)
+        {
+            foreach (Node node in frontier)
+            {
+                JointCombatSnapshot snapshot = JointCombatSnapshot.Capture(root, node.Simulator, node.Turns);
+                if (request.EffectivePotionPolicy.IsBoundaryEligible(node.Actions))
+                    best = SelectBetter(root, best, snapshot, node.Actions, expanded);
+            }
+        }
+        return (best ?? throw new InvalidOperationException("联合 Beam 没有可评分的终局或边界。")) with
+        {
+            ExpandedStates = expanded,
+            Termination = budgetReached ? JointSearchTermination.StateBudget : JointSearchTermination.Completed,
+        };
     }
 
     /// <summary>Independent oracle enumerator: plain depth-first traversal without deduplication.</summary>
@@ -203,6 +295,26 @@ internal static class JointOfflineSearch
                 return comparison;
         }
         return left.Count.CompareTo(right.Count);
+    }
+
+    private sealed class JointObjectiveScoreComparer : IComparer<JointObjectiveScore>
+    {
+        internal static JointObjectiveScoreComparer Instance { get; } = new();
+
+        public int Compare(JointObjectiveScore? left, JointObjectiveScore? right)
+            => left is null
+                ? right is null ? 0 : -1
+                : right is null ? 1 : JointObjectiveScore.Compare(left, right);
+    }
+
+    private sealed class JointActionSequenceComparer : IComparer<IReadOnlyList<PlanAction>>
+    {
+        internal static JointActionSequenceComparer Instance { get; } = new();
+
+        public int Compare(IReadOnlyList<PlanAction>? left, IReadOnlyList<PlanAction>? right)
+            => left is null
+                ? right is null ? 0 : -1
+                : right is null ? 1 : CompareActions(left, right);
     }
 
     private static void ValidateRequest(

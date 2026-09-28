@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F9a（2026-09-29）
+
+新增有界的确定性联合 Beam：按动作深度逐层展开，全体 Actor 共享状态预算与完整状态键转置集合，按联合终局目标和稳定动作序截宽，并记录 `Completed`/`StateBudget` 停止原因。2 Actor 小根的宽 Beam 与独立 DFS oracle 得到相同分数、动作序和状态键，`COOP-MULTI-ACTOR-ROOT` 的 `runId=2ba973750d1a4b41998970ba7058a880` Passed，实例已删除，Release 构建 0/0。F9 的 Pareto/多样性、药水配额、固定并行 lane、4 Actor 与 BFWS 仍待完成。
+
 ## 离线四 Actor 完整迁移 F8（2026-09-29）
 
 联合终局比较器补齐明确的终局边界和团队政策：胜利优先，未完成路线优于已失败路线；死亡 Actor 数先于总战损，之后依次比较逐 Actor 战损、药水战略成本、保命资源、药水次数、成长、长期资源、偷窃回收、回合和动作，最后仍由稳定联合动作序决胜。实现仅位于 `Search/Coop`，单人 `FinalPlanOrdering` 未改。`COOP-JOINT-OBJECTIVE` 的 `runId=0661a8fe6b954efe947351377d65f4ae` Passed，实例已删除，Release 构建 0/0。总战损仍是不同角色 HP 价值模型完成前的 workaround。

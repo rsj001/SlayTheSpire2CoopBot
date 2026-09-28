@@ -124,6 +124,18 @@ internal sealed partial class UnattendedTestRunner
                     || ComparePlanActions(breadthFirst.Actions, oracle.Actions) != 0)
                     throw new InvalidOperationException(
                         "联合 BFS 与独立 DFS oracle 的最优值、动作序或终局状态不一致。");
+                JointOfflineSearchResult beam = JointOfflineSearch.SolveBeam(
+                    root,
+                    JointOfflineSearchRequest.Default(maximumActions: 2, maximumStates: 2_000),
+                    beamWidth: 2_000);
+                if (beam.Termination != JointSearchTermination.Completed
+                    || JointObjectiveScore.Compare(beam.Score, oracle.Score) != 0
+                    || beam.Snapshot.StateKey != oracle.Snapshot.StateKey
+                    || ComparePlanActions(beam.Actions, oracle.Actions) != 0)
+                {
+                    throw new InvalidOperationException(
+                        "联合 Beam 与 DFS oracle 的最优值、动作序或终局状态不一致。");
+                }
 
                 PlanAction prefix = candidates.First(candidate =>
                     candidate.Action.Actor.Index == 1
