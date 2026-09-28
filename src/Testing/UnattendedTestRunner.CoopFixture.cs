@@ -3,7 +3,9 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.Monsters;
+using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
@@ -72,6 +74,7 @@ internal sealed partial class UnattendedTestRunner
             JointCombatSnapshot before = JointCombatSnapshot.Capture(root, simulator, turns);
             AssertRemoteActorStateKeyCoverage(root, before, turns, actorCount - 1);
             AssertRemoteActorPowerLifecycle(root, before, turns, actorCount - 1);
+            AssertCharacterResources(root, before, turns);
             AssertMultiplayerBlockScaling(root, actorCount);
             JointActionCandidate selected = candidates.First(candidate =>
                 candidate.Action.Actor.Index == actorCount - 1
@@ -176,6 +179,51 @@ internal sealed partial class UnattendedTestRunner
                     }
                     return bfs;
                 }
+            }
+        }
+    }
+
+    private static void AssertCharacterResources(
+        CombatRootSnapshot root,
+        JointCombatSnapshot baseline,
+        JointTurnState turns)
+    {
+        AssertMutation(1, "orb", simulator =>
+            simulator.OrbChannel<LightningOrb>(simulator.State.Players[1]));
+        if (root.Actors.Count >= 3)
+        {
+            AssertMutation(2, "stars", simulator =>
+                simulator.GainStars(simulator.State.Players[2], 2));
+        }
+        if (root.Actors.Count >= 4)
+        {
+            AssertMutation(3, "osty", simulator =>
+            {
+                SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+                combat.SummonOsty(simulator, simulator.State.Players[3], 5);
+                PowerLifecycleSupport.ResolvePowerAmountChanges(simulator, combat);
+            });
+        }
+
+        void AssertMutation(
+            int actorIndex,
+            string resource,
+            Action<CombatPredictionSimulator> mutate)
+        {
+            CombatPredictionSimulator fork = root.ForkSimulator();
+            mutate(fork);
+            JointCombatSnapshot changed = JointCombatSnapshot.Capture(root, fork, turns);
+            if (changed.StateKey == baseline.StateKey
+                || changed.Continuation.StateText == baseline.Continuation.StateText)
+            {
+                throw new InvalidOperationException(
+                    $"Actor{actorIndex} 的角色资源 {resource} 未进入联合状态键和续用戳。");
+            }
+            for (int index = 0; index < changed.Actors.Count; index++)
+            {
+                if (index != actorIndex && changed.Actors[index] != baseline.Actors[index])
+                    throw new InvalidOperationException(
+                        $"Actor{actorIndex} 的角色资源 {resource} 污染了 Actor{index}。");
             }
         }
     }
@@ -392,7 +440,15 @@ internal sealed partial class UnattendedTestRunner
             ulong netId = index == 0 ? liveLocal.NetId : checked(liveLocal.NetId + (ulong)index);
             while (!netIds.Add(netId))
                 netId++;
-            players[index] = Player.CreateForNewRun(liveLocal.Character, liveLocal.UnlockState, netId);
+            CharacterModel character = index switch
+            {
+                0 => ModelDb.Character<Ironclad>(),
+                1 => ModelDb.Character<Defect>(),
+                2 => ModelDb.Character<Regent>(),
+                3 => ModelDb.Character<Necrobinder>(),
+                _ => throw new ArgumentOutOfRangeException(nameof(index)),
+            };
+            players[index] = Player.CreateForNewRun(character, liveLocal.UnlockState, netId);
         }
 
         RunState run = RunState.CreateForTest(players, seed: $"COOP-OFFLINE-{actorCount}");
@@ -410,7 +466,9 @@ internal sealed partial class UnattendedTestRunner
             player.PopulateCombatState(run.Rng.Shuffle, state);
             PlayerCombatState combat = player.PlayerCombatState
                 ?? throw new InvalidOperationException("离线 Actor 没有战斗状态。");
-            CardModel card = combat.DrawPile.Cards.First(candidate => candidate.Type == CardType.Attack);
+            CardModel card = combat.DrawPile.Cards.First(candidate =>
+                candidate.Type == CardType.Attack
+                && candidate.Id.Entry.StartsWith("STRIKE_", StringComparison.Ordinal));
             combat.DrawPile.RemoveInternal(card, silent: true);
             combat.Hand.AddInternal(card, silent: true);
             CardModel discard = combat.DrawPile.Cards.First();

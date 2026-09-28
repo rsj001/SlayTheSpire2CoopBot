@@ -64,6 +64,12 @@ Armaments + Strike 的 `COOP-JOINT-REPLAY` 通过 choice candidate、实例定�
 
 `COOP-MULTI-ACTOR-ROOT` 的 `runId=3d0afccd1afc4501b3108ea1519039f6` Passed，完成 `RemotePowerLifecycle`，实例已删除；Release 构建 0/0。该证据只覆盖通用创建、叠加、移除和所有权，不外推全队 Power、回合 Hook 或具体 Power mirror 的 actual/simulated 等价。
 
+## 离线四 Actor 完整迁移 F5d（混合角色资源，2026-09-29）
+
+真实联合夹具改为固定 Ironclad、Defect、Regent、Necrobinder Actor 顺序；分别在远端 Defect 通道 Lightning Orb、Regent 增加 Stars、Necrobinder 召唤 Osty，要求完整状态键/续用戳变化且其余 Actor 诊断快照不变。最初夹具按“第一张攻击牌”给 Regent 选中 Falling Star，因无 Stars 没有出牌候选，`runId=de16a21c6a4a45299f1b8e73025e0461` Failed；随后直接设置 live Stars 又在未初始化的原版 CombatHistory 写入处空引用，`runId=1b615b77f1c644cf9b5684f52cb54d6f` Failed。最终只改为选择各角色基础 Strike，不绕过原版 Hook。
+
+第一次最终源码启动在进入游戏前命中私有实例校验失败并清理；串行重试 `runId=74157755165c4d9b9ddc846c8138a1e2` Passed，完成 `MixedCharacters:Orb:Stars:Osty`，实例已删除。Release 构建 0/0。Silent 专属代表、球触发时序、宠物真实多人所有权仍未完成。
+
 ## 下一版本（开发中，2026-09-28）
 
 后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。

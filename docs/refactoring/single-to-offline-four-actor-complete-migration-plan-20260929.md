@@ -232,7 +232,7 @@
 - F5a（已完成）：`CombatActorRoot` 捕获逐 Actor 可搜索药水、Throwing Axe 可用性、Petrified Toad 可再生药水语义和战后遗物回血；旧根级单人字段保持并与本地 Actor 逐值一致。Actor1 独有 Petrified Toad 的 `COOP-MULTI-ACTOR-ROOT` 运行 `f6a9adae0f5b4dc49e472f21747659af` 通过。
 - F5b（进行中）：通用 StrengthPower 已通过跨 Actor applier、远端 target、叠加/移除、Fork 隔离和状态键/续用戳；全队效果与具体 Hook 时序代表集待补。
 - F5c（待完成）：被动遗物触发/计数/消耗和共享边界代表集。
-- F5d（待完成）：球、Osty/宠物及五角色专属资源代表集。
+- F5d（进行中）：混合 Ironclad/Defect/Regent/Necrobinder 根及 Orb/Stars/Osty 隔离已通过；Silent 专属机制与宠物真实多人所有权仍待补。
 - F5e（待完成）：第三方登记点和未知 subscriber 拒绝边界。
 
 ### F6：完整选择系统和嵌套 continuation

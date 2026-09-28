@@ -1,5 +1,12 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F5d：混合角色资源（2026-09-29）
+
+- 混合根：Ironclad、Defect、Regent、Necrobinder；Defect Lightning Orb、Regent Stars、Necrobinder Osty 分别改变完整键/续用戳且不污染兄弟 Actor。
+- 首差异：`de16a21c6a4a45299f1b8e73025e0461` 因 Regent 误选需 Stars 的 Falling Star 缺候选；`1b615b77f1c644cf9b5684f52cb54d6f` 因夹具直接写 live Stars 在未初始化历史处空引用。最终选择基础 Strike，不改生产语义。
+- 最终请求首次未进入游戏、私有实例校验失败并清理；串行重试 `runId=74157755165c4d9b9ddc846c8138a1e2`，Passed，实例已删除；Release 构建 0 警告/0 错误。
+- 未覆盖 Silent 专属机制、完整球触发、宠物多人所有权、Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F5b：通用 Power 生命周期（2026-09-29）
 
 - 远端 Actor StrengthPower：Actor0 applier、Actor1/末 Actor target，创建→叠加→移除；完整键/续用戳变化，父 Fork 与兄弟 Actor 隔离。
