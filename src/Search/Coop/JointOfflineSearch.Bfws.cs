@@ -5,6 +5,16 @@ namespace CombatSolver;
 
 internal static partial class JointOfflineSearch
 {
+    internal static JointOfflineSearchResult SolveSmartBfws(
+        CombatRootSnapshot root,
+        JointOfflineSearchRequest request,
+        int maximumOpen,
+        CancellationToken cancellationToken = default)
+        => SolveSmartCounterfactual(
+            root,
+            request,
+            adjusted => SolveBfws(root, adjusted, maximumOpen, cancellationToken));
+
     internal static JointOfflineSearchResult SolveBfws(
         CombatRootSnapshot root,
         JointOfflineSearchRequest request,
@@ -65,7 +75,8 @@ internal static partial class JointOfflineSearch
                     best = SelectBetter(root, best, snapshot, node.Actions, expanded);
             }
         }
-        return (best ?? throw new InvalidOperationException("联合 BFWS 没有可评分的终局或边界。")) with
+        return (best ?? throw new JointPotionPolicyUnsatisfiedException(
+            "联合 BFWS 没有满足药水政策的可评分终局或边界。")) with
         {
             ExpandedStates = expanded,
             Termination = termination,

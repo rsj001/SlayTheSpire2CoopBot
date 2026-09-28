@@ -327,6 +327,29 @@ internal sealed partial class UnattendedTestRunner
                     throw new InvalidOperationException(
                         "联合 Smart 药水没有按同根无药基线和单人 HP 阈值裁决。");
                 }
+                JointOfflineSearchRequest smartRequest = new(
+                    [],
+                    MaximumActions: 2,
+                    MaximumStates: 4_000,
+                    PotionPolicy: smartPolicy);
+                JointOfflineSearchResult smartBeam = JointOfflineSearch.SolveSmartBeam(
+                    root,
+                    smartRequest,
+                    beamWidth: 64);
+                JointOfflineSearchResult smartBfws = JointOfflineSearch.SolveSmartBfws(
+                    root,
+                    smartRequest,
+                    maximumOpen: 128);
+                if (smartBeam.ExpandedStates > smartRequest.MaximumStates
+                    || smartBfws.ExpandedStates > smartRequest.MaximumStates
+                    || smartBeam.Actions.Any(static action =>
+                        action.Kind == PlanActionKind.UsePotion)
+                    || smartBfws.Actions.Any(static action =>
+                        action.Kind == PlanActionKind.UsePotion))
+                {
+                    throw new InvalidOperationException(
+                        "联合 Smart Beam/BFWS 未共享状态预算或错误接受无收益药水。");
+                }
 
                 JointOfflineSearchResult AssertPolicySearch(
                     JointOfflineSearchRequest policyRequest,

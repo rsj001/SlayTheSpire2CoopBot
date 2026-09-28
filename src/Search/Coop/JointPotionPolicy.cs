@@ -2,6 +2,9 @@ using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver;
 
+internal sealed class JointPotionPolicyUnsatisfiedException(string message)
+    : InvalidOperationException(message);
+
 internal readonly record struct JointPotionSlotDirective(
     CombatActorId Actor,
     int Slot,
@@ -54,6 +57,13 @@ internal sealed class JointPotionSearchPolicy
                 ? directive with { Directive = SolverPotionDirective.Disabled }
                 : directive),
             MinimumUses,
+            MaximumUses);
+
+    internal JointPotionSearchPolicy ForSmartCandidate(int baselineUses)
+        => new(
+            DefaultPolicy,
+            Directives,
+            Math.Max(MinimumUses, checked(baselineUses + 1)),
             MaximumUses);
 
     internal bool Allows(PlanAction action, IReadOnlyList<PlanAction> priorActions)

@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F4c2b：Smart 搜索预算（2026-09-29）
+
+- Beam/BFWS 先搜索保留 Force 的无可选药基线，再只使用实际剩余状态预算搜索至少多一瓶的候选；两段展开数合并报告。
+- 2 Actor 两动作根的药水无法节省 HP，Smart Beam/BFWS 均返回无药路线，且总展开不超过请求的 `4000`；`runId=fee6bb926ace43b99f781fe72ba60726` Passed，实例已删除。
+- 多用药数量分层、合格用药的动态搜索路径、Linux 及可见 Steam 未覆盖。
+
 ## 离线四 Actor 完整迁移 F4c2a：Smart 药水阈值（2026-09-29）
 
 - Smart 基线把默认及显式 Smart 指令转为 Disabled，同时保留 Force；候选仅统计可选 Smart 用药的 Actor 归属战略成本。

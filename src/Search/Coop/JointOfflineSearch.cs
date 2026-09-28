@@ -39,6 +39,22 @@ internal static partial class JointOfflineSearch
         JointTurnState Turns,
         IReadOnlyList<PlanAction> Actions);
 
+    internal static JointOfflineSearchResult SolveSmartBeam(
+        CombatRootSnapshot root,
+        JointOfflineSearchRequest request,
+        int beamWidth,
+        CancellationToken cancellationToken = default,
+        int degreeOfParallelism = 1)
+        => SolveSmartCounterfactual(
+            root,
+            request,
+            adjusted => SolveBeam(
+                root,
+                adjusted,
+                beamWidth,
+                cancellationToken,
+                degreeOfParallelism));
+
     /// <summary>Offline production member: breadth-first enumeration with complete-state deduplication.</summary>
     internal static JointOfflineSearchResult SolveBreadthFirst(
         CombatRootSnapshot root,
@@ -223,7 +239,8 @@ internal static partial class JointOfflineSearch
                     best = SelectBetter(root, best, snapshot, node.Actions, expanded);
             }
         }
-        return (best ?? throw new InvalidOperationException("联合 Beam 没有可评分的终局或边界。")) with
+        return (best ?? throw new JointPotionPolicyUnsatisfiedException(
+            "联合 Beam 没有满足药水政策的可评分终局或边界。")) with
         {
             ExpandedStates = expanded,
             Termination = budgetReached ? JointSearchTermination.StateBudget : JointSearchTermination.Completed,
@@ -342,6 +359,60 @@ internal static partial class JointOfflineSearch
         if (comparison > 0 || comparison == 0 && CompareActions(candidate.Actions, best.Actions) < 0)
             return candidate;
         return best;
+    }
+
+    private static JointOfflineSearchResult SolveSmartCounterfactual(
+        CombatRootSnapshot root,
+        JointOfflineSearchRequest request,
+        Func<JointOfflineSearchRequest, JointOfflineSearchResult> solve)
+    {
+        ValidateRequest(root, request);
+        JointPotionSearchPolicy policy = request.EffectivePotionPolicy;
+        if (!policy.RequiresSmartCounterfactual)
+            return solve(request);
+        int baselineBudget = Math.Max(1, request.MaximumStates / 2);
+        JointOfflineSearchResult baseline = solve(request with
+        {
+            MaximumStates = baselineBudget,
+            PotionPolicy = policy.ForSmartBaseline(),
+        });
+        int remaining = request.MaximumStates - baseline.ExpandedStates;
+        if (remaining <= 0)
+            return baseline;
+        JointPotionSearchPolicy candidatePolicy = policy.ForSmartCandidate(
+            baseline.Score.PotionUses);
+        if (candidatePolicy.MaximumUses is { } maximum
+            && candidatePolicy.MinimumUses > maximum)
+        {
+            return baseline;
+        }
+        JointOfflineSearchResult candidate;
+        try
+        {
+            candidate = solve(request with
+            {
+                MaximumStates = remaining,
+                PotionPolicy = candidatePolicy,
+            });
+        }
+        catch (JointPotionPolicyUnsatisfiedException)
+        {
+            return baseline;
+        }
+        JointOfflineSearchResult selected = policy.IsSmartCandidateEligible(
+            baseline,
+            candidate,
+            root.Actors)
+            ? candidate
+            : baseline;
+        return selected with
+        {
+            ExpandedStates = checked(baseline.ExpandedStates + candidate.ExpandedStates),
+            Termination = baseline.Termination == JointSearchTermination.StateBudget
+                || candidate.Termination == JointSearchTermination.StateBudget
+                    ? JointSearchTermination.StateBudget
+                    : JointSearchTermination.Completed,
+        };
     }
 
     private static int CompareActions(
