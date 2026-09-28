@@ -262,7 +262,7 @@ internal sealed partial class UnattendedTestRunner
                     PotionPolicy: new JointPotionSearchPolicy(
                         SolverPotionPolicy.Disabled,
                         maximumUses: 0));
-                AssertPolicySearch(disabledRequest, static actions =>
+                JointOfflineSearchResult disabledResult = AssertPolicySearch(disabledRequest, static actions =>
                     actions.All(action => action.Kind != PlanActionKind.UsePotion),
                     "Disabled 联合药水政策仍使用了药水");
 
@@ -294,6 +294,38 @@ internal sealed partial class UnattendedTestRunner
                         root.Actors[1].HasRenewablePotionShapedRock) != expectedCost)
                 {
                     throw new InvalidOperationException("联合药水政策没有复用单人战略成本。" );
+                }
+                JointPotionSearchPolicy smartPolicy = new(SolverPotionPolicy.Smart);
+                int requiredSaved = PotionUsePolicy.SmartRequiredHpSaved(expectedCost);
+                JointOfflineSearchResult smartBaseline = disabledResult with
+                {
+                    Score = disabledResult.Score with
+                    {
+                        Outcome = null,
+                        TotalHpLost = requiredSaved,
+                    },
+                };
+                JointOfflineSearchResult qualifyingSmart = forcedResult with
+                {
+                    Score = forcedResult.Score with { Outcome = null, TotalHpLost = 0 },
+                };
+                JointOfflineSearchResult rejectedSmart = forcedResult with
+                {
+                    Score = forcedResult.Score with { Outcome = null, TotalHpLost = 1 },
+                };
+                if (!smartPolicy.RequiresSmartCounterfactual
+                    || smartPolicy.ForSmartBaseline().DefaultPolicy != SolverPotionPolicy.Disabled
+                    || !smartPolicy.IsSmartCandidateEligible(
+                        smartBaseline,
+                        qualifyingSmart,
+                        root.Actors)
+                    || smartPolicy.IsSmartCandidateEligible(
+                        smartBaseline,
+                        rejectedSmart,
+                        root.Actors))
+                {
+                    throw new InvalidOperationException(
+                        "联合 Smart 药水没有按同根无药基线和单人 HP 阈值裁决。");
                 }
 
                 JointOfflineSearchResult AssertPolicySearch(

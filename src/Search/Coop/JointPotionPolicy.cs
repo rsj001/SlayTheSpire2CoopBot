@@ -1,3 +1,5 @@
+using CombatSolver.Engine.InCombat.Simulation;
+
 namespace CombatSolver;
 
 internal readonly record struct JointPotionSlotDirective(
@@ -41,6 +43,18 @@ internal sealed class JointPotionSearchPolicy
     internal int MinimumUses { get; }
     internal int? MaximumUses { get; }
     internal IReadOnlyList<JointPotionSlotDirective> Directives { get; }
+    internal bool RequiresSmartCounterfactual
+        => DefaultPolicy == SolverPotionPolicy.Smart
+            || Directives.Any(static directive => directive.Directive == SolverPotionDirective.Smart);
+
+    internal JointPotionSearchPolicy ForSmartBaseline()
+        => new(
+            SolverPotionPolicy.Disabled,
+            Directives.Select(static directive => directive.Directive == SolverPotionDirective.Smart
+                ? directive with { Directive = SolverPotionDirective.Disabled }
+                : directive),
+            MinimumUses,
+            MaximumUses);
 
     internal bool Allows(PlanAction action, IReadOnlyList<PlanAction> priorActions)
     {
@@ -82,6 +96,34 @@ internal sealed class JointPotionSearchPolicy
             .Sum(action => PotionUsePolicy.StrategicHpCost(
                 action.PotionId ?? throw new InvalidOperationException("联合药水动作缺少 PotionId。"),
                 renewablePotionShapedRock));
+
+    internal bool IsSmartCandidateEligible(
+        JointOfflineSearchResult baseline,
+        JointOfflineSearchResult candidate,
+        IReadOnlyList<CombatActorRoot> actors)
+    {
+        PlanAction[] optionalUses = candidate.Actions
+            .Where(action => action.Kind == PlanActionKind.UsePotion
+                && Resolve(
+                    action.Actor,
+                    action.PotionSlot,
+                    action.PotionId
+                        ?? throw new InvalidOperationException("联合药水动作缺少 PotionId。"))
+                    == SolverPotionDirective.Smart)
+            .ToArray();
+        if (optionalUses.Length == 0)
+            return true;
+        int strategicCost = optionalUses.Sum(action => PotionUsePolicy.StrategicHpCost(
+            action.PotionId!,
+            actors[action.Actor.Index].HasRenewablePotionShapedRock));
+        bool baselineWon = baseline.Score.Outcome == CombatTerminalOutcome.Victory;
+        bool candidateWon = candidate.Score.Outcome == CombatTerminalOutcome.Victory;
+        return candidateWon && !baselineWon
+            || PotionUsePolicy.HpSaved(
+                    baseline.Score.TotalHpLost,
+                    candidate.Score.TotalHpLost)
+                >= PotionUsePolicy.SmartRequiredHpSaved(strategicCost);
+    }
 
     internal void Validate(int actorCount)
     {

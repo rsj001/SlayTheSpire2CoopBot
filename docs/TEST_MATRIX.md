@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F4c2a：Smart 药水阈值（2026-09-29）
+
+- Smart 基线把默认及显式 Smart 指令转为 Disabled，同时保留 Force；候选仅统计可选 Smart 用药的 Actor 归属战略成本。
+- Gambler's Brew 候选相对无药基线恰好满足 `SmartRequiredHpSaved` 时接受，少节省 1 HP 时拒绝；`runId=12601915c77d43888b98927f30a5d817` Passed，实例已删除。
+- BFS/Beam/BFWS 共享预算反事实编排、Linux 及可见 Steam 未覆盖。
+
 ## 离线四 Actor 完整迁移 F3d/F4d：跨回合前缀（2026-09-29）
 
 - 两 Actor 依次 EndTurn 到达屏障后，固定前缀经玩家尾、基础敌方侧和下一玩家侧推进，再执行第二轮 Actor0 EndTurn；BFS/DFS 的动作、分数和完整状态键一致，`runId=b85791b45b59410c9d3b1c8242a45ff4` Passed。

@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F4c2a（2026-09-29）
+
+联合药水政策新增 Smart 反事实的纯裁决合同：基线只禁用可选 Smart 药水而保留 Force 指令，候选按动作 Actor 的可再生药水归属计算战略成本，并复用单人胜负与 HP 节省阈值。Gambler's Brew 候选恰好达到阈值时接受、少 1 HP 时拒绝，`COOP-MULTI-ACTOR-ROOT` 的 `runId=12601915c77d43888b98927f30a5d817` Passed，实例已删除。搜索入口和共享预算编排仍待 F4c2b。
+
 ## 离线四 Actor 完整迁移 F3d/F4d（2026-09-29）
 
 联合固定前缀现在可在全员屏障处严格推进玩家尾、基础敌方侧和下一玩家侧，并继续消费下一轮动作；只接受连续一轮且屏障已满足，跳轮和提前跨轮仍明确失败。普通 EndTurn 跨轮的 BFS/DFS 对照 `runId=b85791b45b59410c9d3b1c8242a45ff4` Passed；Actor0 第二轮药水动作继续保持槽位、消耗、目标计数和状态键，最终 `runId=6e70211973b3400fb77bea4b41fbd6fb` Passed，实例均已删除。F4d 关闭；F3d 尚余 opening/cycle 与单人候选序。
