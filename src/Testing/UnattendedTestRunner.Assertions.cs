@@ -24,6 +24,12 @@ internal sealed partial class UnattendedTestRunner
                 AssertCoopActorPlanContract();
                 runner._completedChecks.Add("CoopActorPlan:SingleDefault:ActorOne:OutOfRange:ChoiceOwner");
             }
+            if (request.ScenarioId == "COOP-JOINT-TURN-BARRIER")
+            {
+                runner.SetStage("coop_joint_turn_barrier");
+                AssertCoopJointTurnBarrier();
+                runner._completedChecks.Add("JointTurn:AnyActorOrder:FullBarrier:DeadActor:RejectEarlyNextTurn");
+            }
             if (request.ScenarioId == "MEMORY-DISPLAY-CONTRACT")
             {
                 runner.SetStage("memory_display_contract");
