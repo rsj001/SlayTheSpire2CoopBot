@@ -230,7 +230,8 @@ internal static class JointRoundTransition
     internal static void CompletePlayerSide(
         CombatPredictionSimulator simulator,
         JointTurnState turns,
-        ForkableSet<uint> processedEnemyDeaths)
+        ForkableSet<uint> processedEnemyDeaths,
+        IReadOnlyList<PlanCardChoice>? choices = null)
     {
         if (!turns.IsBarrierReached)
             throw new InvalidOperationException("联合玩家侧尚未到达全员结束屏障。");
@@ -239,7 +240,7 @@ internal static class JointRoundTransition
             .Where(player => simulator.State.GetCreature(player.Creature).IsAlive)
             .ToArray();
         Creature[] participants = players.Select(static player => player.Creature).ToArray();
-        combat.BeginActionChoices((IReadOnlyList<PlanCardChoice>?)null);
+        combat.BeginActionChoices(choices);
         try
         {
             combat.SetActionChoiceTiming(PlanChoiceTiming.PlayerTurnEnd);
@@ -276,7 +277,7 @@ internal static class JointRoundTransition
                     participants,
                     etherealExhaustCount))
             {
-                throw PendingChoice(combat, players[0], turns);
+                throw PendingChoice(combat, turns);
             }
             if (!CorePowerSupport.ApplyEnemyDeathPowers(
                     simulator,
@@ -284,7 +285,7 @@ internal static class JointRoundTransition
                     combat.KnownEnemies,
                     processedEnemyDeaths))
             {
-                throw PendingChoice(combat, players[0], turns);
+                throw PendingChoice(combat, turns);
             }
         }
         finally
@@ -297,9 +298,18 @@ internal static class JointRoundTransition
         SimulatedCombatState combat,
         Player owner,
         JointTurnState turns)
+        => PendingChoice(combat, turns, owner);
+
+    private static JointPendingActionChoiceException PendingChoice(
+        SimulatedCombatState combat,
+        JointTurnState turns,
+        Player? knownOwner = null)
     {
         TurnStartChoiceRequest request = combat.PendingTurnStartChoice
             ?? throw new InvalidOperationException("联合回合尾结算挂起但没有选择请求。");
+        Player owner = request.Owner ?? knownOwner
+            ?? throw new InvalidOperationException(
+                $"联合回合尾选择 {request.SourceId} 没有记录 owner。");
         int actorIndex = -1;
         for (int index = 0; index < combat.Players.Count; index++)
         {
@@ -317,7 +327,10 @@ internal static class JointRoundTransition
             actor,
             source,
             request.SourceId,
-            request.Spec ?? throw new InvalidOperationException("联合回合尾选择缺少 spec。")));
+            request.Spec ?? throw new InvalidOperationException("联合回合尾选择缺少 spec。"),
+            JointPendingChoicePlacement.TurnStart,
+            request.ContextId,
+            request.Timing));
     }
 
     private static InvalidOperationException PendingEnemyChoice(SimulatedCombatState combat)

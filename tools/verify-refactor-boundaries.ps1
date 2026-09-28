@@ -2260,7 +2260,9 @@ foreach ($text in @(
     'private static Node ReplayFixedPrefix(',
     'JointActionTransition.Apply(simulator, turns, action, deaths)',
     'action.Turn != turns.Turn + 1 || !turns.IsBarrierReached',
-    'JointRoundTransition.CompletePlayerSide(simulator, turns, deaths)',
+    'IReadOnlyList<PlanCardChoice> endTurnChoices = transitionChoices',
+    'JointRoundTransition.CompletePlayerSide(',
+    'endTurnChoices);',
     'JointRoundTransition.CompleteBasicEnemySide(simulator, deaths)',
     'JointRoundTransition.StartBasicPlayerSide('
 )) {

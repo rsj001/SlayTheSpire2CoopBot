@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 回合结束选择 owner（2026-09-29）
+
+离线联合模型的选择请求现在记录发起选择的 Player；共享 PhaseTwo 不再把 Power/遗物产生的选择默认归给 Actor0。承载跨回合选择的 EndTurn 动作允许 `TurnStartChoices` 保存不同 Actor 的 owner，而主选择和动作内嵌选择仍必须属于动作 Actor。Actor1 的 Dark Embrace 在回合结束抽到 Seeker Strike，并由 Hellraiser 自动出牌产生 `PlayerTurnEnd` 选择；该选择从同一稳定父状态按前缀恢复完成。首个完整夹具因未隔离 draw pile 未触发选择，`COOP-MULTI-ACTOR-ROOT` 的 `runId=abf2aa3488974e42a6365e7cb111c9f0` Failed；隔离牌堆后 `runId=9bc79f5cdc9548db8f287189f993d54f` Passed，实例均已删除。F6b 仍需遗物及其他自动/重复出牌代表。
+
 ## 离线四 Actor 完整迁移 F4 完成（2026-09-29）
 
 Smart 专门政策补齐动态证据：奖励替换额度按用药 Actor 且每条路线只抵扣一次；ActClear 会降低战斗内 HP 节省的持久价值，因此相同战略成本需要比普通战斗更多原始 HP 改善；Ambergris 要求用药 Actor 自身达到按其最大生命计算的改善。开发期 `5b8846ec5e2e4928b5d18dc011e3e229` 暴露合并断言不可诊断，`41701aa9f20f484b86d0896fd85f5e69` 证明测试把 ActClear 门槛方向理解反了；修正预期后 `runId=2c75864c21834e68b41cf1ab51dba777` Passed，实例已删除。结合既有槽位、九类选择、生成、硬政策、药量层和跨回合证据，F4 关闭。

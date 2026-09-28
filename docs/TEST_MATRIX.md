@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 联合 Actor1 回合结束 Power 选择续执行（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：Actor1 的回合尾 Dark Embrace 抽牌触发 Hellraiser 自动出牌选择，请求保持 Actor1 owner、`PlayerTurnEnd` timing 和跨回合 placement，并从稳定父状态带前缀恢复；`runId=9bc79f5cdc9548db8f287189f993d54f`，Passed，实例已删除。
+- 首次夹具未清空 Actor1 原 draw pile，未命中预期 Strike，`runId=abf2aa3488974e42a6365e7cb111c9f0`，Failed，实例已删除。另一次 `runId=2a638e23e18d4e239bbba3638917829b` 仅暴露夹具清牌误放到既有 Tools of the Trade 测试，修正后未保留为语义证据。
+- Release 构建 0 警告/0 错误；Linux 和可见 Steam 未运行。
+
 ## 离线四 Actor 完整迁移 F4：Smart 专门政策（2026-09-29）
 
 - 每 Actor 奖励替换额度把一瓶付费药的阈值降至单人政策的一点下限；未错误按瓶重复抵扣。

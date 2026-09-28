@@ -156,7 +156,8 @@ internal static class JointActionExpander
             {
                 JointPendingChoiceFrame frame = pending.Frame;
                 if (frame.SourceAction != item.Candidate.Action
-                    || frame.OwnerActor != item.Candidate.Action.Actor)
+                    || frame.Placement != JointPendingChoicePlacement.TurnStart
+                        && frame.OwnerActor != item.Candidate.Action.Actor)
                 {
                     throw new InvalidOperationException(
                         "联合选择帧的 owner 或 SourceAction 与探测动作不一致。",
@@ -197,6 +198,8 @@ internal static class JointActionExpander
                                 pending),
                         JointPendingChoicePlacement.Nested
                             => AppendNestedChoice(item.Candidate.Action, owned),
+                        JointPendingChoicePlacement.TurnStart
+                            => AppendTurnStartChoice(item.Candidate.Action, owned),
                         _ => throw new ArgumentOutOfRangeException(nameof(frame.Placement)),
                     };
                     open.Enqueue((item.Candidate with { Action = expanded }, item.Depth + 1));
@@ -210,6 +213,13 @@ internal static class JointActionExpander
         List<PlanCardChoice> nested = [.. action.NestedChoices ?? []];
         nested.Add(choice);
         return action with { NestedChoices = nested.AsReadOnly() };
+    }
+
+    private static PlanAction AppendTurnStartChoice(PlanAction action, PlanCardChoice choice)
+    {
+        List<PlanCardChoice> choices = [.. action.TurnStartChoices ?? []];
+        choices.Add(choice);
+        return action with { TurnStartChoices = choices.AsReadOnly() };
     }
 
     private static IEnumerable<Creature?> ResolveTargets(

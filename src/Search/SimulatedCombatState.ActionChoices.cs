@@ -122,7 +122,8 @@ internal sealed partial class SimulatedCombatState :
             spec.MinCount,
             spec,
             contextIdOverride ?? spec.ContextId,
-            Timing: _activeActionChoiceTiming);
+            Timing: _activeActionChoiceTiming,
+            Owner: playedCard.Preview.Owner);
         if (!choices.TryTake(request, out PlanCardChoice? choice))
         {
             if (!HasPendingChoice)
@@ -183,7 +184,8 @@ internal sealed partial class SimulatedCombatState :
             requiredEmptyChoice.SourcePile,
             0,
             emptySpec,
-            Timing: _activeActionChoiceTiming);
+            Timing: _activeActionChoiceTiming,
+            Owner: card.Preview.Owner);
         if (!choices.TryTake(request, out PlanCardChoice? plannedChoice))
         {
             if (!HasPendingChoice)

@@ -38,7 +38,7 @@
 | 卡牌实例 identity、升级、附魔和状态 occurrence | `PreparedCardAction`、`CombatPlan.cs` | F3a 使用同一 `ChoiceCardKey`/state occurrence 回放 | 已迁移 | Armaments/Strike 候选回放与搜索单步同键 |
 | 药水使用、目标、槽位、生成、复制和替换 | `CombatBeamSolver.*Potion*.cs`、`Prediction/Potion*` | F4a/F4b 按 Actor 枚举槽位/目标、九类主选择和 Entropic Brew 生成；F4d 跨回合槽位/消耗完成 | 已迁移 | 2/4 Actor 独立候选、九类选择、生成及第二轮药水严格回放通过 |
 | 主动遗物动作 | 原版无战斗内独立提交入口；遗物由 Hook 触发 | 不新增伪造动作；`PlanRelicEffect` 仍是路线注释 | 明确不支持 | F1 反编译检索无 `UseRelic`/`ActivateRelic` 战斗动作；遗物触发归 F5 |
-| 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | F6a frame 保存 owner/source；F6c 支持多 Actor 唯一帧与原序消费；Power 回合开始选择前缀已接通 | 部分迁移 | 动态嵌套、双 Actor 药水帧队列及 Tools of the Trade 跨回合恢复通过；EndTurn、自动/重复出牌和遗物选择待 F6b |
+| 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | F6a frame 保存 owner/source；F6c 支持多 Actor 唯一帧与原序消费；Power 回合开始及回合结束选择前缀已接通 | 部分迁移 | 动态嵌套、双 Actor 药水帧队列、Tools of the Trade 与 Actor1 Hellraiser 回合尾恢复通过；其他自动/重复出牌和遗物选择待 F6b |
 | opening、fixed-prefix、cycle、cross-turn、plan continuation | `CombatSearchCoordinator.*`、`FrontierContinuationScheduler` | F3c 已接入同回合 fixed-prefix 请求并由 BFS/DFS 对照；opening/cycle/cross-turn 尚未接入 | 待迁移 | 单人候选序哨兵与 2/4 Actor 联合成员；跨回合待 F7 |
 
 ## 结算机制
@@ -65,7 +65,8 @@
 | 药水政策、战略成本、成长、偷窃和强制目标 | `PotionUsePolicy`、`FinalPlanOrdering` | F4c 完成硬政策、共享预算 Smart 反事实、精确药量层、逐 Actor 奖励/Ambergris/Boss relief；F8 终局完成 | 已迁移 | 无收益拒绝、用药层、奖励抵扣及专门阈值通过 |
 | BFS/DFS 有限 oracle | 无生产对应 | `JointOfflineSearch` | 已迁移 | 2 Actor 同值/同动作/同键 |
 | 生产规模 Beam/BFWS、Pareto、保路、多样性 | `CombatBeamSolver.*` | 有界联合 Beam/BFWS、共享预算/转置、Actor/药水/Pareto 保路与固定 lane | 已迁移 | 2 Actor 两动作、4 Actor 一动作 oracle 及串并行等价通过 |
-| 串行/固定 lane 并行、预算、取消、内存压力 | `AdmittedJobScheduler`、`SearchBudgetLedger` | 尚无联合实现 | 待迁移 | DOP1/DOPN 同动作/同键、无泄漏 |
+| 串行/固定 lane 并行、预算、取消 | `AdmittedJobScheduler`、`SearchBudgetLedger` | F9 已实现联合固定 lane、共享预算和取消边界 | 已迁移 | DOP1/DOP4 同动作/同键/同展开数，预算与预取消通过 |
+| 内存压力与快照所有权 | `AdmittedJobScheduler`、`SearchMemoryPressureSignal` | 联合搜索尚无完整压力/泄漏审计 | 待迁移 | F11 固定工作量下无快照泄漏、峰值和停止原因可解释 |
 | 严格回放 | `ReplayAction`、无人测试差分 | 仅同一模拟根基础动作 | 待迁移 | 2/4 Actor 完整 actual/simulated 逐步对照 |
 
 ## F0 冻结基线

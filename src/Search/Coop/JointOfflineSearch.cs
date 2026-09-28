@@ -318,12 +318,22 @@ internal static partial class JointOfflineSearch
                         $"联合固定前缀不能从 turn={turns.Turn} 推进到 actionTurn={action.Turn}：" +
                         $"barrier={turns.IsBarrierReached}。");
                 }
-                IReadOnlyList<PlanCardChoice> turnStartChoices = applied
+                IReadOnlyList<PlanCardChoice> transitionChoices = applied
                     .LastOrDefault(prior => prior.Turn == turns.Turn
                         && prior.Kind == PlanActionKind.EndTurn
                         && prior.TurnStartChoices is { Count: > 0 })
                     ?.TurnStartChoices ?? [];
-                JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+                IReadOnlyList<PlanCardChoice> endTurnChoices = transitionChoices
+                    .Where(static choice => choice.Timing == PlanChoiceTiming.PlayerTurnEnd)
+                    .ToArray();
+                IReadOnlyList<PlanCardChoice> turnStartChoices = transitionChoices
+                    .Where(static choice => choice.Timing != PlanChoiceTiming.PlayerTurnEnd)
+                    .ToArray();
+                JointRoundTransition.CompletePlayerSide(
+                    simulator,
+                    turns,
+                    deaths,
+                    endTurnChoices);
                 JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
                 turns = JointRoundTransition.StartBasicPlayerSide(
                     simulator,

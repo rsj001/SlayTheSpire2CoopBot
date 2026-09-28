@@ -22,7 +22,7 @@ internal sealed record JointPlan(
             foreach (PlanCardChoice choice in action.NestedChoices ?? [])
                 ValidateChoiceOwner(action, choice);
             foreach (PlanCardChoice choice in action.TurnStartChoices ?? [])
-                ValidateChoiceOwner(action, choice);
+                choice.ValidateActor(ActorCount);
         }
         ValidateTurnBarriers(requireFinalBarrier: false);
     }

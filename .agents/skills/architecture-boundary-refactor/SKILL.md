@@ -77,7 +77,7 @@ description: 重构 CombatSolver 的 Search、Runtime 会话、UI snapshot、无
 - 单次搜索可变状态属于 `SearchRunContext`；中间候选属于 `BeamRetentionPolicy`；终局政策属于 `FinalPlanOrdering`。
 - `BeamRetentionPolicy` 的主构造、字段和初始化顺序留在根分片；OrderedMutation、OrderedMutationScheduling、Routing、Ranking、Testing只分组已有成员，仍共享同一个策略实例，不引入新的状态所有者。
 - `Expansion` 根分片保留Expand与跨回合剪枝/结束回合准入；Opening、Choices、Replay、Candidates只迁移既有连续成员段。快照、选择预算和租约所有权仍按原调用链交接，不以文件拆分为由新增缓存或调整调用次序。
-- 离线联合 `JointOfflineSearch` 的固定前缀只可在全员屏障处连续推进一轮，并依次调用 `JointRoundTransition` 的玩家尾、基础敌方侧和下一玩家侧；上一轮 EndTurn 持有回合开始选择。禁止在前缀回放内复制生命周期、跳轮或从未到屏障状态强行推进。
+- 离线联合 `JointOfflineSearch` 的固定前缀只可在全员屏障处连续推进一轮，并依次调用 `JointRoundTransition` 的玩家尾、基础敌方侧和下一玩家侧；上一轮 EndTurn 持有按 timing 分派的回合尾/回合开始选择，选择 owner 必须来自请求 Player。禁止在前缀回放内复制生命周期、默认 Actor0、跳轮或从未到屏障状态强行推进。
 - 循环出口的族内、在途和最新候选仅在各自租约前缀同分后共用 `Retention` 内的 `CompareCycleExitQuality`；待准入候选直接使用该质量顺序。区域、跨回合和终局比较器的键次序不同，不因字段相似合并；共享方法不新增状态或依赖。
 - `AdmittedExpansion` 中求解器层的 `AdmittedParent` 持有已预约父节点的作业状态和结果，固定 lane 排空并归并后才复用；提交仍按父节点和动作原序。提前 EndTurn 使用同父 Fork gate，独占批次和暂存基线；全部兄弟动作/选择/药水结束后才移交快照并发布基线，不让 worker 写父 Aggregate。`PrimaryChoiceReplayFrontier` 独占必经首层回放的暂存快照，所有生产作业结束后才移交一个续接消费者；动态预算和 occurrence collector 不跨 lane 共享修改。异常先排空，再释放 probe、frontier、batch 与根。
 - 已撤回的`AdmittedParent`否定就绪缓存实验只能在coordinator内使用；任何改变选择就绪条件的路径都必须失效，实验入口是`MarkDispatched`和`Receive`。worker不能直接改这些条件，正结果继续保持原扫描优先级。

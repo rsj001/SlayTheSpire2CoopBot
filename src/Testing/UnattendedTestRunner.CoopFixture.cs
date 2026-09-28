@@ -99,6 +99,7 @@ internal sealed partial class UnattendedTestRunner
                 AssertBasicEnemySide(root);
                 AssertBasicNextPlayerSide(root);
                 AssertTurnStartChoiceContinuation(root);
+                AssertEndTurnPowerChoiceContinuation(root);
             }
             JointActionCandidate selected = candidates.First(candidate =>
                 candidate.Action.Actor.Index == actorCount - 1
@@ -634,6 +635,92 @@ internal sealed partial class UnattendedTestRunner
             || ((SimulatedCombatState)resumed.State.CombatState).HasPendingChoice)
         {
             throw new InvalidOperationException("联合回合开始选择前缀未完成下一轮恢复。");
+        }
+    }
+
+    private static void AssertEndTurnPowerChoiceContinuation(CombatRootSnapshot root)
+    {
+        CombatPredictionSimulator parent = root.ForkSimulator();
+        SimulatedCombatState parentCombat = (SimulatedCombatState)parent.State.CombatState;
+        Player owner = parent.State.Players[1];
+        SimPlayerCombatState ownerState = parent.State.GetPlayerCombatState(owner);
+        parent.RemoveFromCombat(ownerState.AllCards.ToArray());
+        _ = parentCombat.AddPowerInstance<HellraiserPower>(
+            owner.Creature,
+            1,
+            owner.Creature);
+        _ = parentCombat.AddPowerInstance<DarkEmbracePower>(
+            owner.Creature,
+            1,
+            owner.Creature);
+        PredictedCard ethereal = PredictedCard.Create(ModelDb.Card<DefendDefect>(), owner);
+        ethereal.MutablePreview.AddKeyword(CardKeyword.Ethereal);
+        parent.AddGeneratedCardToCombat(
+            ethereal,
+            PileType.Hand,
+            owner,
+            resultKind: CardGenerationResultKind.Fixed);
+        parent.AddGeneratedCardToCombat(
+            PredictedCard.Create(ModelDb.Card<SeekerStrike>(), owner),
+            PileType.Draw,
+            owner,
+            resultKind: CardGenerationResultKind.Fixed);
+        parent.AddGeneratedCardToCombat(
+            PredictedCard.Create(ModelDb.Card<DefendDefect>(), owner),
+            PileType.Draw,
+            owner,
+            resultKind: CardGenerationResultKind.Fixed);
+
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> parentDeaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, parent);
+        JointPendingChoiceFrame frame;
+        CombatPredictionSimulator probe = parent.Fork();
+        try
+        {
+            JointRoundTransition.CompletePlayerSide(
+                probe,
+                turns,
+                parentDeaths.Fork());
+            throw new InvalidOperationException("Actor1 回合结束 Power 未产生联合选择。");
+        }
+        catch (JointPendingActionChoiceException pending)
+        {
+            frame = pending.Frame;
+        }
+        if (frame.OwnerActor != new CombatActorId(1)
+            || frame.SourceAction.Actor != new CombatActorId(1)
+            || frame.Placement != JointPendingChoicePlacement.TurnStart
+            || frame.Timing != PlanChoiceTiming.PlayerTurnEnd)
+        {
+            throw new InvalidOperationException(
+                "联合回合结束 Power 选择未保留 Actor1 owner、placement 或 timing。");
+        }
+        PlanCardChoice choice = CardChoiceSupport.BuildChoices(
+                frame.Spec,
+                static _ => string.Empty,
+                maxPileBranches: 32,
+                maxHandBranches: 32)
+            .First() with
+        {
+            Actor = frame.OwnerActor,
+            SourceId = frame.SourceId,
+            ContextId = frame.ContextId,
+            Timing = frame.Timing,
+        };
+        CombatPredictionSimulator resumed = parent.Fork();
+        JointRoundTransition.CompletePlayerSide(
+            resumed,
+            turns,
+            parentDeaths.Fork(),
+            [choice]);
+        SimulatedCombatState resumedCombat = (SimulatedCombatState)resumed.State.CombatState;
+        if (resumedCombat.HasPendingChoice
+            || resumed.State.GetPlayerCombatState(owner).Phase != PlayerTurnPhase.None)
+        {
+            throw new InvalidOperationException(
+                "联合 Actor1 回合结束 Power 选择前缀未恢复到稳定屏障。");
         }
     }
 

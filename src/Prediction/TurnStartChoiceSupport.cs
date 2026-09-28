@@ -15,7 +15,8 @@ internal sealed record TurnStartChoiceRequest(
     int Count,
     CardChoiceSpec? Spec = null,
     string ContextId = "",
-    PlanChoiceTiming Timing = PlanChoiceTiming.Action);
+    PlanChoiceTiming Timing = PlanChoiceTiming.Action,
+    Player? Owner = null);
 
 internal sealed class InvalidPlannedChoiceBranchException(string message)
     : InvalidOperationException(message);
@@ -157,7 +158,8 @@ internal static partial class TurnStartChoiceSupport
             1,
             spec,
             contextId,
-            combat.ActiveActionChoiceTiming);
+            combat.ActiveActionChoiceTiming,
+            player);
         return ResolveCapturedChoice(simulator, combat, player, cursor, request);
     }
 
@@ -210,7 +212,8 @@ internal static partial class TurnStartChoiceSupport
             options.Count,
             spec,
             contextId,
-            combat.ActiveActionChoiceTiming);
+            combat.ActiveActionChoiceTiming,
+            player);
         if (cursor == null || !cursor.TryTake(request, out PlanCardChoice? choice))
         {
             combat.SetPendingTurnStartChoice(request);
@@ -256,7 +259,8 @@ internal static partial class TurnStartChoiceSupport
             options.Count,
             spec,
             contextId,
-            combat.ActiveActionChoiceTiming);
+            combat.ActiveActionChoiceTiming,
+            player);
         return ResolveCapturedChoice(simulator, combat, player, cursor, request);
     }
 
@@ -295,7 +299,8 @@ internal static partial class TurnStartChoiceSupport
             sourcePile,
             count,
             spec,
-            Timing: combat.ActiveActionChoiceTiming);
+            Timing: combat.ActiveActionChoiceTiming,
+            Owner: player);
         return ResolveCapturedChoice(simulator, combat, player, cursor, request);
     }
 
