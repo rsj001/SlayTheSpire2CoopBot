@@ -435,6 +435,7 @@ internal sealed partial class UnattendedTestRunner
         CombatPredictionSimulator child = parent.Fork();
         JointTurnState childTurns = turns;
         ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, child);
+        List<PlanAction> attacks = [];
         for (int attack = 0; attack < 3; attack++)
         {
             PlanAction action = JointActionExpander.Expand(child, childTurns)
@@ -443,9 +444,19 @@ internal sealed partial class UnattendedTestRunner
                     && action.Kind == PlanActionKind.PlayCard)
                 ?? throw new InvalidOperationException(
                     $"远端 Actor 手里剑夹具缺少第 {attack + 1} 张可回放攻击牌。");
+            attacks.Add(action);
             childTurns = JointActionTransition.Apply(child, childTurns, action, deaths);
         }
         JointCombatSnapshot after = JointCombatSnapshot.Capture(root, child, childTurns);
+        JointReplayResult fullReplay = JointPlanReplayer.Replay(root, new JointPlan(2, attacks));
+        if (fullReplay.Snapshot.StateKey != after.StateKey
+            || fullReplay.Snapshot.Continuation.StateText != after.Continuation.StateText
+            || attacks.Any(static action => action.CardOccurrence != 0
+                || action.CardStateOccurrence != 0))
+        {
+            throw new InvalidOperationException(
+                "同名卡牌的前缀相对 occurrence 未能从原根严格回放到增量状态。");
+        }
         SimulatedCombatState childCombat = (SimulatedCombatState)child.State.CombatState;
         Player childRemote = child.State.Players[1];
         Shuriken childRelic = childCombat.RelicsOf(childRemote).OfType<Shuriken>().Single();

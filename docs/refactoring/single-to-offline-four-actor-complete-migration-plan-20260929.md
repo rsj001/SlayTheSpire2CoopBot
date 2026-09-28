@@ -16,7 +16,7 @@
 | F3 完整卡牌与目标 | 进行中 | F3a/F3b 已接入目标/实例身份、基础及动态嵌套选择；F3c 已接入同回合 fixed-prefix 请求并通过 BFS/DFS；opening/cycle/cross-turn 仍待完成 |
 | F4 完整药水 | 进行中 | F4a/F4b 已完成 2/4 Actor 独立槽位/目标、九类手动选择与 Entropic Brew 生成；Smart/强制/药量/战略成本等政策待完成 |
 | F5 Power/遗物/球/宠物/角色资源 | 已完成 | F5a-F5e：根元数据、Power/全队/Hook、遗物触发/消耗、五角色资源、真实召唤所有权及第三方拒绝边界均有动态证据 |
-| F6 选择与嵌套 continuation | 进行中 | F6a frame 与 F6c 多 Actor 原序队列已通过；回合边界选择及同名跨动作身份/单人哨兵待补 |
+| F6 选择与嵌套 continuation | 进行中 | F6a frame、F6c 多 Actor 原序队列、F6d 前缀相对同名实例回放已通过；F6b 回合边界选择待 F7 接线 |
 | F7 联合回合与敌方生命周期 | 未开始 | - |
 | F8 联合终局目标 | 未开始 | - |
 | F9 联合 Beam/BFWS | 未开始 | - |
@@ -258,7 +258,7 @@
 - F6a（已完成）：新增不可变 `JointPendingChoiceFrame`，明确保存 `OwnerActor`、完整 `SourceAction`、source/spec 与主/嵌套 placement；联合 expander 在生成分支前严格核对 frame owner/source action。Havoc → Second Wind → Defend 动态嵌套严格回放 `runId=78cfa14e6d98479fa14d2104166c5b95` Passed。
 - F6b（待完成）：回合开始、EndTurn、自动/重复出牌和遗物选择 continuation。
 - F6c（已完成）：`JointChoiceContinuation` 为每个 Actor 最多保存一帧，并按插入原序及完整 SourceAction 消费；Actor0/1 的真实 Gambler's Brew 主选择帧验证同 Actor 重入和后置抢占稳定拒绝，`runId=ddf9af571fc24faba81fb18eccbd3805` Passed。
-- F6d（待完成）：同名实例跨动作身份与单人续执行等价哨兵，关闭 F-ISSUE-006。
+- F6d（已完成）：明确 `CardOccurrence`/`CardStateOccurrence` 是相对于每个动作当前前缀状态的实例地址；三张同 ID/同状态 Strike 每步重新枚举后 occurrence 均为 0，增量执行与从原根严格回放整条计划得到同状态键/续用文本，`runId=b05b87d8492e48a391e785f18c419b7f` Passed，关闭 F-ISSUE-006。单人 replay helper 未分叉，最终等价哨兵归 F12。
 
 ### F7：完整联合回合和敌方生命周期
 

@@ -89,5 +89,5 @@
 | F-ISSUE-004 | `CombatRootSnapshot` 的可再生药水、Throwing Axe、战后回血与可搜索药水原先只捕获本地玩家 | F5a 移入 `CombatActorRoot`；旧根字段保留为本地 Actor 兼容视图 | F8 联合终局继续消费逐 Actor 元数据 |
 | F-ISSUE-004 | `PlanRelicEffect` 是路线显示证据，不等于主动遗物动作 | 反编译原版未发现战斗内 `UseRelic`/`ActivateRelic` 提交入口；不新增动作类型，遗物 Hook 触发语义归 F5 | F1 已定边界，F5 验证触发 |
 | F-ISSUE-005 | 多 Actor 远端玩家获得格挡时，multiplayer scaling mirror 直接按玩家数拒绝 | 按原版精确镜像：玩家目标/非 powered 不缩放；主次敌人按人数及 Act/Boss 系数缩放 | F2 已修复；失败 `e62462a1435d4bbbbe0c48965528985b`，通过 `34221092e12f40f5addc9fb89219ff94` |
-| F-ISSUE-006 | 同 ID 卡牌的 `CardOccurrence` 会在前一实例离开手牌后重编号；直接串联首态候选会使后续严格回放找不到实例 | F5c 只通过每步重新枚举验证遗物语义，不掩盖身份问题 | F6/F10 建立跨动作稳定实例身份或逐步 continuation 合同 |
+| F-ISSUE-006 | 同 ID 卡牌的 `CardOccurrence` 会在前一实例离开手牌后重编号；直接串联首态候选会使后续严格回放找不到实例 | 已明确为前缀相对地址：每步重枚举并记录动作，原根完整回放与增量状态同键/同续用文本 | F6d 已关闭；禁止拼接同一首态的多个候选 |
 

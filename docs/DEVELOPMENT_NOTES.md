@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F6d（2026-09-29）
+
+卡牌 occurrence 合同明确为相对于动作当前前缀状态，而非根级永久实例编号。远端 Actor 的三张同 ID/同状态 Strike 每步重新枚举并形成动作序后，增量执行与从原根严格回放整条序列得到完全相同的状态键和续用文本，`runId=b05b87d8492e48a391e785f18c419b7f` Passed，实例已删除，Release 构建 0/0。F-ISSUE-006 已关闭；禁止直接拼接同一首态的多个同名候选。
+
 ## 离线四 Actor 完整迁移 F6c（2026-09-29）
 
 新增不可变 `JointChoiceContinuation`：每个 Actor 最多拥有一个 pending frame，消费必须匹配队首 OwnerActor 和完整 SourceAction，错误重入/抢占不会修改父队列。Actor0/1 的真实 Gambler's Brew 主选择帧完成双 Actor 原序验证，`COOP-MULTI-ACTOR-ROOT` 的 `runId=ddf9af571fc24faba81fb18eccbd3805` Passed，实例已删除，Release 构建 0/0。F6 回合边界和实例身份仍待完成。

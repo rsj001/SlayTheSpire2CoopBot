@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F6d：同名实例前缀身份（2026-09-29）
+
+- Actor1 三张同 ID/同状态 Strike 每一步都从当前前缀重新枚举，记录的 `CardOccurrence`/`CardStateOccurrence` 均为 0；这是状态相对地址，不是根级永久编号。
+- 同一动作序先增量执行，再从原根由 `JointPlanReplayer` 完整回放；最终状态键与续用文本逐值相同，同时保留 Shuriken 计数/触发断言。
+- `COOP-MULTI-ACTOR-ROOT`：`runId=b05b87d8492e48a391e785f18c419b7f`，Passed，实例已删除；Release 构建 0 警告/0 错误。关闭 F-ISSUE-006；未运行 Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F6c：多 Actor 选择 continuation（2026-09-29）
 
 - Actor0/Actor1 均持 Gambler's Brew，分别经权威 transition 捕获真实主选择帧；`JointChoiceContinuation` 每 Actor 最多一帧，并绑定完整 SourceAction。
