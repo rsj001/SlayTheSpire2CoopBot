@@ -1,5 +1,12 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F1（2026-09-29）
+
+- 统一 transition：`JointActionTransition` 执行卡牌、动作内选择、药水和 EndTurn；BFS、DFS 与回放随节点 Fork 已处理敌人死亡集合，并共用死亡 Power/稳定边界收尾。
+- `COOP-JOINT-REPLAY`：Armaments + Strike + BlockPotion，检查 `JointReplay:ActorCard:Target:EndTurn:SearchReplaySameState:Potion:StrictSnapshot` 与根快照，`runId=b3c20b20d3c143029720422c29bb500c`，35 秒 Passed；隔离实例已由启动器删除。
+- 构建：显式游戏/RitsuLib 路径、`CopyModOnBuild=false` 的 Release 构建 0 警告/0 错误。
+- 边界：未覆盖药水候选/政策、选择 continuation、敌方跨回合或四 Actor strict diff；这些仍在 F4/F6/F7/F10。未运行 Linux或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F0（2026-09-29）
 
 - 新增[单人功能迁移库存](refactoring/offline-four-actor-feature-inventory-20260929.md)，覆盖根与状态、候选与选择、结算机制、回合与终局、搜索政策，并为每项固定单人入口、联合入口、迁移状态和最低关闭证据。

@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Models;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
 
@@ -11,10 +12,24 @@ namespace CombatSolver;
 /// </summary>
 internal static class JointActionTransition
 {
+    internal static ForkableSet<uint> CaptureProcessedEnemyDeaths(
+        CombatRootSnapshot root,
+        CombatPredictionSimulator simulator)
+    {
+        ForkableSet<uint> deaths = [];
+        foreach (Creature enemy in root.Enemies)
+        {
+            if (enemy.CombatId is uint combatId && simulator.State.GetCreature(enemy).IsDead)
+                deaths.Add(combatId);
+        }
+        return deaths;
+    }
+
     internal static JointTurnState Apply(
         CombatPredictionSimulator simulator,
         JointTurnState turnState,
-        PlanAction action)
+        PlanAction action,
+        ForkableSet<uint> processedEnemyDeaths)
     {
         if (simulator.TerminalStamp.HasValue)
             throw new InvalidOperationException("联合终局后不能继续执行动作。");
@@ -24,33 +39,115 @@ internal static class JointActionTransition
         if (!turnState.IsActionable(action.Actor))
             throw new InvalidOperationException($"联合动作 Actor {action.Actor} 当前不可行动。");
 
-        if (action.Kind == PlanActionKind.EndTurn || action.EndsPlayerTurn)
+        if (action.Kind == PlanActionKind.EndTurn)
             return turnState.EndTurn(action.Actor);
-        if (action.Kind != PlanActionKind.PlayCard)
-            throw new InvalidOperationException($"联合单步执行暂不支持动作类型 {action.Kind}。");
 
         Player player = simulator.State.Players[action.Actor.Index];
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        JointTurnState result = action.Kind switch
+        {
+            PlanActionKind.PlayCard => ApplyCard(
+                simulator, combat, player, turnState, action, processedEnemyDeaths),
+            PlanActionKind.UsePotion => ApplyPotion(
+                simulator, combat, player, turnState, action, processedEnemyDeaths),
+            _ => throw new InvalidOperationException(
+                $"联合单步执行不支持 Actor {action.Actor} 的动作类型 {action.Kind}。"),
+        };
+        simulator.CheckWinCondition(turnState.Turn);
+        for (int index = 0; index < simulator.State.Players.Count; index++)
+        {
+            if (simulator.State.GetCreature(simulator.State.Players[index].Creature).IsDead)
+                result = result.MarkDead(new CombatActorId(index));
+        }
+        return result;
+    }
+
+    private static JointTurnState ApplyCard(
+        CombatPredictionSimulator simulator,
+        SimulatedCombatState combat,
+        Player player,
+        JointTurnState turnState,
+        PlanAction action,
+        ForkableSet<uint> processedEnemyDeaths)
+    {
         SimPlayerCombatState playerState = simulator.State.GetPlayerCombatState(player);
         PredictedCard card = FindCard(playerState.Hand.Cards, action)
             ?? throw new InvalidOperationException(
                 $"联合动作找不到 Actor {action.Actor} 的手牌 {action.CardId}#{action.CardOccurrence}。");
         if (!simulator.CanPlay(card))
-            throw new InvalidOperationException($"联合动作不可支付：{action.CardId}。");
+            throw new InvalidOperationException(
+                $"联合动作不可支付：Actor {action.Actor} card={action.CardId}#{action.CardOccurrence}。");
         Creature? target = FindTarget(simulator, action.TargetCombatId);
-        if (!simulator.ManualPlay(card, target, out _))
-            throw new InvalidOperationException(
-                $"联合动作产生未解决的选择：Actor {action.Actor} card={action.CardId}。");
-        if (simulator.HasPendingChoice)
-            throw new InvalidOperationException(
-                $"联合动作留下待处理选择：Actor {action.Actor} card={action.CardId}。");
-
-        simulator.CheckWinCondition(turnState.Turn);
-        for (int index = 0; index < simulator.State.Players.Count; index++)
+        combat.BeginActionChoices(ActionChoices(action));
+        using IDisposable cardScope = combat.BeginCardExecutionScope(processedEnemyDeaths);
+        try
         {
-            if (simulator.State.GetCreature(simulator.State.Players[index].Creature).IsDead)
-                turnState = turnState.MarkDead(new CombatActorId(index));
+            if (!simulator.ManualPlay(card, target, out _)
+                || !CorePowerSupport.ApplyEnemyDeathPowers(
+                    simulator, combat, combat.KnownEnemies, processedEnemyDeaths)
+                || !CombatBeamSolver.SettleReplayActionBoundary(simulator, combat)
+                || simulator.HasPendingChoice)
+            {
+                throw new InvalidOperationException(
+                    $"联合动作产生未解决的选择：Actor {action.Actor} card={action.CardId}。" );
+            }
         }
-        return turnState;
+        finally
+        {
+            combat.EndActionChoices();
+        }
+        return action.EndsPlayerTurn || combat.ConsumePlayerTurnEndRequest()
+            ? turnState.EndTurn(action.Actor)
+            : turnState;
+    }
+
+    private static JointTurnState ApplyPotion(
+        CombatPredictionSimulator simulator,
+        SimulatedCombatState combat,
+        Player player,
+        JointTurnState turnState,
+        PlanAction action,
+        ForkableSet<uint> processedEnemyDeaths)
+    {
+        PotionModel potion = combat.GetPotionAtSlot(player, action.PotionSlot)
+            ?? throw new InvalidOperationException(
+                $"联合动作药水槽为空：Actor {action.Actor} slot={action.PotionSlot}。");
+        if (!string.Equals(potion.Id.Entry, action.PotionId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"联合动作药水身份变化：Actor {action.Actor} slot={action.PotionSlot} " +
+                $"actual={potion.Id.Entry} expected={action.PotionId}。");
+        }
+        Creature? target = FindTarget(simulator, action.TargetCombatId);
+        int historyStart = simulator.History.Entries.Count;
+        combat.BeginActionChoices(action.NestedChoices);
+        try
+        {
+            if (!PotionExecutionSupport.Prepare(
+                    simulator, combat, potion, action.PotionSlot, target)
+                || !PotionExecutionSupport.Complete(
+                    simulator, combat, potion, target, action.Choice,
+                    historyStart, processedEnemyDeaths)
+                || !CombatBeamSolver.SettleReplayActionBoundary(simulator, combat)
+                || simulator.HasPendingChoice)
+            {
+                throw new InvalidOperationException(
+                    $"联合药水动作产生未解决的选择：Actor {action.Actor} potion={action.PotionId}。" );
+            }
+        }
+        finally
+        {
+            combat.EndActionChoices();
+        }
+        return action.EndsPlayerTurn || combat.ConsumePlayerTurnEndRequest()
+            ? turnState.EndTurn(action.Actor)
+            : turnState;
+    }
+
+    private static IReadOnlyList<PlanCardChoice>? ActionChoices(PlanAction action)
+    {
+        IReadOnlyList<PlanCardChoice> choices = action.GetActionChoicesInExecutionOrder();
+        return choices.Count == 0 ? null : choices;
     }
 
     private static PredictedCard? FindCard(

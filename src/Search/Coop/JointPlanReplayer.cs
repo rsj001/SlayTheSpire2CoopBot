@@ -12,6 +12,8 @@ internal static class JointPlanReplayer
     {
         plan.Validate();
         CombatPredictionSimulator simulator = root.ForkSimulator();
+        ForkableSet<uint> processedEnemyDeaths =
+            JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
         JointTurnState turnState = JointTurnState.Start(root.Actors.Count, root.StartTurnNumber);
         List<PlanAction> applied = [];
         foreach (PlanAction action in plan.Actions)
@@ -25,7 +27,8 @@ internal static class JointPlanReplayer
             }
             if (action.Turn < turnState.Turn)
                 throw new InvalidOperationException($"联合回放回合倒退：{action.Turn} < {turnState.Turn}。");
-            turnState = JointActionTransition.Apply(simulator, turnState, action);
+            turnState = JointActionTransition.Apply(
+                simulator, turnState, action, processedEnemyDeaths);
             applied.Add(action);
         }
 

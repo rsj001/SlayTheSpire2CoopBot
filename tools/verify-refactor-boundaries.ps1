@@ -2185,6 +2185,25 @@ foreach ($text in @(
     }
 }
 
+$jointTransitionPath = Join-Path $repositoryRoot 'src/Search/Coop/JointActionTransition.cs'
+foreach ($text in @(
+    'PlanActionKind.PlayCard => ApplyCard(',
+    'PlanActionKind.UsePotion => ApplyPotion(',
+    'PotionExecutionSupport.Prepare(',
+    'CorePowerSupport.ApplyEnemyDeathPowers(',
+    'CombatBeamSolver.SettleReplayActionBoundary('
+)) {
+    if (-not (Select-String -LiteralPath $jointTransitionPath -SimpleMatch $text -Quiet)) {
+        $violations.Add("Joint action transition missing authoritative F1 stage: $text")
+    }
+}
+foreach ($file in @('JointOfflineSearch.cs', 'JointPlanReplayer.cs')) {
+    if (-not (Select-String -LiteralPath (Join-Path $repositoryRoot "src/Search/Coop/$file") `
+            -SimpleMatch 'JointActionTransition.Apply(' -Quiet)) {
+        $violations.Add("Offline joint consumer bypasses the authoritative transition: $file")
+    }
+}
+
 if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Error $_ }
     throw "Refactor boundary verification failed with $($violations.Count) violation(s)."

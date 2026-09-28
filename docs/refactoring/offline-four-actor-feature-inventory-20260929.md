@@ -36,9 +36,9 @@
 | AnyPlayer、Self、全体、无目标及动态目标 | `CombatBeamSolver.Expansion*.cs`、card mirrors | 部分依赖 mirror，未完成联合枚举 | 待迁移 | 按原版 TargetType 的 2/4 Actor 候选对照 |
 | 自动牌、重复牌、复制牌、生成牌、回手与临时牌 | `CombatBeamSolver.CardChoiceContinuation.cs`、`Prediction/*` | 尚无联合 continuation | 待迁移 | 复杂卡牌逐动作/选择 strict replay |
 | 卡牌实例 identity、升级、附魔和状态 occurrence | `PreparedCardAction`、`CombatPlan.cs` | 基础 CardId occurrence | 待迁移 | 同名不同状态实例准确匹配 |
-| 药水使用、目标、槽位、生成、复制和替换 | `CombatBeamSolver.*Potion*.cs`、`Prediction/Potion*` | `PlanAction` 可表达，transition 不执行 | 待迁移 | 四 Actor 独立药水槽及搜索/回放同键 |
-| 主动遗物动作 | 遗物 mirror/choice 入口 | `PlanRelicEffect` 仅显示证据，无动作类型 | 需要真实原版证据 | 确认原版是否存在独立可提交动作；否则记录为触发语义 |
-| 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | `PlanCardChoice` 可表达，transition 不消费 | 待迁移 | owner/source/实例/原序及兄弟 Fork 隔离 |
+| 药水使用、目标、槽位、生成、复制和替换 | `CombatBeamSolver.*Potion*.cs`、`Prediction/Potion*` | transition 已执行已选药水；完整候选/政策未迁移 | 待迁移 | 四 Actor 独立药水槽及搜索/回放同键 |
+| 主动遗物动作 | 原版无战斗内独立提交入口；遗物由 Hook 触发 | 不新增伪造动作；`PlanRelicEffect` 仍是路线注释 | 明确不支持 | F1 反编译检索无 `UseRelic`/`ActivateRelic` 战斗动作；遗物触发归 F5 |
+| 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | transition 已消费动作内选择；完整 continuation 未迁移 | 待迁移 | owner/source/实例/原序及兄弟 Fork 隔离 |
 | opening、fixed-prefix、cycle、cross-turn、plan continuation | `CombatSearchCoordinator.*`、`FrontierContinuationScheduler` | 尚未接入联合搜索 | 待迁移 | 单人候选序哨兵与 2/4 Actor 联合成员 |
 
 ## 结算机制
@@ -86,5 +86,5 @@
 | F-ISSUE-001 | 不同角色 HP 价值不可直接相加 | 保留总战损 workaround，同时保留逐 Actor 向量；不在迁移阶段重设权重 | F8 后续研究 |
 | F-ISSUE-002 | 生产 Runtime/UI/部署大量使用 `LocalContext.GetMe()` | 保持生产单人边界，不把它们纳入离线联合模型 | F12 非目标门禁 |
 | F-ISSUE-003 | 联合 BFS/DFS 在全员屏障处停止，未执行敌方生命周期 | 明确标为待迁移，不把现有 oracle 证据外推 | F7/F10 |
-| F-ISSUE-004 | `PlanRelicEffect` 是路线显示证据，不等于主动遗物动作 | 等待真实原版证据后决定动作类型或触发语义 | F5 |
+| F-ISSUE-004 | `PlanRelicEffect` 是路线显示证据，不等于主动遗物动作 | 反编译原版未发现战斗内 `UseRelic`/`ActivateRelic` 提交入口；不新增动作类型，遗物 Hook 触发语义归 F5 | F1 已定边界，F5 验证触发 |
 

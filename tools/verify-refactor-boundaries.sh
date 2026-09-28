@@ -1717,6 +1717,19 @@ for token in \
     '`需要真实原版证据`'; do
     require_fixed "$offline_actor_inventory" "$token" 'offline four-Actor inventory missing required contract:'
 done
+joint_transition="$repository_root/src/Search/Coop/JointActionTransition.cs"
+for token in \
+    'PlanActionKind.PlayCard => ApplyCard(' \
+    'PlanActionKind.UsePotion => ApplyPotion(' \
+    'PotionExecutionSupport.Prepare(' \
+    'CorePowerSupport.ApplyEnemyDeathPowers(' \
+    'CombatBeamSolver.SettleReplayActionBoundary('; do
+    require_fixed "$joint_transition" "$token" 'joint action transition missing authoritative F1 stage:'
+done
+for file in JointOfflineSearch.cs JointPlanReplayer.cs; do
+    require_fixed "$repository_root/src/Search/Coop/$file" 'JointActionTransition.Apply(' \
+        'offline joint consumer bypasses the authoritative transition:'
+done
 
 if ((${#violations[@]} > 0)); then
     printf '%s\n' "${violations[@]}" >&2

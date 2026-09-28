@@ -3,6 +3,7 @@ namespace CombatSolver;
 using CombatSolver.Engine.InCombat.Simulation;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Models;
 
 internal sealed partial class UnattendedTestRunner
 {
@@ -153,7 +154,8 @@ internal sealed partial class UnattendedTestRunner
         CombatPredictionSimulator simulator = root.ForkSimulator();
         JointTurnState turns = JointTurnState.Start(root.Actors.Count, root.StartTurnNumber);
         IReadOnlyList<JointActionCandidate> candidates = JointActionExpander.Expand(simulator, turns);
-        JointActionCandidate? card = candidates.FirstOrDefault(candidate => candidate.Card != null);
+        JointActionCandidate? card = candidates.FirstOrDefault(candidate =>
+            candidate.Card != null && CardChoiceSupport.GetSpec(simulator, candidate.Card) == null);
         PlanAction[] actions = card is { } selected
             ? [selected.Action, new PlanAction(PlanActionKind.EndTurn, root.StartTurnNumber, Actor: selected.Action.Actor)]
             : [new PlanAction(PlanActionKind.EndTurn, root.StartTurnNumber, Actor: root.LocalActorId)];
@@ -169,5 +171,62 @@ internal sealed partial class UnattendedTestRunner
                 root.ForkSimulator(),
                 turns).StateKey)
             throw new InvalidOperationException("联合回放的卡牌动作未改变严格状态键。");
+
+        if (card is { } selectedCard)
+        {
+            CombatPredictionSimulator direct = root.ForkSimulator();
+            JointTurnState directTurns = JointTurnState.Start(root.Actors.Count, root.StartTurnNumber);
+            ForkableSet<uint> directDeaths =
+                JointActionTransition.CaptureProcessedEnemyDeaths(root, direct);
+            directTurns = JointActionTransition.Apply(
+                direct, directTurns, selectedCard.Action, directDeaths);
+            JointCombatSnapshot directSnapshot = JointCombatSnapshot.Capture(root, direct, directTurns);
+            JointReplayResult singleReplay = JointPlanReplayer.Replay(
+                root,
+                new JointPlan(root.Actors.Count, [selectedCard.Action]));
+            if (directSnapshot.StateKey != singleReplay.Snapshot.StateKey
+                || directSnapshot.Continuation.StateText != singleReplay.Snapshot.Continuation.StateText)
+                throw new InvalidOperationException("联合搜索单步与计划回放没有产生相同状态。");
+        }
+
+        SolverDisplayNames names = SolverDisplayNames.Capture(combatState);
+        JointActionCandidate? choiceCard = candidates.FirstOrDefault(candidate =>
+            candidate.Card != null && CardChoiceSupport.GetSpec(simulator, candidate.Card) != null);
+        if (choiceCard is { Card: { } predictedChoiceCard } selectedChoiceCard)
+        {
+            CardChoiceSpec spec = CardChoiceSupport.GetSpec(simulator, predictedChoiceCard)
+                ?? throw new InvalidOperationException("联合选择卡牌的 spec 在同一根发生变化。");
+            PlanCardChoice choice = CardChoiceSupport.BuildChoices(spec, names, 32, 32)
+                .First() with { Actor = selectedChoiceCard.Action.Actor };
+            PlanAction resolved = selectedChoiceCard.Action with { Choice = choice };
+            JointReplayResult choiceReplay = JointPlanReplayer.Replay(
+                root,
+                new JointPlan(root.Actors.Count, [resolved]));
+            if (choiceReplay.Snapshot.Simulator.HasPendingChoice)
+                throw new InvalidOperationException("联合 transition 没有消费指定 Actor 的卡牌选择。");
+        }
+
+        SimulatedCombatState rootCombat = (SimulatedCombatState)simulator.State.CombatState;
+        Player potionOwner = simulator.State.Players[root.LocalActorId.Index];
+        for (int slot = 0; slot < root.PotionSlotCount; slot++)
+        {
+            PotionModel? potion = rootCombat.GetPotionAtSlot(potionOwner, slot);
+            if (potion == null || PotionChoiceSupport.RequiresChoice(potion))
+                continue;
+            PlanAction potionAction = new(
+                PlanActionKind.UsePotion,
+                root.StartTurnNumber,
+                PotionSlot: slot,
+                PotionId: potion.Id.Entry,
+                Actor: root.LocalActorId);
+            JointReplayResult potionReplay = JointPlanReplayer.Replay(
+                root,
+                new JointPlan(root.Actors.Count, [potionAction]));
+            SimulatedCombatState replayCombat =
+                (SimulatedCombatState)potionReplay.Snapshot.Simulator.State.CombatState;
+            if (!replayCombat.PotionUses.Any(use => use.PotionId == potion.Id.Entry))
+                throw new InvalidOperationException("联合 transition 未记录药水动作。");
+            break;
+        }
     }
 }

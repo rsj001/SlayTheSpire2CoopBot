@@ -13,6 +13,7 @@ internal static class JointOfflineSearch
 {
     private sealed record Node(
         CombatPredictionSimulator Simulator,
+        ForkableSet<uint> ProcessedEnemyDeaths,
         JointTurnState Turns,
         IReadOnlyList<PlanAction> Actions);
 
@@ -24,8 +25,10 @@ internal static class JointOfflineSearch
     {
         ValidateLimits(maximumActions, maximumStates);
         Queue<Node> open = new();
+        CombatPredictionSimulator rootSimulator = root.ForkSimulator();
         open.Enqueue(new Node(
-            root.ForkSimulator(),
+            rootSimulator,
+            JointActionTransition.CaptureProcessedEnemyDeaths(root, rootSimulator),
             JointTurnState.Start(root.Actors.Count, root.StartTurnNumber),
             []));
         HashSet<StateFingerprint> seen = [];
@@ -47,8 +50,10 @@ internal static class JointOfflineSearch
             foreach (JointActionCandidate candidate in JointActionExpander.Expand(node.Simulator, node.Turns))
             {
                 CombatPredictionSimulator child = node.Simulator.Fork();
-                JointTurnState turns = JointActionTransition.Apply(child, node.Turns, candidate.Action);
-                open.Enqueue(new Node(child, turns, [.. node.Actions, candidate.Action]));
+                ForkableSet<uint> deaths = node.ProcessedEnemyDeaths.Fork();
+                JointTurnState turns = JointActionTransition.Apply(
+                    child, node.Turns, candidate.Action, deaths);
+                open.Enqueue(new Node(child, deaths, turns, [.. node.Actions, candidate.Action]));
             }
         }
         return best ?? throw new InvalidOperationException("联合 BFS 没有到达终局或回合屏障。");
@@ -63,20 +68,23 @@ internal static class JointOfflineSearch
         ValidateLimits(maximumActions, maximumStates);
         JointOfflineSearchResult? best = null;
         int expanded = 0;
+        CombatPredictionSimulator rootSimulator = root.ForkSimulator();
         Visit(
-            root.ForkSimulator(),
+            rootSimulator,
+            JointActionTransition.CaptureProcessedEnemyDeaths(root, rootSimulator),
             JointTurnState.Start(root.Actors.Count, root.StartTurnNumber),
             []);
         return best ?? throw new InvalidOperationException("联合 DFS oracle 没有到达终局或回合屏障。");
 
         void Visit(
             CombatPredictionSimulator simulator,
+            ForkableSet<uint> processedEnemyDeaths,
             JointTurnState turns,
             IReadOnlyList<PlanAction> actions)
         {
             if (++expanded > maximumStates)
                 throw new InvalidOperationException($"联合 DFS oracle 超过状态上限 {maximumStates}。");
-            Node node = new(simulator, turns, actions);
+            Node node = new(simulator, processedEnemyDeaths, turns, actions);
             if (IsBoundary(node, maximumActions))
             {
                 JointCombatSnapshot snapshot = JointCombatSnapshot.Capture(root, simulator, turns);
@@ -86,8 +94,10 @@ internal static class JointOfflineSearch
             foreach (JointActionCandidate candidate in JointActionExpander.Expand(simulator, turns))
             {
                 CombatPredictionSimulator child = simulator.Fork();
-                JointTurnState childTurns = JointActionTransition.Apply(child, turns, candidate.Action);
-                Visit(child, childTurns, [.. actions, candidate.Action]);
+                ForkableSet<uint> deaths = processedEnemyDeaths.Fork();
+                JointTurnState childTurns = JointActionTransition.Apply(
+                    child, turns, candidate.Action, deaths);
+                Visit(child, deaths, childTurns, [.. actions, candidate.Action]);
             }
         }
     }

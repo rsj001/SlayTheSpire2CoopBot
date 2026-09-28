@@ -4,6 +4,12 @@
 
 建立单人功能迁移权威库存，按根/状态、候选/选择、结算机制、回合/终局和搜索政策映射单人源码入口、联合入口、当前状态与最低关闭证据。Windows/Linux 结构门禁现检查库存的必备分类和四种状态词，后续 F 阶段只能在同一库存关闭缺口。F0 不改行为源码；动态基线复用同源码已通过的 `COOP-P2-SINGLE-ROOT`、`COOP-ACTOR-PLAN-CONTRACT`、`COOP-ACTOR-CANDIDATES`、`COOP-JOINT-REPLAY` 和 `COOP-PRODUCTION-SINGLE-BOUNDARY`，未重复启动游戏。Windows 结构门禁通过；本机 WSL 服务不可用，Linux 等价门禁未执行。
 
+## 离线四 Actor 完整迁移 F1（2026-09-29）
+
+`JointActionTransition` 现统一执行已选卡牌、动作内主/嵌套选择、药水和 EndTurn，并在卡牌/药水后共用死亡 Power 与稳定边界结算。BFS、DFS oracle 和计划回放都随分支 Fork 同一份已处理敌人死亡集合；带 `EndsPlayerTurn` 的卡牌会先结算卡牌，再结束对应 Actor，不再被误当作纯 EndTurn。反编译原版未发现战斗内独立 `UseRelic`/`ActivateRelic` 提交动作，因此没有为路线显示用的 `PlanRelicEffect` 伪造动作类型；遗物 Hook 完整性仍归 F5。
+
+`COOP-JOINT-REPLAY` 使用 Armaments、Strike 和 BlockPotion，通过普通卡、动作选择、药水、EndTurn、搜索单步/计划回放同状态键与续用文本，`runId=b3c20b20d3c143029720422c29bb500c`，实例已删除。显式路径 Release 构建 0 警告/0 错误；未执行跨回合、四 Actor 药水候选、Linux 或可见 Steam。
+
 ## 下一版本（开发中，2026-09-28）
 
 后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。
