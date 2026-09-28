@@ -139,13 +139,14 @@ internal sealed partial class UnattendedTestRunner
                 JointOfflineSearchResult repeatedBeam = JointOfflineSearch.SolveBeam(
                     root,
                     JointOfflineSearchRequest.Default(maximumActions: 2, maximumStates: 2_000),
-                    beamWidth: 2_000);
+                    beamWidth: 2_000,
+                    degreeOfParallelism: 4);
                 if (JointObjectiveScore.Compare(beam.Score, repeatedBeam.Score) != 0
                     || beam.Snapshot.StateKey != repeatedBeam.Snapshot.StateKey
                     || ComparePlanActions(beam.Actions, repeatedBeam.Actions) != 0
                     || beam.ExpandedStates != repeatedBeam.ExpandedStates)
                 {
-                    throw new InvalidOperationException("联合 Beam 同预算重复运行不确定。");
+                    throw new InvalidOperationException("联合 Beam 串行与固定 lane 运行不一致。");
                 }
                 JointOfflineSearchResult budgeted = JointOfflineSearch.SolveBeam(
                     root,

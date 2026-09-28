@@ -95,11 +95,14 @@ internal static class JointOfflineSearch
         CombatRootSnapshot root,
         JointOfflineSearchRequest request,
         int beamWidth,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        int degreeOfParallelism = 1)
     {
         ValidateRequest(root, request);
         if (beamWidth <= 0)
             throw new ArgumentOutOfRangeException(nameof(beamWidth));
+        if (degreeOfParallelism <= 0)
+            throw new ArgumentOutOfRangeException(nameof(degreeOfParallelism));
         List<Node> frontier = [ReplayFixedPrefix(root, request)];
         HashSet<StateFingerprint> seen = [];
         JointOfflineSearchResult? best = null;
@@ -109,6 +112,7 @@ internal static class JointOfflineSearch
         {
             cancellationToken.ThrowIfCancellationRequested();
             List<(Node Node, JointCombatSnapshot Snapshot, JointObjectiveScore Score)> next = [];
+            List<Node> expandable = [];
             for (int frontierIndex = 0; frontierIndex < frontier.Count; frontierIndex++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -140,10 +144,56 @@ internal static class JointOfflineSearch
                         best = SelectBetter(root, best, snapshot, node.Actions, expanded);
                     continue;
                 }
+                expandable.Add(node);
+            }
+            IReadOnlyList<(Node Node, JointCombatSnapshot Snapshot, JointObjectiveScore Score)>[]
+                expandedParents = new IReadOnlyList<(Node, JointCombatSnapshot, JointObjectiveScore)>[expandable.Count];
+            int laneCount = Math.Min(degreeOfParallelism, expandable.Count);
+            if (laneCount == 1)
+            {
+                for (int parentIndex = 0; parentIndex < expandable.Count; parentIndex++)
+                    expandedParents[parentIndex] = ExpandParent(expandable[parentIndex]);
+            }
+            else if (laneCount > 1)
+            {
+                Task[] lanes = new Task[laneCount];
+                for (int laneIndex = 0; laneIndex < laneCount; laneIndex++)
+                {
+                    int fixedLane = laneIndex;
+                    lanes[laneIndex] = Task.Run(() =>
+                    {
+                        for (int parentIndex = fixedLane;
+                             parentIndex < expandable.Count;
+                             parentIndex += laneCount)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            expandedParents[parentIndex] = ExpandParent(expandable[parentIndex]);
+                        }
+                    }, cancellationToken);
+                }
+                Task.WhenAll(lanes).GetAwaiter().GetResult();
+            }
+            foreach (IReadOnlyList<(Node Node, JointCombatSnapshot Snapshot, JointObjectiveScore Score)> children
+                     in expandedParents)
+                next.AddRange(children);
+            frontier = JointBeamRetentionPolicy.Select(
+                    next.Select(static item => new JointBeamRetentionCandidate<Node>(
+                        item.Node,
+                        item.Score,
+                        item.Node.Actions)).ToArray(),
+                    beamWidth)
+                .Select(static candidate => candidate.Value)
+                .ToList();
+
+            IReadOnlyList<(Node Node, JointCombatSnapshot Snapshot, JointObjectiveScore Score)>
+                ExpandParent(Node node)
+            {
+                List<(Node, JointCombatSnapshot, JointObjectiveScore)> children = [];
                 foreach (JointActionCandidate candidate in JointActionExpander.Expand(
                              node.Simulator,
                              node.Turns))
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (!request.EffectivePotionPolicy.Allows(candidate.Action, node.Actions))
                         continue;
                     CombatPredictionSimulator child = node.Simulator.Fork();
@@ -156,18 +206,13 @@ internal static class JointOfflineSearch
                     PlanAction[] actions = [.. node.Actions, candidate.Action];
                     Node childNode = new(child, deaths, turns, actions);
                     JointCombatSnapshot childSnapshot = JointCombatSnapshot.Capture(root, child, turns);
-                    JointObjectiveScore score = JointObjective.Capture(root, childSnapshot, actions);
-                    next.Add((childNode, childSnapshot, score));
+                    children.Add((
+                        childNode,
+                        childSnapshot,
+                        JointObjective.Capture(root, childSnapshot, actions)));
                 }
+                return children;
             }
-            frontier = JointBeamRetentionPolicy.Select(
-                    next.Select(static item => new JointBeamRetentionCandidate<Node>(
-                        item.Node,
-                        item.Score,
-                        item.Node.Actions)).ToArray(),
-                    beamWidth)
-                .Select(static candidate => candidate.Value)
-                .ToList();
         }
         if (best is null)
         {
