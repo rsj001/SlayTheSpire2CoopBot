@@ -46,7 +46,7 @@ internal sealed partial class UnattendedTestRunner
             {
                 runner.SetStage("coop_multi_actor_root");
                 AssertCoopMultiActorRoots(scenario.CombatState);
-                runner._completedChecks.Add("MultiActorRoot:Two:Four:MixedCharacters:ActorRelicMetadata:RemotePowerLifecycle:RemoteRelicTrigger:Orb:Stars:Osty:SingleCompatibility:Candidates:Potions:NinePotionChoices:EntropicGeneration:PotionChoiceOwner:PotionDisabled:PotionForced:PotionStrategicCost:Snapshot:RemoteActorStateKey:ForkIsolation:RemoteActorReplay:FixedPrefix:BfsVsDfs");
+                runner._completedChecks.Add("MultiActorRoot:Two:Four:MixedCharacters:ActorRelicMetadata:RemotePowerLifecycle:RemoteTeamPower:RemoteRelicTrigger:Orb:Stars:Osty:SingleCompatibility:Candidates:Potions:NinePotionChoices:EntropicGeneration:PotionChoiceOwner:PotionDisabled:PotionForced:PotionStrategicCost:Snapshot:RemoteActorStateKey:ForkIsolation:RemoteActorReplay:FixedPrefix:BfsVsDfs");
             }
             if (request.ScenarioId == "COOP-JOINT-OBJECTIVE")
             {

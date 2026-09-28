@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Characters;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Potions;
@@ -25,6 +26,7 @@ internal sealed partial class UnattendedTestRunner
         AssertActorCount(4);
         AssertJointPotionChoiceCoverage(source);
         AssertRemoteActorRelicTrigger(source);
+        AssertRemoteActorTeamPower(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -181,6 +183,42 @@ internal sealed partial class UnattendedTestRunner
                     return bfs;
                 }
             }
+        }
+    }
+
+    private static void AssertRemoteActorTeamPower(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            4,
+            includeRemoteTeamPowerFixture: true);
+        CombatPredictionSimulator beforeSimulator = root.ForkSimulator();
+        JointTurnState turns = JointTurnState.Start(4, root.StartTurnNumber);
+        JointCombatSnapshot before = JointCombatSnapshot.Capture(root, beforeSimulator, turns);
+        PlanAction action = JointActionExpander.Expand(beforeSimulator, turns)
+            .Select(static candidate => candidate.Action)
+            .Single(static action => action.Actor.Index == 1
+                && action.Kind == PlanActionKind.PlayCard
+                && action.CardId == "ONE_FOR_ALL");
+        JointReplayResult replay = JointPlanReplayer.Replay(root, new JointPlan(4, [action]));
+        SimulatedCombatState combat =
+            (SimulatedCombatState)replay.Snapshot.Simulator.State.CombatState;
+        int expected = ModelDb.Card<OneForAll>().DynamicVars["OneForAllPower"].IntValue;
+        Player applier = replay.Snapshot.Simulator.State.Players[1];
+        foreach (Player player in replay.Snapshot.Simulator.State.Players)
+        {
+            OneForAllPower power = combat.GetPower<OneForAllPower>(player.Creature)
+                ?? throw new InvalidOperationException("万众一心没有为全部 Actor 创建 Power。");
+            if (power.Amount != expected || !ReferenceEquals(power.Applier, applier.Creature))
+            {
+                throw new InvalidOperationException(
+                    $"万众一心 Actor Power 来源/数值错误：amount={power.Amount} expected={expected}。");
+            }
+        }
+        if (replay.Snapshot.StateKey == before.StateKey
+            || replay.Snapshot.Continuation.StateText == before.Continuation.StateText)
+        {
+            throw new InvalidOperationException("万众一心的全队 Power 未进入联合状态。");
         }
     }
 
@@ -486,7 +524,8 @@ internal sealed partial class UnattendedTestRunner
         CombatState source,
         int actorCount,
         PotionModel? remotePotion = null,
-        bool includeRemoteRelicTriggerFixture = false)
+        bool includeRemoteRelicTriggerFixture = false,
+        bool includeRemoteTeamPowerFixture = false)
     {
         if (actorCount is < 1 or > 4)
             throw new ArgumentOutOfRangeException(nameof(actorCount));
@@ -553,6 +592,8 @@ internal sealed partial class UnattendedTestRunner
                     for (int copy = 0; copy < 2; copy++)
                         combat.Hand.AddInternal(state.CreateCard(canonicalAttack, player), silent: true);
                 }
+                if (includeRemoteTeamPowerFixture)
+                    combat.Hand.AddInternal(state.CreateCard(ModelDb.Card<OneForAll>(), player), silent: true);
             }
         }
 

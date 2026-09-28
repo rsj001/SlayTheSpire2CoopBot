@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F5b 全队效果（2026-09-29）
+
+补齐原版多人卡 One For All 的精确 OnPlay 镜像：从分支玩家目录遍历全部 Actor，以出牌 Actor 为 Power 来源，对每人应用卡牌动态值；不依赖本地玩家，也不把 AllAllies 误解成单目标。四 Actor 联合根由 Actor1 出牌后，四份 `OneForAllPower` 的数值和 applier、完整状态键及续用戳均通过，`runId=69805442a5ae4e6599e0e84de008d8f2`，实例已删除，Release 构建 0/0。结合 F5c 的 Shuriken AfterCardPlayed 动作链，F5b 标记完成。
+
 ## 离线四 Actor 完整迁移 F5c（2026-09-29）
 
 远端 Actor 的被动遗物现有联合动作链证据：Actor1 持有 Shuriken 与三张独立 Strike，每步经联合候选重新枚举并由权威 transition 执行。第三次攻击只给 Actor1 增加精确 Strength；单调计数、完整状态键、续用戳和父 Fork 隔离均通过。最终 `COOP-MULTI-ACTOR-ROOT` 的 `runId=e0a5cdea18764e00ae656242cf1cfc46` Passed，实例已删除；Release 构建 0/0。

@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
@@ -12,6 +13,21 @@ namespace CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 
 internal static class BespokeCardMirrors
 {
+    public static void OneForAllOnPlay(OneForAll card, CardOnPlayMirrorContext context)
+    {
+        if (context.CombatState is not ICombatPredictionEffectSink effects)
+            throw new InvalidOperationException("万众一心效果缺少可写的预测状态。");
+        int amount = card.DynamicVars["OneForAllPower"].IntValue;
+        foreach (Player player in context.State.Players)
+        {
+            effects.ApplyPower(
+                typeof(OneForAllPower),
+                player.Creature,
+                amount,
+                card.Owner.Creature);
+        }
+    }
+
     public static void AstralPulseOnPlay(AstralPulse _, CardOnPlayMirrorContext context)
         => context.AttackAllOpponents(hitCount: 2);
 

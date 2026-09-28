@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F5b：全队 Power（2026-09-29）
+
+- 新增 One For All 精确 OnPlay mirror：遍历分支状态的全部玩家，以出牌 Actor 为 applier，对每名 Actor 应用同额 `OneForAllPower`；不读取本地玩家。
+- 四 Actor 根由 Actor1 出牌，四名 Actor 的 Power 数值与 applier 均精确一致，状态键/续用戳变化；`COOP-MULTI-ACTOR-ROOT` 的 `runId=69805442a5ae4e6599e0e84de008d8f2`，Passed，实例已删除；Release 构建 0 警告/0 错误。
+- 与 F5c 的 Shuriken `AfterCardPlayed` 动作链共同关闭 F5b 的全队效果和 Hook 时序代表；未覆盖遗物消耗/共享边界、Linux或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F5c：远端被动遗物（2026-09-29）
 
 - Actor1 持有 Shuriken 与三张独立 Strike，经 `JointActionTransition` 每步重新枚举并连续执行；第三次攻击后 Actor1 获得精确 Strength，Actor0 不受影响，遗物计数为 3，完整键/续用戳变化且父 Fork 保持原值。

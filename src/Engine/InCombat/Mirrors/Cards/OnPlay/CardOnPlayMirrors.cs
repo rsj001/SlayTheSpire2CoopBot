@@ -85,6 +85,7 @@ internal static partial class CardOnPlayMirrors
         registry.Register<Entrench>(BespokeCardMirrors.EntrenchOnPlay);
         registry.Register<FiendFire>(BespokeCardMirrors.FiendFireOnPlay);
         registry.Register<LeadingStrike>(BespokeCardMirrors.LeadingStrikeOnPlay);
+        registry.Register<OneForAll>(BespokeCardMirrors.OneForAllOnPlay);
         registry.Register<Maul>(BespokeCardMirrors.MaulOnPlay);
         registry.Register<Sacrifice>(BespokeCardMirrors.SacrificeOnPlay);
         registry.Register<Spite>(BespokeCardMirrors.SpiteOnPlay);
