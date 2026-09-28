@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F7a：玩家侧结束屏障（2026-09-29）
+
+- Actor0 单独 EndTurn 后屏障未到达，Actor0/1 的模拟 `PlayerTurnPhase` 仍为 Play；不会提前执行共享回合尾。
+- Actor1 随后 EndTurn，联合 transition 按 Actor 固定顺序执行各自 PhaseOne/手牌清理，再对两名存活参与者执行一次共享 PhaseTwo；双方 phase 均为 None。
+- `COOP-MULTI-ACTOR-ROOT`：`runId=92d774c3b3f341c8a11472a246c717ec`，Passed，实例已删除；Release 构建 0 警告/0 错误。敌方侧、死亡资格、下一回合和 Linux/可见 Steam 未覆盖。
+
 ## 离线四 Actor 完整迁移 F6d：同名实例前缀身份（2026-09-29）
 
 - Actor1 三张同 ID/同状态 Strike 每一步都从当前前缀重新枚举，记录的 `CardOccurrence`/`CardStateOccurrence` 均为 0；这是状态相对地址，不是根级永久编号。

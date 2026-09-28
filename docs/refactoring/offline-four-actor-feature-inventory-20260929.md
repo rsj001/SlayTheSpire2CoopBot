@@ -57,7 +57,7 @@
 | 功能面 | 单人权威入口 | 联合入口 | F0 状态 | 最低关闭证据 |
 |---|---|---|---|---|
 | Actor 独立结束与全员屏障 | 单人 `EndTurn` 尾部 | `JointTurnState` | 已迁移 | 任意顺序、死亡 Actor、提前跨回合拒绝 |
-| 玩家回合尾 Hook、敌方回合、下一回合开始/抽牌 | `CombatBeamSolver.Terminal.cs`、simulation commands | BFS/DFS 在屏障停止 | 待迁移 | 2/4 Actor 两回合 strict diff |
+| 玩家回合尾 Hook、敌方回合、下一回合开始/抽牌 | `CombatBeamSolver.Terminal.cs`、simulation commands | F7a 已完成屏障后的玩家侧 PhaseOne/flush/PhaseTwo；敌方与下一回合待补 | 待迁移 | 2 Actor 屏障时序通过；完整两回合待 F7b-d |
 | 额外回合、死亡、复活、逃跑和失去资格 | `Prediction/*`、`SimulatedCombatState*.cs` | 仅基础死亡标记 | 待迁移 | roster/屏障/续用戳与实际状态一致 |
 | 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | 基础 win check | 待迁移 | 首个差异定位到动作/Hook/字段 |
 | 单人终局政策 | `FinalPlanOrdering`、`RouteQualityPolicy` | 未复用 | 待迁移 | ActorCount=1 结果逐位等价 |

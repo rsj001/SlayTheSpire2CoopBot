@@ -93,6 +93,7 @@ internal sealed partial class UnattendedTestRunner
                 AssertJointChoiceContinuation(
                     choiceRoot,
                     JointTurnState.Start(2, choiceRoot.StartTurnNumber));
+                AssertJointPlayerEndBarrier(root);
             }
             JointActionCandidate selected = candidates.First(candidate =>
                 candidate.Action.Actor.Index == actorCount - 1
@@ -198,6 +199,35 @@ internal sealed partial class UnattendedTestRunner
                     return bfs;
                 }
             }
+        }
+    }
+
+    private static void AssertJointPlayerEndBarrier(CombatRootSnapshot root)
+    {
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber);
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        turns = JointActionTransition.Apply(
+            simulator,
+            turns,
+            new PlanAction(PlanActionKind.EndTurn, turns.Turn, Actor: new CombatActorId(0)),
+            deaths);
+        if (turns.IsBarrierReached
+            || simulator.State.GetPlayerCombatState(simulator.State.Players[0]).Phase
+                != PlayerTurnPhase.Play)
+        {
+            throw new InvalidOperationException("单个 Actor EndTurn 提前触发了共享玩家侧结算。");
+        }
+        turns = JointActionTransition.Apply(
+            simulator,
+            turns,
+            new PlanAction(PlanActionKind.EndTurn, turns.Turn, Actor: new CombatActorId(1)),
+            deaths);
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        if (simulator.State.Players.Any(player =>
+                simulator.State.GetPlayerCombatState(player).Phase != PlayerTurnPhase.None))
+        {
+            throw new InvalidOperationException("全员屏障后的玩家侧 PhaseTwo 未完整结束。");
         }
     }
 
