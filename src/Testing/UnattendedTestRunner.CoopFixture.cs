@@ -136,6 +136,42 @@ internal sealed partial class UnattendedTestRunner
                     throw new InvalidOperationException(
                         "联合 Beam 与 DFS oracle 的最优值、动作序或终局状态不一致。");
                 }
+                JointOfflineSearchResult repeatedBeam = JointOfflineSearch.SolveBeam(
+                    root,
+                    JointOfflineSearchRequest.Default(maximumActions: 2, maximumStates: 2_000),
+                    beamWidth: 2_000);
+                if (JointObjectiveScore.Compare(beam.Score, repeatedBeam.Score) != 0
+                    || beam.Snapshot.StateKey != repeatedBeam.Snapshot.StateKey
+                    || ComparePlanActions(beam.Actions, repeatedBeam.Actions) != 0
+                    || beam.ExpandedStates != repeatedBeam.ExpandedStates)
+                {
+                    throw new InvalidOperationException("联合 Beam 同预算重复运行不确定。");
+                }
+                JointOfflineSearchResult budgeted = JointOfflineSearch.SolveBeam(
+                    root,
+                    JointOfflineSearchRequest.Default(maximumActions: 2, maximumStates: 1),
+                    beamWidth: 8);
+                if (budgeted.Termination != JointSearchTermination.StateBudget
+                    || budgeted.ExpandedStates != 1)
+                {
+                    throw new InvalidOperationException("联合 Beam 未严格遵守共享状态预算。");
+                }
+                using (CancellationTokenSource cancelled = new())
+                {
+                    cancelled.Cancel();
+                    try
+                    {
+                        _ = JointOfflineSearch.SolveBeam(
+                            root,
+                            JointOfflineSearchRequest.Default(maximumActions: 2, maximumStates: 2_000),
+                            beamWidth: 8,
+                            cancelled.Token);
+                        throw new InvalidOperationException("联合 Beam 忽略了预取消请求。");
+                    }
+                    catch (OperationCanceledException) when (cancelled.IsCancellationRequested)
+                    {
+                    }
+                }
 
                 PlanAction prefix = candidates.First(candidate =>
                     candidate.Action.Actor.Index == 1
@@ -212,6 +248,23 @@ internal sealed partial class UnattendedTestRunner
                         throw new InvalidOperationException(message);
                     }
                     return bfs;
+                }
+            }
+            else if (actorCount == 4)
+            {
+                JointOfflineSearchRequest oneAction = JointOfflineSearchRequest.Default(
+                    maximumActions: 1,
+                    maximumStates: 2_000);
+                JointOfflineSearchResult fourActorOracle =
+                    JointOfflineSearch.SolveDepthFirstOracle(root, oneAction);
+                JointOfflineSearchResult fourActorBeam =
+                    JointOfflineSearch.SolveBeam(root, oneAction, beamWidth: 2_000);
+                if (JointObjectiveScore.Compare(fourActorBeam.Score, fourActorOracle.Score) != 0
+                    || fourActorBeam.Snapshot.StateKey != fourActorOracle.Snapshot.StateKey
+                    || ComparePlanActions(fourActorBeam.Actions, fourActorOracle.Actions) != 0)
+                {
+                    throw new InvalidOperationException(
+                        "四 Actor 一层 Beam 与 DFS oracle 的最优值、动作序或状态不一致。");
                 }
             }
         }

@@ -109,14 +109,27 @@ internal static class JointOfflineSearch
         {
             cancellationToken.ThrowIfCancellationRequested();
             List<(Node Node, JointCombatSnapshot Snapshot, JointObjectiveScore Score)> next = [];
-            foreach (Node node in frontier)
+            for (int frontierIndex = 0; frontierIndex < frontier.Count; frontierIndex++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (expanded >= request.MaximumStates)
                 {
                     budgetReached = true;
+                    for (int remaining = frontierIndex; remaining < frontier.Count; remaining++)
+                    {
+                        Node pending = frontier[remaining];
+                        JointCombatSnapshot pendingSnapshot = JointCombatSnapshot.Capture(
+                            root,
+                            pending.Simulator,
+                            pending.Turns);
+                        next.Add((
+                            pending,
+                            pendingSnapshot,
+                            JointObjective.Capture(root, pendingSnapshot, pending.Actions)));
+                    }
                     break;
                 }
+                Node node = frontier[frontierIndex];
                 expanded++;
                 JointCombatSnapshot snapshot = JointCombatSnapshot.Capture(root, node.Simulator, node.Turns);
                 if (!seen.Add(snapshot.StateKey))
