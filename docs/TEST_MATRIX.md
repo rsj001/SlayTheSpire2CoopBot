@@ -27,6 +27,7 @@
 - P11 源码改动：生产 `CombatBeamSolver` 使用显式单人边界辅助，ActorCount=1 接受且 ActorCount=2 稳定拒绝；联合类型仅供离线/Testing 使用。
 - 动态证据：`COOP-PRODUCTION-SINGLE-BOUNDARY` 通过接受 1、拒绝 2，`status=Passed`，实例已删除。
 - 多 Actor 根夹具：首次 `COOP-MULTI-ACTOR-ROOT` 在 2 Actor 根捕获阶段发现 `MadScienceGrowth.CaptureRemainingCapacity` 对 `CombatState.Players` 使用 `Single()`；改为逐 Actor 计算并求和后，使用 1 CPU / 1 GiB 与清理开关重新运行，2/4 Actor 根目录、候选、联合快照、状态键和非本地 Actor 回放均 `status=Passed`，实例 `.local/headless-instances/coop-multi-actor-root-final` 已删除。
+- 联合搜索对照：同一 `COOP-MULTI-ACTOR-ROOT` 还运行 BFS（完整状态键去重）与不去重 DFS oracle，2 Actor 的最优值、动作序和终局状态键一致，完成检查含 `BfsVsDfs`；4 Actor 只运行根/候选/快照/回放，不把 toy oracle 结论外推为正常规模全局最优。
 - 未执行：完整多 Actor actual/simulated strict diff、敌方跨回合联合结算、部署、Steam、联网客户端控制。P12 收尾将执行最终 Release 构建、Windows 结构门禁、提交和同源码本地 Mod 部署。
 
 ## PR #144 最终修复与合并验证（2026-09-28）

@@ -46,7 +46,7 @@ internal sealed partial class UnattendedTestRunner
             {
                 runner.SetStage("coop_multi_actor_root");
                 AssertCoopMultiActorRoots(scenario.CombatState);
-                runner._completedChecks.Add("MultiActorRoot:Two:Four:Candidates:Snapshot:RemoteActorReplay");
+                runner._completedChecks.Add("MultiActorRoot:Two:Four:Candidates:Snapshot:RemoteActorReplay:BfsVsDfs");
             }
             if (request.ScenarioId == "COOP-JOINT-OBJECTIVE")
             {

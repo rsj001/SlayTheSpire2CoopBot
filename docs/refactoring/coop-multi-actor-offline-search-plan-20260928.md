@@ -16,8 +16,8 @@
 - P6：新增 `JointCombatSnapshot`，按 Actor 顺序冻结资源/牌堆投影、联合回合状态、预测 `ContinuationStamp` 和状态指纹；`COOP-JOINT-SNAPSHOT-KEY` 与 `COOP-MULTI-ACTOR-ROOT` 通过 Fork 隔离、屏障差异和真实 2/4 Actor 状态键/回放。
 - P7：新增 `JointObjectiveScore` 及确定性字典序比较器；`COOP-JOINT-OBJECTIVE` 通过胜负、总战损、逐 Actor 战损、药水、回合和动作排序。当前“总战损”只是跨角色比较的临时 workaround；角色 HP 的可比价值不同，后续需单独研究，不在本批改变。
 - P8：新增 `JointPlanReplayer`，从同一根 Fork 后按 Actor 逐步定位卡牌/目标并检查选择、资源、死亡和回合屏障；`COOP-JOINT-REPLAY` 通过。当前回放覆盖同一预测战斗中的严格动作边界，尚未把完整敌方回合和网络部署纳入验收。
-- P9：新增 2 Actor 固定小状态穷举 oracle；`COOP-JOINT-ORACLE` 通过全局最优、动作序和展开计数。oracle 是有限 toy fixture 的枚举器，不是第二套生产战斗语义。
-- P10：同一 oracle 扩展到 4 Actor；`COOP-JOINT-FOUR-ACTOR` 通过四名 Actor 的穷举全局最优和确定性动作序。正常规模多人搜索仍未宣称全局最优。
+- P9：新增真实 2 Actor 根上的 BFS 联合搜索和不去重 DFS oracle；`COOP-MULTI-ACTOR-ROOT` 通过最优值、动作序和终局状态键一致，另有 `COOP-JOINT-ORACLE` 的有限 toy 穷举证据。两者共享单步权威模拟，不共享枚举策略。
+- P10：真实 4 Actor 根在同一场景通过根目录、候选、联合快照和非本地 Actor 回放；`COOP-JOINT-FOUR-ACTOR` 继续提供有限 toy fixture 的穷举全局最优证据。正常规模多人搜索仍未宣称全局最优。
 - P11：生产 `CombatBeamSolver` 保持显式 ActorCount=1 边界；`COOP-PRODUCTION-SINGLE-BOUNDARY` 通过 ActorCount=1 接受、ActorCount=2 稳定拒绝。离线联合类型不接入 Runtime、Overlay、部署或网络。
 - P12：待完成本轮架构/测试/开发记录同步、Release 构建、Windows 结构门禁、干净提交和同源码本地 Mod 部署。
 

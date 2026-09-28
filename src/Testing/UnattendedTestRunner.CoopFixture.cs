@@ -47,7 +47,42 @@ internal sealed partial class UnattendedTestRunner
                 || replay.AppliedActions.Count != 1
                 || replay.AppliedActions[0].Actor.Index != actorCount - 1)
                 throw new InvalidOperationException($"离线 {actorCount} Actor 的非本地动作未被严格回放。");
+
+            if (actorCount == 2)
+            {
+                JointOfflineSearchResult breadthFirst = JointOfflineSearch.SolveBreadthFirst(
+                    root,
+                    maximumActions: 2,
+                    maximumStates: 2_000);
+                JointOfflineSearchResult oracle = JointOfflineSearch.SolveDepthFirstOracle(
+                    root,
+                    maximumActions: 2,
+                    maximumStates: 2_000);
+                if (JointObjectiveScore.Compare(breadthFirst.Score, oracle.Score) != 0
+                    || breadthFirst.Snapshot.StateKey != oracle.Snapshot.StateKey
+                    || ComparePlanActions(breadthFirst.Actions, oracle.Actions) != 0)
+                    throw new InvalidOperationException(
+                        "联合 BFS 与独立 DFS oracle 的最优值、动作序或终局状态不一致。");
+            }
         }
+    }
+
+    private static int ComparePlanActions(
+        IReadOnlyList<PlanAction> left,
+        IReadOnlyList<PlanAction> right)
+    {
+        if (left.Count != right.Count)
+            return left.Count.CompareTo(right.Count);
+        for (int index = 0; index < left.Count; index++)
+        {
+            if (left[index].Actor != right[index].Actor
+                || left[index].Kind != right[index].Kind
+                || !string.Equals(left[index].CardId, right[index].CardId, StringComparison.Ordinal)
+                || left[index].CardOccurrence != right[index].CardOccurrence
+                || left[index].TargetCombatId != right[index].TargetCombatId)
+                return 1;
+        }
+        return 0;
     }
 
     private static CombatRootSnapshot CreateOfflineJointRoot(CombatState source, int actorCount)
