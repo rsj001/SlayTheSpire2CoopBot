@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F3a（2026-09-29）
+
+- 候选：卡牌 action 带 state key/occurrence、升级、附魔和 replay count；目标覆盖完整 `TargetType` 分类；基础选择分支复用单人 `CardChoiceSupport.BuildChoices`。
+- `COOP-JOINT-REPLAY` 使用 Armaments + Strike，`runId=78e1c6845f4646fb8e244b7747304738`，Passed；检查选择候选、严格实例回放和搜索/回放同状态，实例已删除。
+- Release 构建 0 警告/0 错误。F3a 不覆盖动态/嵌套 continuation、自动/重复子出牌或联合 opening/cross-turn 政策；未运行 Linux或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F2（2026-09-29）
 
 - 首个差异：`COOP-MULTI-ACTOR-ROOT` 在 Actor1 格挡扰动命中 multiplayer scaling mirror 的单人拒绝，`runId=e62462a1435d4bbbbe0c48965528985b`，状态 Failed，实例已删除。

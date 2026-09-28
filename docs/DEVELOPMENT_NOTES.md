@@ -16,6 +16,12 @@
 
 首次 `COOP-MULTI-ACTOR-ROOT` 在远端玩家格挡扰动处失败：multiplayer scaling mirror 对任意多人状态抛 `NotSupportedException`，`runId=e62462a1435d4bbbbe0c48965528985b`。按原版实现改为只缩放主/次敌人的 powered 格挡，并使用模拟状态冻结的玩家数、Encounter 与 Act；玩家目标保持系数 1。修复后同场景通过 2/4 Actor 资源/卡牌扰动、Fork 隔离、非本地回放、BFS/DFS 和 2/4 人敌人格挡倍率，`runId=34221092e12f40f5addc9fb89219ff94`，实例已删除。Release 构建 0/0；机制专项扰动仍由 F4/F5/F7 验证。
 
+## 离线四 Actor 完整迁移 F3a（2026-09-29）
+
+联合卡牌候选现保存与生产回放相同的 state key/occurrence、升级、附魔和 replay count，transition 复用生产 `FindCardForReplay`。目标枚举覆盖当前全部 `TargetType`：AnyEnemy、AnyPlayer、AnyAlly 显式枚举可命中目标，Self/全体/随机/无目标/TargetedNoCreature/Osty 由 mirror 解析，未知值显式失败。基础选牌卡使用同一 `CardChoiceSupport.BuildChoices` 算法生成带 Actor owner 的候选；为此只增加接受显示名函数的内部重载，生产调用仍传冻结的 `SolverDisplayNames`。
+
+Armaments + Strike 的 `COOP-JOINT-REPLAY` 通过 choice candidate、实例定位和搜索/回放同状态，`runId=78e1c6845f4646fb8e244b7747304738`，实例已删除；显式路径 Release 构建 0/0。F3 尚未完成动态/嵌套选择 continuation、自动/重复子出牌以及 opening/cross-turn/fixed-prefix 政策接入，因此计划仍标为进行中。
+
 ## 下一版本（开发中，2026-09-28）
 
 后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。

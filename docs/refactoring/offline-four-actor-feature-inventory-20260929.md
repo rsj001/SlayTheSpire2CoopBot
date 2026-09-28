@@ -33,9 +33,9 @@
 |---|---|---|---|---|
 | 普通出牌与 EndTurn | `CombatBeamSolver.Expansion*.cs` | `JointActionExpander`、`JointActionTransition` | 已迁移 | 搜索与回放同键、2/4 Actor 非本地动作 |
 | AnyEnemy、AnyAlly 基础目标 | `CombatBeamSolver.Expansion.cs` | `JointActionExpander.ResolveTargets` | 已迁移 | 目标顺序、队友目标与 Actor owner |
-| AnyPlayer、Self、全体、无目标及动态目标 | `CombatBeamSolver.Expansion*.cs`、card mirrors | 部分依赖 mirror，未完成联合枚举 | 待迁移 | 按原版 TargetType 的 2/4 Actor 候选对照 |
+| AnyPlayer、Self、全体、无目标及动态目标 | `CombatBeamSolver.Expansion*.cs`、card mirrors | F3a 已覆盖全部当前 TargetType；AnyPlayer/AnyAlly 显式枚举 | 已迁移 | 2/4 Actor 手动目标集合；非手动目标由 mirror 解析 |
 | 自动牌、重复牌、复制牌、生成牌、回手与临时牌 | `CombatBeamSolver.CardChoiceContinuation.cs`、`Prediction/*` | 尚无联合 continuation | 待迁移 | 复杂卡牌逐动作/选择 strict replay |
-| 卡牌实例 identity、升级、附魔和状态 occurrence | `PreparedCardAction`、`CombatPlan.cs` | 基础 CardId occurrence | 待迁移 | 同名不同状态实例准确匹配 |
+| 卡牌实例 identity、升级、附魔和状态 occurrence | `PreparedCardAction`、`CombatPlan.cs` | F3a 使用同一 `ChoiceCardKey`/state occurrence 回放 | 已迁移 | Armaments/Strike 候选回放与搜索单步同键 |
 | 药水使用、目标、槽位、生成、复制和替换 | `CombatBeamSolver.*Potion*.cs`、`Prediction/Potion*` | transition 已执行已选药水；完整候选/政策未迁移 | 待迁移 | 四 Actor 独立药水槽及搜索/回放同键 |
 | 主动遗物动作 | 原版无战斗内独立提交入口；遗物由 Hook 触发 | 不新增伪造动作；`PlanRelicEffect` 仍是路线注释 | 明确不支持 | F1 反编译检索无 `UseRelic`/`ActivateRelic` 战斗动作；遗物触发归 F5 |
 | 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | transition 已消费动作内选择；完整 continuation 未迁移 | 待迁移 | owner/source/实例/原序及兄弟 Fork 隔离 |

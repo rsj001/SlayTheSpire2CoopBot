@@ -1744,6 +1744,17 @@ for token in \
 done
 forbid_fixed "$multiplayer_block_mirror" 'only supports single-player combat' \
     'multiplayer block mirror restored the obsolete blanket multiplayer rejection:'
+joint_expander="$repository_root/src/Search/Coop/JointActionExpander.cs"
+for token in \
+    'CardStateKey: CardChoiceSupport.ChoiceCardKey(card)' \
+    'CardChoiceSupport.BuildChoices(' \
+    'TargetType.AnyPlayer' \
+    'TargetType.AnyAlly' \
+    'throw new NotSupportedException('; do
+    require_fixed "$joint_expander" "$token" 'joint card expansion missing F3a identity/target boundary:'
+done
+require_fixed "$joint_transition" 'CombatBeamSolver.FindCardForReplay' \
+    'joint transition restored a second card-instance matcher:'
 
 if ((${#violations[@]} > 0)); then
     printf '%s\n' "${violations[@]}" >&2

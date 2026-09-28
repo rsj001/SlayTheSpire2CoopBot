@@ -2222,6 +2222,22 @@ foreach ($text in @(
 if (Select-String -LiteralPath $multiplayerBlockMirror -SimpleMatch 'only supports single-player combat' -Quiet) {
     $violations.Add('Multiplayer block mirror restored the obsolete blanket multiplayer rejection.')
 }
+$jointExpanderPath = Join-Path $repositoryRoot 'src/Search/Coop/JointActionExpander.cs'
+foreach ($text in @(
+    'CardStateKey: CardChoiceSupport.ChoiceCardKey(card)',
+    'CardChoiceSupport.BuildChoices(',
+    'TargetType.AnyPlayer',
+    'TargetType.AnyAlly',
+    'throw new NotSupportedException('
+)) {
+    if (-not (Select-String -LiteralPath $jointExpanderPath -SimpleMatch $text -Quiet)) {
+        $violations.Add("Joint card expansion missing F3a identity/target boundary: $text")
+    }
+}
+if (-not (Select-String -LiteralPath $jointTransitionPath `
+        -SimpleMatch 'CombatBeamSolver.FindCardForReplay' -Quiet)) {
+    $violations.Add('Joint transition restored a second card-instance matcher.')
+}
 
 if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Error $_ }

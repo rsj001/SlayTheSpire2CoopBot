@@ -261,6 +261,8 @@ F0 起的完整单人功能迁移范围由[离线四 Actor 单人功能迁移库
 
 `ModifyBlockMultiplicativeMirrors` 对多人缩放使用模拟状态冻结的玩家数、Encounter 和 Act：玩家目标或非 powered 格挡系数为 1，主/次敌人的 powered 格挡按原版人数及 Act/Boss 系数缩放。detached `MultiplayerScalingModel` 不读取 live RunState/CombatState。
 
+F3a 的 `JointActionExpander` 为卡牌动作保存与生产回放相同的 `ChoiceCardKey`、state occurrence、升级、附魔和 replay count；`JointActionTransition` 直接调用 `CombatBeamSolver.FindCardForReplay`，不维护第二套实例匹配。手动目标按原版 `TargetType` 区分 AnyEnemy、AnyPlayer 和排除自身的 AnyAlly；其余非手动目标交给 card mirror 解析，未知枚举值显式失败。基础动作选择分支复用 `CardChoiceSupport.BuildChoices` 的同一组合与排序算法，离线入口只把显示标题留空。
+
 `src/Search/Coop/` 是离线联合模型的独立职责边界：`JointTurnState` 拥有 Actor 可行动／结束／死亡屏障，`JointPlan` 拥有带 Actor 身份的计划合同，`JointActionExpander`、`JointCombatSnapshot`、`JointPlanReplayer` 和 `JointObjective` 分别拥有候选展开、完整联合快照、严格回放和终局比较；`JointExhaustiveOracle` 只服务有限 toy fixture 的穷举证据。它们只消费冻结的 `CombatRootSnapshot` 和 Fork 后的 `CombatPredictionSimulator`，不读取 Runtime、UI、全局设置、网络或真实客户端，也不部署联合计划。
 
 离线模型按根 Actor 固定顺序保存身份，Actor 数量可为 1 至 4；Actor 身份进入计划、屏障、续用文本和联合状态指纹。`JointActionTransition` 是 BFS、DFS oracle 与严格回放共享的单步权威执行入口，负责已选卡牌、动作内选择、药水与 EndTurn，并把已处理敌人死亡集合随节点 Fork；候选枚举和跨回合生命周期不属于该类型。`JointOfflineSearch` 的 BFS 只负责完整状态键去重，DFS oracle 保持不去重，二者不复制动作结算。原版没有战斗内独立主动遗物提交入口，`PlanRelicEffect` 仍是卡牌/药水等动作触发后的路线注释，不新增伪造的 Relic action。当前生产 `CombatBeamSolver` 仍由 `EnsureSinglePlayerRoot` 保持 ActorCount=1，捕获多人根时稳定拒绝，不把联合类型偷偷降级成本地 Actor。总战损比较目前是跨角色 HP 价值尚未统一时的临时 workaround；由于不同角色 HP 的可比价值可能不同，该缺口只在联合目标研究记录中保留，不作为本阶段语义修复。

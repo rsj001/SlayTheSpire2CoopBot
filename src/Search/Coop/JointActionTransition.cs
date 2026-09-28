@@ -71,7 +71,7 @@ internal static class JointActionTransition
         ForkableSet<uint> processedEnemyDeaths)
     {
         SimPlayerCombatState playerState = simulator.State.GetPlayerCombatState(player);
-        PredictedCard card = FindCard(playerState.Hand.Cards, action)
+        PredictedCard card = CombatBeamSolver.FindCardForReplay(playerState.Hand.Cards, action)
             ?? throw new InvalidOperationException(
                 $"联合动作找不到 Actor {action.Actor} 的手牌 {action.CardId}#{action.CardOccurrence}。");
         if (!simulator.CanPlay(card))
@@ -148,22 +148,6 @@ internal static class JointActionTransition
     {
         IReadOnlyList<PlanCardChoice> choices = action.GetActionChoicesInExecutionOrder();
         return choices.Count == 0 ? null : choices;
-    }
-
-    private static PredictedCard? FindCard(
-        IReadOnlyList<PredictedCard> hand,
-        PlanAction action)
-    {
-        int occurrence = 0;
-        foreach (PredictedCard card in hand)
-        {
-            if (!string.Equals(card.Preview.Id.Entry, action.CardId, StringComparison.Ordinal))
-                continue;
-            if (occurrence == action.CardOccurrence)
-                return card;
-            occurrence++;
-        }
-        return null;
     }
 
     private static Creature? FindTarget(

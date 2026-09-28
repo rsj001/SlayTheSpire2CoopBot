@@ -218,12 +218,19 @@ internal static partial class CardChoiceSupport
         SolverDisplayNames displayNames,
         int maxPileBranches,
         int maxHandBranches)
+        => BuildChoices(spec, displayNames.Card, maxPileBranches, maxHandBranches);
+
+    internal static IReadOnlyList<PlanCardChoice> BuildChoices(
+        CardChoiceSpec spec,
+        Func<CardModel, string> displayName,
+        int maxPileBranches,
+        int maxHandBranches)
     {
         if (spec.MaxCount < spec.MinCount)
             return [];
         if (spec.IsImplicitAllSelection)
             return [new PlanCardChoice(spec.Effect, spec.SourcePile,
-                ToTokens(spec.Options, spec.Options, spec.SourceCards, displayNames.Card), ContextId: spec.ContextId)];
+                ToTokens(spec.Options, spec.Options, spec.SourceCards, displayName), ContextId: spec.ContextId)];
 
         int minTake = Math.Min(spec.MinCount, spec.Options.Count);
         int maxTake = Math.Min(spec.MaxCount, spec.Options.Count);
@@ -324,7 +331,7 @@ internal static partial class CardChoiceSupport
             .Select(selection => new PlanCardChoice(
                 spec.Effect,
                 spec.SourcePile,
-                ToTokens(selection, spec.Options, spec.SourceCards, displayNames.Card),
+                ToTokens(selection, spec.Options, spec.SourceCards, displayName),
                 ContextId: spec.ContextId))
             .ToList();
     }

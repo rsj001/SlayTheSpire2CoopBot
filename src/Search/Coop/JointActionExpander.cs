@@ -49,13 +49,41 @@ internal static class JointActionExpander
                     CardOccurrence: occurrence,
                     TargetIndex: -1,
                     CardUpgradeLevel: card.Preview.CurrentUpgradeLevel,
+                    ReplayCount: Math.Max(0, card.Preview.GetEnchantedReplayCount()),
+                    CardStateKey: CardChoiceSupport.ChoiceCardKey(card),
+                    CardStateOccurrence: CountStateOccurrence(
+                        playerState.Hand.Cards, card, CardChoiceSupport.ChoiceCardKey(card)),
+                    CardEnchantmentId: card.Preview.Enchantment?.Id.Entry ?? string.Empty,
                     Actor: actor);
                 foreach (Creature? target in ResolveTargets(simulator, card, player))
                 {
-                    candidates.Add(new JointActionCandidate(
-                        target is null ? action : action with { TargetCombatId = target.CombatId },
-                        card,
-                        target));
+                    PlanAction targeted = target is null
+                        ? action
+                        : action with { TargetCombatId = target.CombatId };
+                    CardChoiceSpec? spec = CardChoiceSupport.GetSpec(simulator, card);
+                    if (spec == null)
+                    {
+                        candidates.Add(new JointActionCandidate(
+                            targeted with
+                            {
+                                Choice = CardChoiceSupport.BuildRequiredEmptyChoice(card.Preview)
+                                    is { } empty ? empty with { Actor = actor } : null,
+                            },
+                            card,
+                            target));
+                        continue;
+                    }
+                    foreach (PlanCardChoice choice in CardChoiceSupport.BuildChoices(
+                                 spec,
+                                 static _ => string.Empty,
+                                 maxPileBranches: 32,
+                                 maxHandBranches: 32))
+                    {
+                        candidates.Add(new JointActionCandidate(
+                            targeted with { Choice = choice with { Actor = actor } },
+                            card,
+                            target));
+                    }
                 }
             }
 
@@ -86,8 +114,40 @@ internal static class JointActionExpander
                 yield return ally;
             yield break;
         }
+        if (type == TargetType.AnyPlayer)
+        {
+            foreach (Creature player in simulator.State.PlayerCreatures.Where(simulator.State.IsHittable))
+                yield return player;
+            yield break;
+        }
+        if (type is TargetType.None
+            or TargetType.Self
+            or TargetType.AllEnemies
+            or TargetType.RandomEnemy
+            or TargetType.AllAllies
+            or TargetType.TargetedNoCreature
+            or TargetType.Osty)
+        {
+            yield return null;
+            yield break;
+        }
+        throw new NotSupportedException(
+            $"联合卡牌目标类型未登记：Actor={owner.NetId} card={card.Preview.Id.Entry} target={type}。");
+    }
 
-        // All-target, self-target and targetless cards resolve their target inside the mirror.
-        yield return null;
+    private static int CountStateOccurrence(
+        IReadOnlyList<PredictedCard> hand,
+        PredictedCard selected,
+        string stateKey)
+    {
+        int occurrence = 0;
+        foreach (PredictedCard card in hand)
+        {
+            if (ReferenceEquals(card, selected))
+                return occurrence;
+            if (string.Equals(CardChoiceSupport.ChoiceCardKey(card), stateKey, StringComparison.Ordinal))
+                occurrence++;
+        }
+        throw new InvalidOperationException("联合候选卡牌不在所属 Actor 的手牌中。");
     }
 }
