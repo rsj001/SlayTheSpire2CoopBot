@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F5a（2026-09-29）
+
+- 根元数据：每个 `CombatActorRoot` 捕获可搜索药水、Throwing Axe、Petrified Toad 与战后遗物回血；旧单人根字段保持为本地 Actor 等价值。
+- `COOP-MULTI-ACTOR-ROOT`：Actor1 独有 Petrified Toad，Actor0 不受污染，联合成本读取 Actor1；`runId=f6a9adae0f5b4dc49e472f21747659af`，Passed，实例已删除。
+- Release 构建 0 警告/0 错误。未覆盖动态 Power/遗物触发、球、宠物、角色资源、Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F4c1（2026-09-29）
 
 - 政策：Actor+槽位+药水 ID 指令；Disabled/Force、最少/最多用量在候选与边界两端执行；战略成本复用单人 `PotionUsePolicy`。

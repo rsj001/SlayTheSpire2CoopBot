@@ -33,7 +33,11 @@ internal sealed record CombatActorRoot(
     int StartTurnNumber,
     PlayerTurnPhase Phase,
     IReadOnlySet<string> CardIds,
-    IReadOnlyList<string> PotionIds);
+    IReadOnlyList<string> PotionIds,
+    IReadOnlyList<SearchablePotionSlotSnapshot> SearchablePotions,
+    bool HasUnusedCardReplayAllocator,
+    bool HasRenewablePotionShapedRock,
+    PostCombatRelicHealProfile PostCombatRelicHeal);
 
 internal readonly record struct CombatActorId(int Index)
 {
@@ -347,6 +351,22 @@ internal sealed class CombatRootSnapshot
                 .Where(potion => potion != null)
                 .Select(potion => potion!.Id.Entry)
                 .ToArray();
+            bool hasUnusedCardReplayAllocator = player.Relics
+                .OfType<ThrowingAxe>()
+                .Any(relic => !relic.IsMelted && !relic._usedThisCombat);
+            bool hasRenewablePotionShapedRock = player.Relics
+                .OfType<PetrifiedToad>()
+                .Any(relic => !relic.IsMelted);
+            SearchablePotionSlotSnapshot[] searchablePotions = player.PotionSlots
+                .Select((potion, slot) => (Potion: potion, Slot: slot))
+                .Where(item => item.Potion != null && PotionOnUseSupport.CanSearch(item.Potion))
+                .Select(item => new SearchablePotionSlotSnapshot(
+                    item.Slot,
+                    item.Potion!.Id.Entry,
+                    PotionUsePolicy.StrategicHpCost(
+                        item.Potion,
+                        hasRenewablePotionShapedRock)))
+                .ToArray();
             actors[index] = new CombatActorRoot(
                 new CombatActorId(index),
                 player,
@@ -355,7 +375,11 @@ internal sealed class CombatRootSnapshot
                 playerState.TurnNumber,
                 playerState.Phase,
                 cardIds,
-                Array.AsReadOnly(potionIds));
+                Array.AsReadOnly(potionIds),
+                Array.AsReadOnly(searchablePotions),
+                hasUnusedCardReplayAllocator,
+                hasRenewablePotionShapedRock,
+                CapturePostCombatRelicHeal(player.Relics));
         }
         return actors;
     }

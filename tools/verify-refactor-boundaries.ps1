@@ -2298,6 +2298,18 @@ foreach ($text in @(
         $violations.Add("Joint potion policy missing F4c1 boundary: $text")
     }
 }
+foreach ($text in @(
+    'IReadOnlyList<SearchablePotionSlotSnapshot> SearchablePotions,',
+    'bool HasUnusedCardReplayAllocator,',
+    'bool HasRenewablePotionShapedRock,',
+    'PostCombatRelicHealProfile PostCombatRelicHeal)',
+    'CapturePostCombatRelicHeal(player.Relics)'
+)) {
+    if (-not (Select-String -LiteralPath (Join-Path $repositoryRoot 'src/Runtime/CombatRootSnapshot.cs') `
+            -SimpleMatch $text -Quiet)) {
+        $violations.Add("Combat Actor root missing F5a relic ownership: $text")
+    }
+}
 
 if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Error $_ }

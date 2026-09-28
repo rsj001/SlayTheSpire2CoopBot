@@ -1793,6 +1793,15 @@ for token in \
     'directive.Actor.Index < 0 || directive.Actor.Index >= actorCount'; do
     require_fixed "$joint_potion_policy" "$token" 'joint potion policy missing F4c1 boundary:'
 done
+combat_root="$repository_root/src/Runtime/CombatRootSnapshot.cs"
+for token in \
+    'IReadOnlyList<SearchablePotionSlotSnapshot> SearchablePotions,' \
+    'bool HasUnusedCardReplayAllocator,' \
+    'bool HasRenewablePotionShapedRock,' \
+    'PostCombatRelicHealProfile PostCombatRelicHeal)' \
+    'CapturePostCombatRelicHeal(player.Relics)'; do
+    require_fixed "$combat_root" "$token" 'combat Actor root missing F5a relic ownership:'
+done
 
 if ((${#violations[@]} > 0)); then
     printf '%s\n' "${violations[@]}" >&2

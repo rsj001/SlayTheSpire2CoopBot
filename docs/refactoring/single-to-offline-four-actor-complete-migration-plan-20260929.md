@@ -15,7 +15,7 @@
 | F2 Actor 状态/Fork/快照/续用 | 已完成 | 2/4 Actor 远端字段扰动与 Fork 隔离通过；修复多人敌人格挡缩放 mirror |
 | F3 完整卡牌与目标 | 进行中 | F3a/F3b 已接入目标/实例身份、基础及动态嵌套选择；F3c 已接入同回合 fixed-prefix 请求并通过 BFS/DFS；opening/cycle/cross-turn 仍待完成 |
 | F4 完整药水 | 进行中 | F4a/F4b 已完成 2/4 Actor 独立槽位/目标、九类手动选择与 Entropic Brew 生成；Smart/强制/药量/战略成本等政策待完成 |
-| F5 Power/遗物/球/宠物/角色资源 | 未开始 | - |
+| F5 Power/遗物/球/宠物/角色资源 | 进行中 | F5a 已完成逐 Actor 遗物/药水根元数据并保持单人字段等价；动态 Power/球/宠物/角色资源待审计 |
 | F6 选择与嵌套 continuation | 未开始 | - |
 | F7 联合回合与敌方生命周期 | 未开始 | - |
 | F8 联合终局目标 | 未开始 | - |
@@ -226,6 +226,14 @@
 - 触发顺序、来源和目标不依赖本地玩家；
 - 未登记第三方语义明确拒绝；
 - 关键机制至少有一个 actual/simulated strict diff fixture。
+
+执行拆分：
+
+- F5a（已完成）：`CombatActorRoot` 捕获逐 Actor 可搜索药水、Throwing Axe 可用性、Petrified Toad 可再生药水语义和战后遗物回血；旧根级单人字段保持并与本地 Actor 逐值一致。Actor1 独有 Petrified Toad 的 `COOP-MULTI-ACTOR-ROOT` 运行 `f6a9adae0f5b4dc49e472f21747659af` 通过。
+- F5b（待完成）：Power 创建/叠加/移除、applier/target 与全队效果代表集。
+- F5c（待完成）：被动遗物触发/计数/消耗和共享边界代表集。
+- F5d（待完成）：球、Osty/宠物及五角色专属资源代表集。
+- F5e（待完成）：第三方登记点和未知 subscriber 拒绝边界。
 
 ### F6：完整选择系统和嵌套 continuation
 

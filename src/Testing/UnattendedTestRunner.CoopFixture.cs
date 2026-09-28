@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Potions;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Models.Singleton;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -27,6 +28,16 @@ internal sealed partial class UnattendedTestRunner
             if (root.Actors.Count != actorCount || root.PlayerCount != actorCount
                 || root.LocalActorId.Index != 0)
                 throw new InvalidOperationException($"离线联合根未捕获 {actorCount} 个稳定 Actor。 ");
+            if (root.Actors[0].HasRenewablePotionShapedRock
+                || !root.Actors[1].HasRenewablePotionShapedRock
+                || root.HasRenewablePotionShapedRock != root.Actors[0].HasRenewablePotionShapedRock
+                || root.HasUnusedCardReplayAllocator != root.Actors[0].HasUnusedCardReplayAllocator
+                || root.PostCombatRelicHeal != root.Actors[0].PostCombatRelicHeal
+                || !root.Actors[1].SearchablePotions.Any(potion => potion.PotionId == "GAMBLERS_BREW"))
+            {
+                throw new InvalidOperationException(
+                    "联合 Actor 遗物/药水根元数据没有保持逐 Actor 归属或单人兼容字段。");
+            }
 
             CombatPredictionSimulator simulator = root.ForkSimulator();
             JointTurnState turns = JointTurnState.Start(actorCount, root.StartTurnNumber);
@@ -143,7 +154,7 @@ internal sealed partial class UnattendedTestRunner
                 int expectedCost = PotionUsePolicy.StrategicHpCost("GAMBLERS_BREW");
                 if (forcedPolicy.StrategicHpCost(
                         forcedResult.Actions,
-                        root.HasRenewablePotionShapedRock) != expectedCost)
+                        root.Actors[1].HasRenewablePotionShapedRock) != expectedCost)
                 {
                     throw new InvalidOperationException("联合药水政策没有复用单人战略成本。" );
                 }
@@ -367,6 +378,8 @@ internal sealed partial class UnattendedTestRunner
                 player);
             if (!player.AddPotionInternal(potion, 0, silent: true).success)
                 throw new InvalidOperationException($"无法为离线 Actor{index} 注入药水。");
+            if (index == 1)
+                player.AddRelicInternal(ModelDb.Relic<PetrifiedToad>().ToMutable(), silent: true);
         }
 
         MonsterModel sourceMonster = source.Enemies.FirstOrDefault()?.Monster

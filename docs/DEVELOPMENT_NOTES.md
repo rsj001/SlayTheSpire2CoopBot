@@ -52,6 +52,12 @@ Armaments + Strike 的 `COOP-JOINT-REPLAY` 通过 choice candidate、实例定�
 
 `COOP-MULTI-ACTOR-ROOT` 分别运行 Disabled/max=0 与默认 Disabled、Actor1 Gambler's Brew Force、min=max=1 的 BFS/DFS，请求均同值同终态，强制路线恰好使用 Actor1 的一瓶药且成本与单人函数一致；`runId=d1fc4875e9ef4dd1806a6b9be8438627`，Passed，实例已删除。Release 构建 0/0。Smart 相对无药基线、联合反事实和跨回合 continuation 尚未完成；根级 `HasRenewablePotionShapedRock` 的 Actor 归属记为 F5/F8 缺口。
 
+## 离线四 Actor 完整迁移 F5a（2026-09-29）
+
+状态所有权审计确认 `ContinuationStamp` 已逐 Actor 保存 Power、遗物、球和 Osty，但根级可搜索药水、Throwing Axe 可用性、Petrified Toad 可再生药水语义与战后遗物回血只来自本地玩家。现将这些不可变元数据加入每个 `CombatActorRoot`；生产单人根字段及消费路径不改，并由夹具断言其与本地 Actor 新字段逐值一致。联合药水成本改为读取动作 Actor 的可再生性。
+
+`COOP-MULTI-ACTOR-ROOT` 只给 Actor1 注入 Petrified Toad，验证 Actor1 为可再生、Actor0 不受污染、本地兼容字段相等且 Actor1 可搜索药水仍被捕获；`runId=f6a9adae0f5b4dc49e472f21747659af`，Passed，实例已删除。Release 构建 0/0。该证据只关闭根元数据所有权，不代表动态 Power、遗物触发、球、宠物或角色资源已完成。
+
 ## 下一版本（开发中，2026-09-28）
 
 后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。
