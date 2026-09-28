@@ -58,7 +58,7 @@
 |---|---|---|---|---|
 | Actor 独立结束与全员屏障 | 单人 `EndTurn` 尾部 | `JointTurnState` | 已迁移 | 任意顺序、死亡 Actor、提前跨回合拒绝 |
 | 玩家回合尾 Hook、敌方回合、下一回合开始/抽牌 | `CombatBeamSolver.Terminal.cs`、simulation commands | F7a 已完成屏障后的玩家侧 PhaseOne/flush/PhaseTwo；敌方与下一回合待补 | 待迁移 | 2 Actor 屏障时序通过；完整两回合待 F7b-d |
-| 额外回合、死亡、复活、逃跑和失去资格 | `Prediction/*`、`SimulatedCombatState*.cs` | 仅基础死亡标记 | 待迁移 | roster/屏障/续用戳与实际状态一致 |
+| 额外回合、死亡、复活、逃跑和失去资格 | `Prediction/*`、`SimulatedCombatState*.cs` | F7b 已通过死亡 Actor 候选/屏障/玩家侧参与者；其余待补 | 待迁移 | 死亡代表通过；复活/逃跑/额外回合待验证 |
 | 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | 基础 win check | 待迁移 | 首个差异定位到动作/Hook/字段 |
 | 单人终局政策 | `FinalPlanOrdering`、`RouteQualityPolicy` | 未复用 | 待迁移 | ActorCount=1 结果逐位等价 |
 | 团队目标 | 无单人对应 | `JointObjective` 临时总战损 + 向量 | 待迁移 | 存活、分布、资源、成长和稳定决胜 |

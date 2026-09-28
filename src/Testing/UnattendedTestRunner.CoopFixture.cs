@@ -94,6 +94,7 @@ internal sealed partial class UnattendedTestRunner
                     choiceRoot,
                     JointTurnState.Start(2, choiceRoot.StartTurnNumber));
                 AssertJointPlayerEndBarrier(root);
+                AssertDeadActorBarrier(root);
             }
             JointActionCandidate selected = candidates.First(candidate =>
                 candidate.Action.Actor.Index == actorCount - 1
@@ -199,6 +200,36 @@ internal sealed partial class UnattendedTestRunner
                     return bfs;
                 }
             }
+        }
+    }
+
+    private static void AssertDeadActorBarrier(CombatRootSnapshot root)
+    {
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber);
+        Player dead = simulator.State.Players[1];
+        if (!simulator.Kill(dead.Creature, force: true))
+            throw new InvalidOperationException("死亡 Actor 屏障夹具没有完成强制死亡结算。");
+        turns = turns.MarkDead(new CombatActorId(1));
+        if (JointActionExpander.Expand(simulator, turns)
+            .Any(static candidate => candidate.Action.Actor.Index == 1))
+        {
+            throw new InvalidOperationException("死亡 Actor 仍产生联合候选。");
+        }
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        turns = JointActionTransition.Apply(
+            simulator,
+            turns,
+            new PlanAction(PlanActionKind.EndTurn, turns.Turn, Actor: new CombatActorId(0)),
+            deaths);
+        if (!turns.IsBarrierReached)
+            throw new InvalidOperationException("死亡 Actor 仍阻塞联合结束屏障。");
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        if (simulator.State.GetPlayerCombatState(simulator.State.Players[0]).Phase
+                != PlayerTurnPhase.None
+            || simulator.State.GetCreature(dead.Creature).IsAlive)
+        {
+            throw new InvalidOperationException("死亡 Actor 屏障后的玩家侧状态错误。");
         }
     }
 

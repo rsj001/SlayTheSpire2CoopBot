@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F7b：死亡 Actor 屏障（2026-09-29）
+
+- Actor1 在分支内强制死亡并标记 Dead 后不再产生候选；Actor0 单独 EndTurn 即到达屏障。
+- 联合玩家侧结算只包含存活 Actor0；Actor0 phase 归 None，Actor1 保持死亡，不被共享 PhaseTwo 误复活或阻塞。
+- `COOP-MULTI-ACTOR-ROOT`：`runId=672c2a82f07e41d2a73c5538e5f3fd1d`，Passed，实例已删除；Release 构建 0 警告/0 错误。复活/逃跑/额外回合、Linux 或可见 Steam 未覆盖。
+
 ## 离线四 Actor 完整迁移 F7a：玩家侧结束屏障（2026-09-29）
 
 - Actor0 单独 EndTurn 后屏障未到达，Actor0/1 的模拟 `PlayerTurnPhase` 仍为 Play；不会提前执行共享回合尾。

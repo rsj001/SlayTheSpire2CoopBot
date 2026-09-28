@@ -17,7 +17,7 @@
 | F4 完整药水 | 进行中 | F4a/F4b 已完成 2/4 Actor 独立槽位/目标、九类手动选择与 Entropic Brew 生成；Smart/强制/药量/战略成本等政策待完成 |
 | F5 Power/遗物/球/宠物/角色资源 | 已完成 | F5a-F5e：根元数据、Power/全队/Hook、遗物触发/消耗、五角色资源、真实召唤所有权及第三方拒绝边界均有动态证据 |
 | F6 选择与嵌套 continuation | 进行中 | F6a frame、F6c 多 Actor 原序队列、F6d 前缀相对同名实例回放已通过；F6b 回合边界选择待 F7 接线 |
-| F7 联合回合与敌方生命周期 | 进行中 | F7a 已完成全员屏障后的逐 Actor PhaseOne/flush 与共享 PhaseTwo；死亡/敌方侧/下一回合待补 |
+| F7 联合回合与敌方生命周期 | 进行中 | F7a 玩家侧屏障与 F7b 死亡 Actor 资格已通过；复活/逃跑/额外回合、敌方侧及下一回合待补 |
 | F8 联合终局目标 | 未开始 | - |
 | F9 联合 Beam/BFWS | 未开始 | - |
 | F10 strict replay 与差分 | 未开始 | - |
@@ -283,7 +283,7 @@
 执行拆分：
 
 - F7a（已完成）：`JointRoundTransition.CompletePlayerSide` 只接受已到达屏障的状态，按 Actor 固定顺序运行各自 PhaseOne/手牌清理，再对全部存活参与者运行一次共享 PhaseTwo；单 Actor EndTurn 不提前改变 live phase，`runId=92d774c3b3f341c8a11472a246c717ec` Passed。
-- F7b（待完成）：死亡/复活/逃跑/额外回合对屏障资格的影响。
+- F7b（进行中）：远端 Actor 强制死亡后不再产生候选、不阻塞屏障，玩家侧只处理存活参与者且死者保持死亡，`runId=672c2a82f07e41d2a73c5538e5f3fd1d` Passed；复活/逃跑/额外回合待补。
 - F7c（待完成）：敌方侧开始、行动、结束、死亡/召唤与 RNG。
 - F7d（待完成）：下一轮各 Actor 开始、抽牌、资源重置与回合边界选择。
 

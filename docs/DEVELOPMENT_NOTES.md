@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F7b 死亡资格（2026-09-29）
+
+联合屏障现有死亡 Actor 动态证据：远端 Actor 在分支内死亡后不再获得候选，也不阻塞其余存活 Actor 到达屏障；玩家侧回合尾只以存活玩家为参与者，且不会误复活死者。`COOP-MULTI-ACTOR-ROOT` 的 `runId=672c2a82f07e41d2a73c5538e5f3fd1d` Passed，实例已删除，Release 构建 0/0。复活、逃跑和额外回合仍归 F7b 后续。
+
 ## 离线四 Actor 完整迁移 F7a（2026-09-29）
 
 新增联合玩家侧结束入口：只有所有有效 Actor 到达屏障后，才按 Actor 固定顺序运行各自 PhaseOne、历史归一化和手牌清理，再对全部存活参与者执行一次共享 PhaseTwo。单个 Actor 的 EndTurn 仍只改变联合 turn state，不提前修改模拟 player phase。`COOP-MULTI-ACTOR-ROOT` 的 `runId=92d774c3b3f341c8a11472a246c717ec` Passed，实例已删除，Release 构建 0/0。F7 敌方侧和下一轮仍待完成。
