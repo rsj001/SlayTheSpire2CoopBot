@@ -1,5 +1,12 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F4b（2026-09-29）
+
+- 九类选择：Attack/Skill/Power/Colorless Potion 及 Ashwater、Droplet of Precognition、Gambler's Brew、Liquid Memories、Touch of Insanity 均生成 Actor1 主选择并严格回放。
+- 生成：Entropic Brew 使用后状态键与续用戳均改变；同场景仍覆盖 2/4 Actor 候选和 BFS/DFS。
+- `COOP-MULTI-ACTOR-ROOT`：首次启动在进入游戏前因私有实例校验失败并清理；串行重试 `runId=35794e9d204e4a11b8b54607dbeca5d7`，Passed，实例已删除。Release 构建 0 警告/0 错误。
+- 未覆盖 Smart/Force、精确药量、战略成本、跨回合、Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F4a（2026-09-29）
 
 - 候选：按 Actor 模拟槽位、可用性和 `TargetType` 枚举药水；主选择与 nested 选择通过显式 placement 分离，探针从父状态 Fork。

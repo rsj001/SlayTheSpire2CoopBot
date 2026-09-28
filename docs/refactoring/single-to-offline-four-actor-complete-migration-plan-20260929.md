@@ -14,7 +14,7 @@
 | F1 统一联合单步转移 | 已完成 | `JointActionTransition` 统一卡牌/选择/药水/EndTurn；`COOP-JOINT-REPLAY` 通过 |
 | F2 Actor 状态/Fork/快照/续用 | 已完成 | 2/4 Actor 远端字段扰动与 Fork 隔离通过；修复多人敌人格挡缩放 mirror |
 | F3 完整卡牌与目标 | 进行中 | F3a/F3b 已接入目标/实例身份、基础及动态嵌套选择；F3c 已接入同回合 fixed-prefix 请求并通过 BFS/DFS；opening/cycle/cross-turn 仍待完成 |
-| F4 完整药水 | 进行中 | F4a 已完成 2/4 Actor 独立槽位、目标和主选择候选；Smart/强制/药量/战略成本等政策待完成 |
+| F4 完整药水 | 进行中 | F4a/F4b 已完成 2/4 Actor 独立槽位/目标、九类手动选择与 Entropic Brew 生成；Smart/强制/药量/战略成本等政策待完成 |
 | F5 Power/遗物/球/宠物/角色资源 | 未开始 | - |
 | F6 选择与嵌套 continuation | 未开始 | - |
 | F7 联合回合与敌方生命周期 | 未开始 | - |
@@ -203,7 +203,7 @@
 执行拆分：
 
 - F4a（已完成）：`JointActionExpander` 按 Actor 模拟槽位枚举可搜索药水和目标；需要选择的药水先由权威 transition 执行生成阶段，再把主选择写入 `PlanAction.Choice`，后续选择才进入 nested 链。`COOP-MULTI-ACTOR-ROOT` 运行 `cf7241344aa044cbbe3bbdff233257fb` 通过 2/4 Actor 独立 Block Potion/Gambler's Brew 候选、选择 owner 与 BFS/DFS 对照。
-- F4b（待完成）：生成／复制／替换药水和九类手动选择代表集。
+- F4b（已完成）：四种生成牌药水和 Ashwater、Droplet of Precognition、Gambler's Brew、Liquid Memories、Touch of Insanity 九类主选择均由 Actor1 严格回放；Entropic Brew 生成改变联合状态键和续用戳。`COOP-MULTI-ACTOR-ROOT` 运行 `35794e9d204e4a11b8b54607dbeca5d7` 通过。
 - F4c（待完成）：Disabled/Smart/Force、无药基线、精确药量层、战略成本和联合反事实。
 - F4d（待完成）：跨回合药水 continuation，依赖 F7 生命周期与 F8 终局政策。
 

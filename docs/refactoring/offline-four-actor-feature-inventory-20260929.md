@@ -36,7 +36,7 @@
 | AnyPlayer、Self、全体、无目标及动态目标 | `CombatBeamSolver.Expansion*.cs`、card mirrors | F3a 已覆盖全部当前 TargetType；AnyPlayer/AnyAlly 显式枚举 | 已迁移 | 2/4 Actor 手动目标集合；非手动目标由 mirror 解析 |
 | 自动牌、重复牌、复制牌、生成牌、回手与临时牌 | `CombatBeamSolver.CardChoiceContinuation.cs`、`Prediction/*` | F3b 可探测并补全动作内动态/嵌套选择；完整跨回合 continuation 待 F6 | 待迁移 | Havoc→Second Wind 动态嵌套通过；其余代表集与跨回合仍待验证 |
 | 卡牌实例 identity、升级、附魔和状态 occurrence | `PreparedCardAction`、`CombatPlan.cs` | F3a 使用同一 `ChoiceCardKey`/state occurrence 回放 | 已迁移 | Armaments/Strike 候选回放与搜索单步同键 |
-| 药水使用、目标、槽位、生成、复制和替换 | `CombatBeamSolver.*Potion*.cs`、`Prediction/Potion*` | F4a 已按 Actor 枚举槽位/目标并区分主选择与 nested 选择；生成/复制/替换代表集待 F4b | 待迁移 | 2/4 Actor 独立 Block Potion/Gambler's Brew 候选已通过；完整代表集及搜索/回放同键待补 |
+| 药水使用、目标、槽位、生成、复制和替换 | `CombatBeamSolver.*Potion*.cs`、`Prediction/Potion*` | F4a/F4b 已按 Actor 枚举槽位/目标、九类主选择，并验证 Entropic Brew 生成；策略与跨回合待完成 | 待迁移 | 2/4 Actor 独立候选、九类选择严格回放、生成后的状态键/续用戳已通过 |
 | 主动遗物动作 | 原版无战斗内独立提交入口；遗物由 Hook 触发 | 不新增伪造动作；`PlanRelicEffect` 仍是路线注释 | 明确不支持 | F1 反编译检索无 `UseRelic`/`ActivateRelic` 战斗动作；遗物触发归 F5 |
 | 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | F3b 已完成动作内探测/补全；回合边界与独立 continuation 待 F6 | 待迁移 | owner/source/实例/原序及兄弟 Fork 隔离 |
 | opening、fixed-prefix、cycle、cross-turn、plan continuation | `CombatSearchCoordinator.*`、`FrontierContinuationScheduler` | F3c 已接入同回合 fixed-prefix 请求并由 BFS/DFS 对照；opening/cycle/cross-turn 尚未接入 | 待迁移 | 单人候选序哨兵与 2/4 Actor 联合成员；跨回合待 F7 |

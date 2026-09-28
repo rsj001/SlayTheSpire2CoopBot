@@ -40,6 +40,12 @@ Armaments + Strike 的 `COOP-JOINT-REPLAY` 通过 choice candidate、实例定�
 
 增强后的 `COOP-MULTI-ACTOR-ROOT` 为 Actor0 注入 Block Potion、其他 Actor 注入 Gambler's Brew，2/4 Actor 均取得独立药水候选，Actor1 主选择 owner 正确，含药水动作空间的 BFS/DFS 仍一致；`runId=cf7241344aa044cbbe3bbdff233257fb`，Passed，实例已删除。Release 构建 0/0。生成/复制/替换代表集、九类手动选择、Smart/Force/战略成本和跨回合 continuation 尚未完成，F4 保持进行中。
 
+## 离线四 Actor 完整迁移 F4b（2026-09-29）
+
+同一联合根夹具逐项建立 Attack/Skill/Power/Colorless Potion 的生成牌选择，以及 Ashwater、Droplet of Precognition、Gambler's Brew、Liquid Memories、Touch of Insanity 的九类主选择；每类都要求候选由 Actor1 拥有并能通过联合计划严格回放。Entropic Brew 另行验证生成后药水槽变化进入完整状态键和续用戳。
+
+首次无头启动在进入游戏前命中私有实例校验失败，实例已删除，不计战斗结果；按既有串行重试授权再次运行后，`COOP-MULTI-ACTOR-ROOT` 的 `runId=35794e9d204e4a11b8b54607dbeca5d7` Passed，完成 `NinePotionChoices:EntropicGeneration`，实例已删除。Release 构建 0/0。Smart/Force、精确药量、战略成本与跨回合药水 continuation 仍待 F4c/F4d。
+
 ## 下一版本（开发中，2026-09-28）
 
 后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。

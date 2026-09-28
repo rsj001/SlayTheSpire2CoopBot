@@ -19,6 +19,7 @@ internal sealed partial class UnattendedTestRunner
     {
         AssertActorCount(2);
         AssertActorCount(4);
+        AssertJointPotionChoiceCoverage(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -109,6 +110,73 @@ internal sealed partial class UnattendedTestRunner
         }
     }
 
+    private static void AssertJointPotionChoiceCoverage(CombatState source)
+    {
+        PotionModel[] choicePotions =
+        [
+            CanonicalModels.Potion<AttackPotion>(),
+            CanonicalModels.Potion<SkillPotion>(),
+            CanonicalModels.Potion<PowerPotion>(),
+            CanonicalModels.Potion<ColorlessPotion>(),
+            CanonicalModels.Potion<Ashwater>(),
+            CanonicalModels.Potion<DropletOfPrecognition>(),
+            CanonicalModels.Potion<GamblersBrew>(),
+            CanonicalModels.Potion<LiquidMemories>(),
+            CanonicalModels.Potion<TouchOfInsanity>(),
+        ];
+        foreach (PotionModel canonical in choicePotions)
+        {
+            CombatRootSnapshot root = CreateOfflineJointRoot(source, 2, canonical);
+            CombatPredictionSimulator simulator = root.ForkSimulator();
+            IReadOnlyList<JointActionCandidate> candidates = JointActionExpander.Expand(
+                simulator,
+                JointTurnState.Start(2, root.StartTurnNumber));
+            PlanAction[] potionActions = candidates
+                .Select(static candidate => candidate.Action)
+                .Where(action => action.Actor.Index == 1
+                    && action.Kind == PlanActionKind.UsePotion
+                    && string.Equals(action.PotionId, canonical.Id.Entry, StringComparison.Ordinal))
+                .ToArray();
+            if (potionActions.Length == 0
+                || potionActions.Any(action => action.Choice == null
+                    || action.Choice.Actor.Index != 1))
+            {
+                throw new InvalidOperationException(
+                    $"联合药水 {canonical.Id.Entry} 没有生成 Actor1 所有的主选择分支。");
+            }
+            JointReplayResult replay = JointPlanReplayer.Replay(
+                root,
+                new JointPlan(2, [potionActions[0]]));
+            if (replay.AppliedActions.Count != 1
+                || replay.AppliedActions[0].Choice?.Actor.Index != 1)
+            {
+                throw new InvalidOperationException(
+                    $"联合药水 {canonical.Id.Entry} 的主选择不能严格回放。");
+            }
+        }
+
+        CombatRootSnapshot entropicRoot = CreateOfflineJointRoot(
+            source,
+            2,
+            CanonicalModels.Potion<EntropicBrew>());
+        CombatPredictionSimulator beforeSimulator = entropicRoot.ForkSimulator();
+        JointTurnState turns = JointTurnState.Start(2, entropicRoot.StartTurnNumber);
+        JointCombatSnapshot before = JointCombatSnapshot.Capture(entropicRoot, beforeSimulator, turns);
+        PlanAction entropic = JointActionExpander.Expand(beforeSimulator, turns)
+            .Select(static candidate => candidate.Action)
+            .First(action => action.Actor.Index == 1
+                && action.Kind == PlanActionKind.UsePotion
+                && action.PotionId == "ENTROPIC_BREW");
+        JointReplayResult generated = JointPlanReplayer.Replay(
+            entropicRoot,
+            new JointPlan(2, [entropic]));
+        if (generated.Snapshot.StateKey == before.StateKey
+            || generated.Snapshot.Continuation.StateText == before.Continuation.StateText)
+        {
+            throw new InvalidOperationException("联合 Entropic Brew 没有改变药水槽状态键和续用戳。");
+        }
+    }
+
     private static void AssertMultiplayerBlockScaling(CombatRootSnapshot root, int actorCount)
     {
         CombatPredictionSimulator simulator = root.ForkSimulator();
@@ -192,7 +260,10 @@ internal sealed partial class UnattendedTestRunner
         return 0;
     }
 
-    private static CombatRootSnapshot CreateOfflineJointRoot(CombatState source, int actorCount)
+    private static CombatRootSnapshot CreateOfflineJointRoot(
+        CombatState source,
+        int actorCount,
+        PotionModel? remotePotion = null)
     {
         if (actorCount is < 1 or > 4)
             throw new ArgumentOutOfRangeException(nameof(actorCount));
@@ -227,12 +298,15 @@ internal sealed partial class UnattendedTestRunner
             CardModel card = combat.DrawPile.Cards.First(candidate => candidate.Type == CardType.Attack);
             combat.DrawPile.RemoveInternal(card, silent: true);
             combat.Hand.AddInternal(card, silent: true);
+            CardModel discard = combat.DrawPile.Cards.First();
+            combat.DrawPile.RemoveInternal(discard, silent: true);
+            combat.DiscardPile.AddInternal(discard, silent: true);
             combat.Energy = player.MaxEnergy;
             combat.Phase = PlayerTurnPhase.Play;
             PotionModel potion = PredictionUtils.CreatePotion(
                 index == 0
                     ? CanonicalModels.Potion<BlockPotion>()
-                    : CanonicalModels.Potion<GamblersBrew>(),
+                    : remotePotion ?? CanonicalModels.Potion<GamblersBrew>(),
                 player);
             if (!player.AddPotionInternal(potion, 0, silent: true).success)
                 throw new InvalidOperationException($"无法为离线 Actor{index} 注入药水。");
