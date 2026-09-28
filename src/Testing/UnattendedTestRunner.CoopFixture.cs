@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Models.Singleton;
+using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver.Engine.Common;
@@ -29,6 +30,7 @@ internal sealed partial class UnattendedTestRunner
         AssertRemoteActorTeamPower(source);
         AssertRemoteActorRelicConsumption(source);
         AssertCharacterOwnedGeneratedState(source);
+        AssertThirdPartySubscriberBoundary();
 
         void AssertActorCount(int actorCount)
         {
@@ -185,6 +187,39 @@ internal sealed partial class UnattendedTestRunner
                     return bfs;
                 }
             }
+        }
+    }
+
+    private static void AssertThirdPartySubscriberBoundary()
+    {
+        var previousMocks = AssemblyInfo.MockTypes;
+        AssemblyInfo.MockTypes = previousMocks == null ? [] : new(previousMocks);
+        try
+        {
+            PredictionModHookSubscriberCapture.ValidateSubscriberForTesting(
+                (AbstractModel)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(
+                    typeof(MapOnlySubscriber)),
+                "coop-run");
+            AssemblyInfo.MockTypes[typeof(MapAndCombatSubscriber)] = (null, false);
+            PredictionModHookSubscriberCapture.ValidateSubscriberForTesting(
+                (AbstractModel)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(
+                    typeof(MapAndCombatSubscriber)),
+                "coop-combat");
+            throw new InvalidOperationException("未知 gameplay subscriber 被联合根静默放行。");
+        }
+        catch (PredictionUnsupportedException exception)
+        {
+            if (!exception.Message.Contains(nameof(MapAndCombatSubscriber), StringComparison.Ordinal)
+                || !exception.Message.Contains("coop-combat", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "未知 gameplay subscriber 拒绝缺少类型或 scope 上下文。",
+                    exception);
+            }
+        }
+        finally
+        {
+            AssemblyInfo.MockTypes = previousMocks;
         }
     }
 

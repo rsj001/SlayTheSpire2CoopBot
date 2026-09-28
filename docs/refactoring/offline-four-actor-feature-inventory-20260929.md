@@ -21,7 +21,7 @@
 | Actor 身份进入动作与选择 | `Search/CombatPlan.cs` | `JointPlan.cs` | 已迁移 | 越界与跨 Actor owner 稳定拒绝 |
 | 每 Actor HP、格挡、能量、Stars、金币 | `Search/SimulatedCombatState.cs` | `JointCombatSnapshot.cs`、Actor continuation | 已迁移 | 2/4 Actor 远端格挡/能量/Stars/金币扰动与 Fork 隔离 |
 | 每 Actor 五个牌堆与卡牌实例状态 | `Search/SimulatedCombatState*.cs` | `ContinuationStamp`、`JointCombatSnapshot` | 已迁移 | 五牌堆进入 Actor continuation；远端升级实例扰动通过 |
-| 每 Actor Power、遗物、药水、球、宠物、角色资源 | `Search/SimulatedCombatState*.cs`、`Prediction/*` | F5a 已补逐 Actor 遗物/药水根元数据；动态 Power/球/宠物/角色资源仍待迁移 | 待迁移 | Actor1 独有 Petrified Toad 归属与单人兼容已通过；其余机制待专项证据 |
+| 每 Actor Power、遗物、药水、球、宠物、角色资源 | `Search/SimulatedCombatState*.cs`、`Prediction/*` | F5a-F5d 已覆盖根元数据、动态机制、五角色代表与真实召唤所有权 | 已迁移 | Power/遗物/Orb/Stars/Shiv/Osty 与 Fork/兄弟隔离均通过 |
 | 敌人 roster、AI、行动和隐藏状态 | `Prediction/Monster*`、`SimulatedCombatState*.cs` | 复用模拟器，联合快照未完整投影 | 待迁移 | 敌方跨回合 strict diff 与 RNG 计数 |
 | 九条战斗 RNG、Hook 历史和战斗历史 | `Engine/InCombat/Simulation/*`、`PredictionStateStore` | 复用模拟器，联合审计未完成 | 待迁移 | 兄弟 Fork 隔离与跨回合 strict diff |
 | 续用戳 | `Runtime/ContinuationStamp.cs` | Actor 分段字段 | 已迁移 | 单人文本兼容；2/4 Actor 代表字段扰动通过，机制字段由 F4/F5继续验证 |
@@ -50,7 +50,7 @@
 | 被动遗物、计数、消耗和共享遗物 | `Mirrors/Relic*`、`Prediction/*Relic*` | F5c 已通过远端 Shuriken 计数/触发及同型 Throwing Axe 独立消耗 | 已迁移 | Actor1 触发/消耗、Actor0 同型隔离与父 Fork 均通过 |
 | 球槽、球序、触发和角色资源 | `SimulatedCombatState*Orb*`、角色 mirrors | F5d 已验证 Defect Orb、Regent Stars、Silent Shiv、Necrobinder Osty 的远端归属 | 已迁移 | 资源键/续用戳/兄弟隔离及 Silent 动作级生成通过 |
 | 宠物和召唤物所有权 | `Prediction/*`、相关 card/power mirrors | F5d 由远端 Necrobinder 实际打出 Afterlife 并按 Player 查询 Osty | 已迁移 | Actor2 召唤存活，Actor0/1 无 Osty，所有权稳定 |
-| 第三方 subscriber 与登记表 | `THIRD_PARTY_ADAPTERS.md` 所列 registry | 未知 gameplay subscriber 仍拒绝 | 待迁移 | 已登记来源 Actor 对照；未知来源稳定拒绝 |
+| 第三方 subscriber 与登记表 | `THIRD_PARTY_ADAPTERS.md` 所列 registry | 复用单人登记/惰性判定；未知 gameplay subscriber 稳定拒绝 | 已迁移 | inert 放行；未知战斗 hook 类型/scope 明确失败 |
 
 ## 回合、终局和搜索政策
 

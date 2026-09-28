@@ -241,4 +241,7 @@ internal sealed class PredictionModHookSubscriberCapture
         throw new PredictionUnsupportedException(
             $"Unsupported gameplay ModHelper {scope} subscriber {type.FullName}.");
     }
+
+    internal static void ValidateSubscriberForTesting(AbstractModel subscriber, string scope)
+        => ValidateSubscriber(subscriber, scope);
 }

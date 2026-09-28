@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F5e：第三方 subscriber 边界（2026-09-29）
+
+- 通过生产 `PredictionModHookSubscriberCapture.ValidateSubscriber` 路径验证：只覆写战斗外 hook 的 subscriber 放行；映射为未知来源且覆写 `AfterCardPlayed` 的 subscriber 抛 `PredictionUnsupportedException`，消息包含类型与 `coop-combat` scope。
+- 首次直接构造 `AbstractModel` 命中 ModelDb 重复模型，`runId=f95dcf7e72b94383947efbdabbd8ef51`；改为无构造测试实例后，CombatSolver 自身非玩法 manifest 按规则放行，`runId=d8b9c1d4f60c40e08f975df385e0677f`，随后显式映射未知来源。
+- 最终 `COOP-MULTI-ACTOR-ROOT`：`runId=7eb68184342747fb865bf839fbabc583`，Passed，实例已删除；Release 构建 0 警告/0 错误。F5 阶段关闭；未运行 Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F5d：Silent 与宠物所有权（2026-09-29）
 
 - 独立 roster 为 Ironclad、Silent、Necrobinder。Actor1 实际打出 Blade Dance 后，生成的 Shiv 只存在于 Actor1 手牌；Actor0/2 均无 Shiv。

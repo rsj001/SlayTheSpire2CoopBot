@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F5e（2026-09-29）
+
+第三方 subscriber 的联合边界继续复用生产根捕获校验：战斗外 inert 类型放行，未知来源且覆写战斗 hook 的类型明确失败，不浅拷贝或跳过。新增同程序集测试入口只暴露现有私有校验，不改变登记政策。`COOP-MULTI-ACTOR-ROOT` 的 `runId=7eb68184342747fb865bf839fbabc583` Passed，实例已删除，Release 构建 0/0。F5a-F5e 至此全部完成。
+
 ## 离线四 Actor 完整迁移 F5d 动作级所有权（2026-09-29）
 
 混合角色 fixture 现支持显式 roster，并增加两条真实动作路径：远端 Silent 打出 Blade Dance 后，Shiv 仅进入其自身手牌；远端 Necrobinder 打出 Afterlife 后，存活 Osty 只由该 Player 查询得到。`COOP-MULTI-ACTOR-ROOT` 的 `runId=e1f94caff84845e281c716f46d1e6499` Passed，实例已删除，Release 构建 0/0。F5d 标记完成。
