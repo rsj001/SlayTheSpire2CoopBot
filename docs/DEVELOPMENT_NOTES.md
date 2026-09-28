@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F5c（2026-09-29）
+
+远端 Actor 的被动遗物现有联合动作链证据：Actor1 持有 Shuriken 与三张独立 Strike，每步经联合候选重新枚举并由权威 transition 执行。第三次攻击只给 Actor1 增加精确 Strength；单调计数、完整状态键、续用戳和父 Fork 隔离均通过。最终 `COOP-MULTI-ACTOR-ROOT` 的 `runId=e0a5cdea18764e00ae656242cf1cfc46` Passed，实例已删除；Release 构建 0/0。
+
+过程中确认同 ID 卡牌的 occurrence 会随前一实例离开手牌重新编号，不能直接把同一首态的三个候选串成严格计划；该问题登记为 F-ISSUE-006，留给 F6/F10 的实例身份/continuation 合同处理。当前 F5c 仅关闭被动计数与触发代表，遗物消耗和共享边界仍未完成。
+
 ## 离线四 Actor 完整迁移 F0（2026-09-29）
 
 建立单人功能迁移权威库存，按根/状态、候选/选择、结算机制、回合/终局和搜索政策映射单人源码入口、联合入口、当前状态与最低关闭证据。Windows/Linux 结构门禁现检查库存的必备分类和四种状态词，后续 F 阶段只能在同一库存关闭缺口。F0 不改行为源码；动态基线复用同源码已通过的 `COOP-P2-SINGLE-ROOT`、`COOP-ACTOR-PLAN-CONTRACT`、`COOP-ACTOR-CANDIDATES`、`COOP-JOINT-REPLAY` 和 `COOP-PRODUCTION-SINGLE-BOUNDARY`，未重复启动游戏。Windows 结构门禁通过；本机 WSL 服务不可用，Linux 等价门禁未执行。

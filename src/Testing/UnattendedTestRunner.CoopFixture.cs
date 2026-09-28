@@ -24,6 +24,7 @@ internal sealed partial class UnattendedTestRunner
         AssertActorCount(2);
         AssertActorCount(4);
         AssertJointPotionChoiceCoverage(source);
+        AssertRemoteActorRelicTrigger(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -180,6 +181,64 @@ internal sealed partial class UnattendedTestRunner
                     return bfs;
                 }
             }
+        }
+    }
+
+    private static void AssertRemoteActorRelicTrigger(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            2,
+            includeRemoteRelicTriggerFixture: true);
+        CombatPredictionSimulator parent = root.ForkSimulator();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber);
+        SimulatedCombatState parentCombat = (SimulatedCombatState)parent.State.CombatState;
+        Player remote = parent.State.Players[1];
+        Shuriken parentRelic = parentCombat.RelicsOf(remote).OfType<Shuriken>().Single();
+        JointCombatSnapshot before = JointCombatSnapshot.Capture(root, parent, turns);
+        CombatPredictionSimulator child = parent.Fork();
+        JointTurnState childTurns = turns;
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, child);
+        for (int attack = 0; attack < 3; attack++)
+        {
+            PlanAction action = JointActionExpander.Expand(child, childTurns)
+                .Select(static candidate => candidate.Action)
+                .FirstOrDefault(static action => action.Actor.Index == 1
+                    && action.Kind == PlanActionKind.PlayCard)
+                ?? throw new InvalidOperationException(
+                    $"远端 Actor 手里剑夹具缺少第 {attack + 1} 张可回放攻击牌。");
+            childTurns = JointActionTransition.Apply(child, childTurns, action, deaths);
+        }
+        JointCombatSnapshot after = JointCombatSnapshot.Capture(root, child, childTurns);
+        SimulatedCombatState childCombat = (SimulatedCombatState)child.State.CombatState;
+        Player childRemote = child.State.Players[1];
+        Shuriken childRelic = childCombat.RelicsOf(childRemote).OfType<Shuriken>().Single();
+        int remoteStrength = childCombat.GetAmount<StrengthPower>(childRemote.Creature);
+        int localStrength = childCombat.GetAmount<StrengthPower>(child.State.Players[0].Creature);
+        int childCounter = RelicPredictionStateSupport.GetCounterValue(
+            child,
+            childRelic,
+            childRelic._attacksPlayedThisTurn);
+        bool stateChanged = after.StateKey != before.StateKey;
+        bool continuationChanged = after.Continuation.StateText != before.Continuation.StateText;
+        if (remoteStrength != childRelic.DynamicVars.Strength.IntValue
+            || localStrength != 0
+            || childCounter != 3
+            || after.StateKey == before.StateKey
+            || after.Continuation.StateText == before.Continuation.StateText)
+        {
+            throw new InvalidOperationException(
+                $"远端 Actor 手里剑错误：remoteStrength={remoteStrength} " +
+                $"localStrength={localStrength} counter={childCounter} " +
+                $"stateChanged={stateChanged} continuationChanged={continuationChanged}。");
+        }
+        if (parentCombat.GetAmount<StrengthPower>(remote.Creature) != 0
+            || RelicPredictionStateSupport.GetCounterValue(
+                parent,
+                parentRelic,
+                parentRelic._attacksPlayedThisTurn) != 0)
+        {
+            throw new InvalidOperationException("远端 Actor 遗物回放污染了父 Fork。");
         }
     }
 
@@ -426,7 +485,8 @@ internal sealed partial class UnattendedTestRunner
     private static CombatRootSnapshot CreateOfflineJointRoot(
         CombatState source,
         int actorCount,
-        PotionModel? remotePotion = null)
+        PotionModel? remotePotion = null,
+        bool includeRemoteRelicTriggerFixture = false)
     {
         if (actorCount is < 1 or > 4)
             throw new ArgumentOutOfRangeException(nameof(actorCount));
@@ -484,7 +544,16 @@ internal sealed partial class UnattendedTestRunner
             if (!player.AddPotionInternal(potion, 0, silent: true).success)
                 throw new InvalidOperationException($"无法为离线 Actor{index} 注入药水。");
             if (index == 1)
+            {
                 player.AddRelicInternal(ModelDb.Relic<PetrifiedToad>().ToMutable(), silent: true);
+                if (includeRemoteRelicTriggerFixture)
+                {
+                    player.AddRelicInternal(ModelDb.Relic<Shuriken>().ToMutable(), silent: true);
+                    CardModel canonicalAttack = ModelDb.GetById<CardModel>(card.Id);
+                    for (int copy = 0; copy < 2; copy++)
+                        combat.Hand.AddInternal(state.CreateCard(canonicalAttack, player), silent: true);
+                }
+            }
         }
 
         MonsterModel sourceMonster = source.Enemies.FirstOrDefault()?.Monster

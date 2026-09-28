@@ -47,7 +47,7 @@
 |---|---|---|---|---|
 | 卡牌和伤害/格挡基础结算 | `Engine/InCombat/Simulation/*`、`Mirrors/*` | 复用同一 simulator/mirror | 已迁移 | Actor0-3 同机制 strict diff |
 | Power 创建、叠加、减少、移除和生命周期 | `Mirrors/Power*`、`Prediction/*Power*` | F5b 已通过通用跨 Actor StrengthPower 生命周期；全队效果/Hook 时序待补 | 待迁移 | applier/target、叠加/移除、Fork/键已通过；具体 Hook strict diff 待补 |
-| 被动遗物、计数、消耗和共享遗物 | `Mirrors/Relic*`、`Prediction/*Relic*` | 复用模拟器，Actor 审计未完成 | 待迁移 | 每 Actor 与共享边界对照 |
+| 被动遗物、计数、消耗和共享遗物 | `Mirrors/Relic*`、`Prediction/*Relic*` | F5c 已通过远端 Shuriken 三次攻击动作链；消耗和共享边界待补 | 待迁移 | Actor1 计数/触发/归属/Fork 已通过；消耗与共享代表待验证 |
 | 球槽、球序、触发和角色资源 | `SimulatedCombatState*Orb*`、角色 mirrors | F5d 已验证混合角色根及 Defect Orb、Regent Stars、Necrobinder Osty；完整触发/Silent 待补 | 待迁移 | 三种远端资源键/续用戳与兄弟隔离已通过 |
 | 宠物和召唤物所有权 | `Prediction/*`、相关 card/power mirrors | 未建立统一 Actor owner 合同 | 需要真实原版证据 | 原版多玩家所有权/死亡时序证据 |
 | 第三方 subscriber 与登记表 | `THIRD_PARTY_ADAPTERS.md` 所列 registry | 未知 gameplay subscriber 仍拒绝 | 待迁移 | 已登记来源 Actor 对照；未知来源稳定拒绝 |
@@ -89,4 +89,5 @@
 | F-ISSUE-004 | `CombatRootSnapshot` 的可再生药水、Throwing Axe、战后回血与可搜索药水原先只捕获本地玩家 | F5a 移入 `CombatActorRoot`；旧根字段保留为本地 Actor 兼容视图 | F8 联合终局继续消费逐 Actor 元数据 |
 | F-ISSUE-004 | `PlanRelicEffect` 是路线显示证据，不等于主动遗物动作 | 反编译原版未发现战斗内 `UseRelic`/`ActivateRelic` 提交入口；不新增动作类型，遗物 Hook 触发语义归 F5 | F1 已定边界，F5 验证触发 |
 | F-ISSUE-005 | 多 Actor 远端玩家获得格挡时，multiplayer scaling mirror 直接按玩家数拒绝 | 按原版精确镜像：玩家目标/非 powered 不缩放；主次敌人按人数及 Act/Boss 系数缩放 | F2 已修复；失败 `e62462a1435d4bbbbe0c48965528985b`，通过 `34221092e12f40f5addc9fb89219ff94` |
+| F-ISSUE-006 | 同 ID 卡牌的 `CardOccurrence` 会在前一实例离开手牌后重编号；直接串联首态候选会使后续严格回放找不到实例 | F5c 只通过每步重新枚举验证遗物语义，不掩盖身份问题 | F6/F10 建立跨动作稳定实例身份或逐步 continuation 合同 |
 

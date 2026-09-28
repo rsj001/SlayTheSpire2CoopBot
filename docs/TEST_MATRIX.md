@@ -1,5 +1,12 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F5c：远端被动遗物（2026-09-29）
+
+- Actor1 持有 Shuriken 与三张独立 Strike，经 `JointActionTransition` 每步重新枚举并连续执行；第三次攻击后 Actor1 获得精确 Strength，Actor0 不受影响，遗物计数为 3，完整键/续用戳变化且父 Fork 保持原值。
+- 首次夹具把 mutable 卡交给 `CombatState.CreateCard`，`runId=55de1deb10024f7aa54394b61420208e` 失败；改用 canonical 创建实例。随后一次性串联首态 occurrence 暴露重编号问题，`runId=28f8bebab5ea41b298d8c9a71482ca2a` 失败，已登记 F-ISSUE-006；计数归零的错误测试预期在 `runId=5828803d4d2c4c9ab9058790e0d7e646` 暴露并按原版单调计数修正。
+- 一次启动在 fixture 前命中私有实例校验并清理；串行重试 `runId=e0a5cdea18764e00ae656242cf1cfc46`，Passed，实例已删除；Release 构建 0 警告/0 错误。
+- 尚未覆盖遗物消耗、共享遗物、全队 Power、Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F5d：混合角色资源（2026-09-29）
 
 - 混合根：Ironclad、Defect、Regent、Necrobinder；Defect Lightning Orb、Regent Stars、Necrobinder Osty 分别改变完整键/续用戳且不污染兄弟 Actor。
