@@ -57,9 +57,9 @@
 | 功能面 | 单人权威入口 | 联合入口 | F0 状态 | 最低关闭证据 |
 |---|---|---|---|---|
 | Actor 独立结束与全员屏障 | 单人 `EndTurn` 尾部 | `JointTurnState` | 已迁移 | 任意顺序、死亡 Actor、提前跨回合拒绝 |
-| 玩家回合尾 Hook、敌方回合、下一回合开始/抽牌 | `CombatBeamSolver.Terminal.cs`、simulation commands | F7a 已完成屏障后的玩家侧 PhaseOne/flush/PhaseTwo；敌方与下一回合待补 | 待迁移 | 2 Actor 屏障时序通过；完整两回合待 F7b-d |
+| 玩家回合尾 Hook、敌方回合、下一回合开始/抽牌 | `CombatBeamSolver.Terminal.cs`、simulation commands | F7a 已完成玩家侧，F7c1 已完成纯攻击敌方侧；特殊敌方后效与下一回合待补 | 待迁移 | 2 Actor 屏障与纯攻击敌方轮通过；完整两回合待 F7b-d |
 | 额外回合、死亡、复活、逃跑和失去资格 | `Prediction/*`、`SimulatedCombatState*.cs` | F7b 已通过死亡 Actor 候选/屏障/玩家侧参与者；其余待补 | 待迁移 | 死亡代表通过；复活/逃跑/额外回合待验证 |
-| 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | 基础 win check | 待迁移 | 首个差异定位到动作/Hook/字段 |
+| 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | F7c1 支持无登记后效的纯攻击行动；特殊后效明确拒绝 | 待迁移 | 纯攻击已通过；死亡/召唤/特殊后效待逐类严格对照 |
 | 单人终局政策 | `FinalPlanOrdering`、`RouteQualityPolicy` | 未复用 | 待迁移 | ActorCount=1 结果逐位等价 |
 | 团队目标 | 无单人对应 | `JointObjective` 临时总战损 + 向量 | 待迁移 | 存活、分布、资源、成长和稳定决胜 |
 | 药水政策、战略成本、成长、偷窃和强制目标 | `PotionUsePolicy`、`FinalPlanOrdering` | F4c1 已接入 Actor+槽位 Disabled/Force、药量上下界和战略成本；Smart 反事实及其余终局政策待完成 | 待迁移 | 硬政策 BFS/DFS 已通过；单人 Smart 等价及联合反事实待补 |

@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F7c1：纯攻击敌方侧（2026-09-29）
+
+- 联合屏障后的敌方侧按冻结行动名单执行开始 Hook、格挡清理、纯攻击、结束 Hook、毒与下一行动准备；Fuzzy Wurm Crawler 的纯攻击分别结算到两个存活 Actor，伤害一致。
+- 带 `MonsterMoveEffects` 已登记后效的行动仍明确拒绝，避免为每个 Actor 重复执行召唤、施加状态等一次性后效；死亡/召唤、特殊后效和 RNG 严格对照仍属 F7c 后续。
+- `COOP-MULTI-ACTOR-ROOT`：`runId=3f9a5c67effa42c5b10791292be1309b`，Passed，实例已删除；Release 构建 0 警告/0 错误。Linux 或可见 Steam 未覆盖。
+
 ## 离线四 Actor 完整迁移 F7b：死亡 Actor 屏障（2026-09-29）
 
 - Actor1 在分支内强制死亡并标记 Dead 后不再产生候选；Actor0 单独 EndTurn 即到达屏障。

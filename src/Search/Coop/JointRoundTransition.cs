@@ -1,12 +1,96 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.ValueProps;
+using CombatSolver.Engine.InCombat.Mirrors;
 using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver;
 
 internal static class JointRoundTransition
 {
+    internal static void CompleteBasicEnemySide(
+        CombatPredictionSimulator simulator,
+        ForkableSet<uint> processedEnemyDeaths)
+    {
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Creature[] players = simulator.State.Players
+            .Select(static player => player.Creature)
+            .Where(creature => simulator.State.GetCreature(creature).IsAlive)
+            .ToArray();
+        Creature[] actingEnemies = combat.Enemies.ToArray();
+        combat.CurrentSide = CombatSide.Enemy;
+        foreach (Creature enemy in combat.Enemies)
+            combat.BeginSideTurn(enemy);
+        combat.SnapshotPowerAmountsAtTurnStart(combat.Enemies);
+        if (!HookMirrors.BeforeSideTurnStart(simulator, CombatSide.Enemy, combat.Enemies))
+            throw PendingEnemyChoice(combat);
+        foreach (Creature enemy in combat.Enemies)
+        {
+            SimCreatureState state = simulator.State.GetCreature(enemy);
+            if (state.Block > 0)
+            {
+                if (combat.ShouldClearBlock(enemy, out AbstractModel? preventer))
+                    state.DamageBlock(state.Block, ValueProp.Move);
+                else
+                    PersistentRelicSupport.TriggerAfterPreventingBlockClear(simulator, preventer, enemy);
+            }
+            if (!CorePowerSupport.TriggerAfterBlockCleared(simulator, combat, enemy))
+                throw PendingEnemyChoice(combat);
+        }
+        if (!combat.TriggerSideTurnStart(
+                simulator,
+                CombatSide.Enemy,
+                combat.Enemies,
+                decrementPlating: combat.RoundNumber > 1))
+        {
+            throw PendingEnemyChoice(combat);
+        }
+        if (!CorePowerSupport.TriggerPoison(simulator, combat, combat.Enemies.ToArray())
+            || !CorePowerSupport.ApplyEnemyDeathPowers(
+                simulator, combat, combat.KnownEnemies, processedEnemyDeaths))
+        {
+            throw PendingEnemyChoice(combat);
+        }
+
+        Dictionary<Creature, MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MoveState>
+            performedMoves = new(actingEnemies.Length);
+        foreach (Creature enemy in actingEnemies)
+        {
+            if (!combat.CanPerformMonsterMove(simulator, enemy))
+                continue;
+            ForecastMove move = combat.CurrentMonsterMove(enemy);
+            MonsterMoveSemantics.ApplyBasicForecastMoveToPlayers(
+                simulator,
+                combat,
+                move,
+                players,
+                processedEnemyDeaths);
+            performedMoves[enemy] = move.Move;
+            if (combat.HasPendingChoice)
+                throw PendingEnemyChoice(combat);
+            if (simulator.CheckWinCondition(combat.GetPlayerTurnNumber(simulator.State.Players[0])))
+                return;
+        }
+        if (!CorePowerSupport.TriggerEnemySideTurnEndEffects(
+                simulator,
+                combat,
+                combat.Enemies.ToArray()))
+        {
+            throw PendingEnemyChoice(combat);
+        }
+        if (!CorePowerSupport.ApplyEnemyDeathPowers(
+                simulator, combat, combat.KnownEnemies, processedEnemyDeaths)
+            || !CorePowerSupport.TriggerPoison(simulator, combat, players))
+        {
+            throw PendingEnemyChoice(combat);
+        }
+        foreach (Creature player in players)
+            combat.ClearNoDraw(player);
+        combat.PrepareMonsterMovesForNextRound(simulator, performedMoves);
+    }
+
     internal static void CompletePlayerSide(
         CombatPredictionSimulator simulator,
         JointTurnState turns,
@@ -99,4 +183,7 @@ internal static class JointRoundTransition
             request.SourceId,
             request.Spec ?? throw new InvalidOperationException("联合回合尾选择缺少 spec。")));
     }
+
+    private static InvalidOperationException PendingEnemyChoice(SimulatedCombatState combat)
+        => new($"联合敌方轮产生待处理选择：{combat.PendingTurnStartChoice?.SourceId ?? "unknown"}。");
 }

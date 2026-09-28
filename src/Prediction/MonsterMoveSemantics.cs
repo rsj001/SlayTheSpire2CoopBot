@@ -3,12 +3,37 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
+using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver;
 
 internal static class MonsterMoveSemantics
 {
+    internal static void ApplyBasicForecastMoveToPlayers(
+        CombatPredictionSimulator simulator,
+        SimulatedCombatState combat,
+        ForecastMove move,
+        IReadOnlyList<Creature> players,
+        ISet<uint> processedEnemyDeaths)
+    {
+        if (move.AttackHits.Count == 0 || MonsterMoveEffects.Supports(
+                move.Owner.Monster
+                    ?? throw new InvalidOperationException("预测行动所有者不是怪物。"),
+                move.Move.Id))
+        {
+            throw new PredictionUnsupportedException(
+                $"联合敌方轮尚未登记 move={move.Owner.Monster?.Id.Entry}/{move.Move.Id} 的多人后效。");
+        }
+        foreach (Creature player in players)
+        {
+            if (simulator.State.GetCreature(player).IsAlive)
+                _ = ApplyForecastMove(simulator, combat, move, player, processedEnemyDeaths);
+            if (simulator.HasPendingChoice || simulator.State.GetCreature(move.Owner).IsDead)
+                return;
+        }
+    }
+
     public static bool ApplyForecastMove(
         CombatPredictionSimulator simulator,
         SimulatedCombatState combat,

@@ -95,6 +95,7 @@ internal sealed partial class UnattendedTestRunner
                     JointTurnState.Start(2, choiceRoot.StartTurnNumber));
                 AssertJointPlayerEndBarrier(root);
                 AssertDeadActorBarrier(root);
+                AssertBasicEnemySide(root);
             }
             JointActionCandidate selected = candidates.First(candidate =>
                 candidate.Action.Actor.Index == actorCount - 1
@@ -200,6 +201,30 @@ internal sealed partial class UnattendedTestRunner
                     return bfs;
                 }
             }
+        }
+    }
+
+    private static void AssertBasicEnemySide(CombatRootSnapshot root)
+    {
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        int[] hpBefore = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+        int[] hpAfter = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        if (hpAfter.Where((hp, index) => hp >= hpBefore[index]).Any()
+            || hpBefore[0] - hpAfter[0] != hpBefore[1] - hpAfter[1])
+        {
+            throw new InvalidOperationException(
+                $"纯攻击敌方轮未对全部 Actor 同序结算：before={string.Join(',', hpBefore)} " +
+                $"after={string.Join(',', hpAfter)}。");
         }
     }
 
