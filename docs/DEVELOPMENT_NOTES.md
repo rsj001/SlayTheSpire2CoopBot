@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F5c 遗物消耗（2026-09-29）
+
+为一次性遗物状态增加只读预测查询，并建立两名 Actor 各持同型 Throwing Axe 的联合动作夹具。Actor1 出牌后只消耗其自己的实例；Actor0 同型遗物及父 Fork 中两份实例均保持未使用。`COOP-MULTI-ACTOR-ROOT` 的 `runId=31ea273edf31473a939b7075faceddbe` Passed，实例已删除，Release 构建 0/0。结合前一 Shuriken 动作链，F5c 标记完成。
+
 ## 离线四 Actor 完整迁移 F5b 全队效果（2026-09-29）
 
 补齐原版多人卡 One For All 的精确 OnPlay 镜像：从分支玩家目录遍历全部 Actor，以出牌 Actor 为 Power 来源，对每人应用卡牌动态值；不依赖本地玩家，也不把 AllAllies 误解成单目标。四 Actor 联合根由 Actor1 出牌后，四份 `OneForAllPower` 的数值和 applier、完整状态键及续用戳均通过，`runId=69805442a5ae4e6599e0e84de008d8f2`，实例已删除，Release 构建 0/0。结合 F5c 的 Shuriken AfterCardPlayed 动作链，F5b 标记完成。

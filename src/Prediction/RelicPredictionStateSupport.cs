@@ -383,6 +383,13 @@ internal static class RelicPredictionStateSupport
         JossPaper relic)
         => JossPaperValueReadOnly(simulator, relic);
 
+    internal static bool IsThrowingAxeUsed(
+        CombatPredictionSimulator simulator,
+        ThrowingAxe relic)
+        => simulator.StateStore
+            .Peek((AbstractModel)relic, () => new ThrowingAxePredictionState(relic))
+            .UsedThisCombat;
+
     public static void SetJossPaperCardsExhausted(
         CombatPredictionSimulator simulator,
         JossPaper relic,

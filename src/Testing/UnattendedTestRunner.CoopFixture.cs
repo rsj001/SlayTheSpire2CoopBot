@@ -27,6 +27,7 @@ internal sealed partial class UnattendedTestRunner
         AssertJointPotionChoiceCoverage(source);
         AssertRemoteActorRelicTrigger(source);
         AssertRemoteActorTeamPower(source);
+        AssertRemoteActorRelicConsumption(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -183,6 +184,40 @@ internal sealed partial class UnattendedTestRunner
                     return bfs;
                 }
             }
+        }
+    }
+
+    private static void AssertRemoteActorRelicConsumption(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            2,
+            includeRelicConsumptionFixture: true);
+        CombatPredictionSimulator parent = root.ForkSimulator();
+        SimulatedCombatState parentCombat = (SimulatedCombatState)parent.State.CombatState;
+        ThrowingAxe parentLocal = parentCombat.RelicsOf(parent.State.Players[0])
+            .OfType<ThrowingAxe>().Single();
+        ThrowingAxe parentRemote = parentCombat.RelicsOf(parent.State.Players[1])
+            .OfType<ThrowingAxe>().Single();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber);
+        PlanAction attack = JointActionExpander.Expand(parent, turns)
+            .Select(static candidate => candidate.Action)
+            .First(static action => action.Actor.Index == 1
+                && action.Kind == PlanActionKind.PlayCard);
+        JointReplayResult replay = JointPlanReplayer.Replay(root, new JointPlan(2, [attack]));
+        CombatPredictionSimulator child = replay.Snapshot.Simulator;
+        SimulatedCombatState childCombat = (SimulatedCombatState)child.State.CombatState;
+        ThrowingAxe childLocal = childCombat.RelicsOf(child.State.Players[0])
+            .OfType<ThrowingAxe>().Single();
+        ThrowingAxe childRemote = childCombat.RelicsOf(child.State.Players[1])
+            .OfType<ThrowingAxe>().Single();
+        if (!RelicPredictionStateSupport.IsThrowingAxeUsed(child, childRemote)
+            || RelicPredictionStateSupport.IsThrowingAxeUsed(child, childLocal)
+            || RelicPredictionStateSupport.IsThrowingAxeUsed(parent, parentLocal)
+            || RelicPredictionStateSupport.IsThrowingAxeUsed(parent, parentRemote))
+        {
+            throw new InvalidOperationException(
+                "远端 Actor 投掷斧消耗污染了同型队友遗物或父 Fork。");
         }
     }
 
@@ -525,7 +560,8 @@ internal sealed partial class UnattendedTestRunner
         int actorCount,
         PotionModel? remotePotion = null,
         bool includeRemoteRelicTriggerFixture = false,
-        bool includeRemoteTeamPowerFixture = false)
+        bool includeRemoteTeamPowerFixture = false,
+        bool includeRelicConsumptionFixture = false)
     {
         if (actorCount is < 1 or > 4)
             throw new ArgumentOutOfRangeException(nameof(actorCount));
@@ -595,6 +631,8 @@ internal sealed partial class UnattendedTestRunner
                 if (includeRemoteTeamPowerFixture)
                     combat.Hand.AddInternal(state.CreateCard(ModelDb.Card<OneForAll>(), player), silent: true);
             }
+            if (includeRelicConsumptionFixture)
+                player.AddRelicInternal(ModelDb.Relic<ThrowingAxe>().ToMutable(), silent: true);
         }
 
         MonsterModel sourceMonster = source.Enemies.FirstOrDefault()?.Monster

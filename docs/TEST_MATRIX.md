@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F5c：遗物消耗与共享边界（2026-09-29）
+
+- Actor0/Actor1 分别持有独立 Throwing Axe；Actor1 经联合 transition 出牌后，只有 Actor1 的 `UsedThisCombat` 变为 true，Actor0 同型实例和父 Fork 两份实例都保持 false。
+- `COOP-MULTI-ACTOR-ROOT`：`runId=31ea273edf31473a939b7075faceddbe`，Passed，实例已删除；Release 构建 0 警告/0 错误。
+- 与远端 Shuriken 代表合并，关闭 F5c 的被动触发、计数、消耗和共享边界；未运行 Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F5b：全队 Power（2026-09-29）
 
 - 新增 One For All 精确 OnPlay mirror：遍历分支状态的全部玩家，以出牌 Actor 为 applier，对每名 Actor 应用同额 `OneForAllPower`；不读取本地玩家。

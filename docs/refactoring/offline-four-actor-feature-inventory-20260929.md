@@ -47,7 +47,7 @@
 |---|---|---|---|---|
 | 卡牌和伤害/格挡基础结算 | `Engine/InCombat/Simulation/*`、`Mirrors/*` | 复用同一 simulator/mirror | 已迁移 | Actor0-3 同机制 strict diff |
 | Power 创建、叠加、减少、移除和生命周期 | `Mirrors/Power*`、`Prediction/*Power*` | F5b 已通过通用远端生命周期、One For All 全队应用与 Shuriken Hook 代表 | 已迁移 | applier/target、叠加/移除、Fork/键、四 Actor 全队来源均通过 |
-| 被动遗物、计数、消耗和共享遗物 | `Mirrors/Relic*`、`Prediction/*Relic*` | F5c 已通过远端 Shuriken 三次攻击动作链；消耗和共享边界待补 | 待迁移 | Actor1 计数/触发/归属/Fork 已通过；消耗与共享代表待验证 |
+| 被动遗物、计数、消耗和共享遗物 | `Mirrors/Relic*`、`Prediction/*Relic*` | F5c 已通过远端 Shuriken 计数/触发及同型 Throwing Axe 独立消耗 | 已迁移 | Actor1 触发/消耗、Actor0 同型隔离与父 Fork 均通过 |
 | 球槽、球序、触发和角色资源 | `SimulatedCombatState*Orb*`、角色 mirrors | F5d 已验证混合角色根及 Defect Orb、Regent Stars、Necrobinder Osty；完整触发/Silent 待补 | 待迁移 | 三种远端资源键/续用戳与兄弟隔离已通过 |
 | 宠物和召唤物所有权 | `Prediction/*`、相关 card/power mirrors | 未建立统一 Actor owner 合同 | 需要真实原版证据 | 原版多玩家所有权/死亡时序证据 |
 | 第三方 subscriber 与登记表 | `THIRD_PARTY_ADAPTERS.md` 所列 registry | 未知 gameplay subscriber 仍拒绝 | 待迁移 | 已登记来源 Actor 对照；未知来源稳定拒绝 |
