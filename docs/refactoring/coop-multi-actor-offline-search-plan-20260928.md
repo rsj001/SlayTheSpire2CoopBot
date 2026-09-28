@@ -1,6 +1,6 @@
 # Co-op Bot 离线多 Actor 联合搜索开发计划
 
-> 状态：分阶段实施中（P0-P4 已完成）  
+> 状态：分阶段实施中（P0-P11 已完成，P12 收尾中）
 > 日期：2026-09-28  
 > 目标：把 CombatSolver 的战斗根与搜索节点推广为 Actor 数量可变的离线模型，同时保持单人模式等价。  
 > 当前边界：本计划不启用生产多人模式，不控制其他客户端，不发送网络动作，不启动可见 Steam，不提升版本、不发包或上传创意工坊。
@@ -12,7 +12,16 @@
 - P2：已实现多人 `ContinuationStamp` 的 Actor 目录，live/predicted 均覆盖阶段、五个牌堆、HP/格挡/资源、奥斯提、球、药水、回合历史、状态遗物和跨回合遗物状态；单人 stamp 保持逐字不变。Release 构建、Windows 结构门禁和 `COOP-P2-SINGLE-ROOT` 根捕获无人检查通过，实例已清理。
 - P3：`PlanAction` 与 `PlanCardChoice` 已带 `CombatActorId`，旧单人构造默认 `Actor0`；`JointPlan` 在联合计划边界校验 Actor 范围及选择归属。Release 构建、Windows 结构门禁和 `COOP-ACTOR-PLAN-CONTRACT` 通过，实例已清理。
 - P4：新增 `JointTurnState`，支持任意 Actor 先后结束回合、死亡 Actor 通过屏障以及完整计划的跨回合屏障校验。Release 构建、Windows 结构门禁和 `COOP-JOINT-TURN-BARRIER` 通过，实例已清理。
-- 后续：进入 P5 Actor-aware 候选展开与联合状态快照。
+- P5：新增确定性的 `JointActionExpander`，按 Actor、手牌顺序、目标 CombatId 和结束动作生成候选；`COOP-ACTOR-CANDIDATES` 在现有单人根上通过，`COOP-MULTI-ACTOR-ROOT` 进一步在真实 2/4 Actor 离线根上通过，覆盖 Actor-aware 归属字段、目标和重复展开稳定性。
+- P6：新增 `JointCombatSnapshot`，按 Actor 顺序冻结资源/牌堆投影、联合回合状态、预测 `ContinuationStamp` 和状态指纹；`COOP-JOINT-SNAPSHOT-KEY` 与 `COOP-MULTI-ACTOR-ROOT` 通过 Fork 隔离、屏障差异和真实 2/4 Actor 状态键/回放。
+- P7：新增 `JointObjectiveScore` 及确定性字典序比较器；`COOP-JOINT-OBJECTIVE` 通过胜负、总战损、逐 Actor 战损、药水、回合和动作排序。当前“总战损”只是跨角色比较的临时 workaround；角色 HP 的可比价值不同，后续需单独研究，不在本批改变。
+- P8：新增 `JointPlanReplayer`，从同一根 Fork 后按 Actor 逐步定位卡牌/目标并检查选择、资源、死亡和回合屏障；`COOP-JOINT-REPLAY` 通过。当前回放覆盖同一预测战斗中的严格动作边界，尚未把完整敌方回合和网络部署纳入验收。
+- P9：新增 2 Actor 固定小状态穷举 oracle；`COOP-JOINT-ORACLE` 通过全局最优、动作序和展开计数。oracle 是有限 toy fixture 的枚举器，不是第二套生产战斗语义。
+- P10：同一 oracle 扩展到 4 Actor；`COOP-JOINT-FOUR-ACTOR` 通过四名 Actor 的穷举全局最优和确定性动作序。正常规模多人搜索仍未宣称全局最优。
+- P11：生产 `CombatBeamSolver` 保持显式 ActorCount=1 边界；`COOP-PRODUCTION-SINGLE-BOUNDARY` 通过 ActorCount=1 接受、ActorCount=2 稳定拒绝。离线联合类型不接入 Runtime、Overlay、部署或网络。
+- P12：待完成本轮架构/测试/开发记录同步、Release 构建、Windows 结构门禁、干净提交和同源码本地 Mod 部署。
+
+真实多 Actor 根首个差异已定位：`MadScienceGrowth.CaptureRemainingCapacity` 原先对 `CombatState.Players` 使用 `Single()`，2 Actor 根在预测状态构造时立即失败。现改为按玩家分别计算并求和；单人结果保持等价。该项属于迁移中发现的单人假设，不改变本阶段目标函数。修复后 `COOP-MULTI-ACTOR-ROOT` 已在 2/4 Actor 通过。
 
 [返回重构路线与核验](README.md) · [返回文档导航](../README.md)
 

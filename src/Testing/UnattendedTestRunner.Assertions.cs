@@ -30,6 +30,59 @@ internal sealed partial class UnattendedTestRunner
                 AssertCoopJointTurnBarrier();
                 runner._completedChecks.Add("JointTurn:AnyActorOrder:FullBarrier:DeadActor:RejectEarlyNextTurn");
             }
+            if (request.ScenarioId == "COOP-ACTOR-CANDIDATES")
+            {
+                runner.SetStage("coop_actor_candidates");
+                AssertCoopActorCandidates(scenario.CombatState, scenario.Player);
+                runner._completedChecks.Add("JointCandidates:HandCards:Targets:EndTurn:ActorOwnership:Deterministic");
+            }
+            if (request.ScenarioId == "COOP-JOINT-SNAPSHOT-KEY")
+            {
+                runner.SetStage("coop_joint_snapshot_key");
+                AssertCoopJointSnapshotKey(scenario.CombatState);
+                runner._completedChecks.Add("JointSnapshot:ActorProjection:Continuation:BarrierKey:ForkMutation");
+            }
+            if (request.ScenarioId == "COOP-MULTI-ACTOR-ROOT")
+            {
+                runner.SetStage("coop_multi_actor_root");
+                AssertCoopMultiActorRoots(scenario.CombatState);
+                runner._completedChecks.Add("MultiActorRoot:Two:Four:Candidates:Snapshot:RemoteActorReplay");
+            }
+            if (request.ScenarioId == "COOP-JOINT-OBJECTIVE")
+            {
+                runner.SetStage("coop_joint_objective");
+                AssertCoopObjectiveContract();
+                runner._completedChecks.Add("JointObjective:Victory:TeamLoss:PerActorLoss:Potions:Turns");
+            }
+            if (request.ScenarioId == "COOP-JOINT-REPLAY")
+            {
+                runner.SetStage("coop_joint_replay");
+                AssertCoopJointReplay(scenario.CombatState);
+                runner._completedChecks.Add("JointReplay:ActorCard:Target:EndTurn:StrictSnapshot");
+            }
+            if (request.ScenarioId is "COOP-JOINT-ORACLE" or "COOP-JOINT-FOUR-ACTOR")
+            {
+                runner.SetStage("coop_joint_oracle");
+                AssertCoopOracleContracts();
+                runner._completedChecks.Add("JointOracle:TwoActor:Exhaustive:GlobalOptimum:FourActor");
+            }
+            if (request.ScenarioId == "COOP-PRODUCTION-SINGLE-BOUNDARY")
+            {
+                runner.SetStage("coop_production_single_boundary");
+                CombatBeamSolver.VerifySinglePlayerBoundaryForTesting(1);
+                bool rejected = false;
+                try
+                {
+                    CombatBeamSolver.VerifySinglePlayerBoundaryForTesting(2);
+                }
+                catch (NotSupportedException)
+                {
+                    rejected = true;
+                }
+                if (!rejected)
+                    throw new InvalidOperationException("生产搜索边界未拒绝 ActorCount=2。");
+                runner._completedChecks.Add("ProductionSearch:ActorCount1:RejectActorCount2");
+            }
             if (request.ScenarioId == "MEMORY-DISPLAY-CONTRACT")
             {
                 runner.SetStage("memory_display_contract");

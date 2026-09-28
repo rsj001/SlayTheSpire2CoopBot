@@ -253,6 +253,12 @@ RitsuLib 0.6.0 自身拥有 BaseLib 目标类型的外部登记查询、按程�
 
 ## 3. Search
 
+### 3.1 离线多 Actor 联合模型（Co-op Bot 第一阶段）
+
+`src/Search/Coop/` 是离线联合模型的独立职责边界：`JointTurnState` 拥有 Actor 可行动／结束／死亡屏障，`JointPlan` 拥有带 Actor 身份的计划合同，`JointActionExpander`、`JointCombatSnapshot`、`JointPlanReplayer` 和 `JointObjective` 分别拥有候选展开、完整联合快照、严格回放和终局比较；`JointExhaustiveOracle` 只服务有限 toy fixture 的穷举证据。它们只消费冻结的 `CombatRootSnapshot` 和 Fork 后的 `CombatPredictionSimulator`，不读取 Runtime、UI、全局设置、网络或真实客户端，也不部署联合计划。
+
+离线模型按根 Actor 固定顺序保存身份，Actor 数量可为 1 至 4；Actor 身份进入计划、屏障、续用文本和联合状态指纹。当前生产 `CombatBeamSolver` 仍由 `EnsureSinglePlayerRoot` 保持 ActorCount=1，捕获多人根时稳定拒绝，不把联合类型偷偷降级成本地 Actor。总战损比较目前是跨角色 HP 价值尚未统一时的临时 workaround；由于不同角色 HP 的可比价值可能不同，该缺口只在联合目标研究记录中保留，不作为本阶段语义修复。
+
 策略重构回归语料由 `tools/StrategyCorpus` 编排：玩家包使用 Testing 的严格 `combat_start` 无头恢复，仓库生成场景使用 `OfflineSearchHarness`。Search 在请求完成后提供只读质量和根戳记证据；Testing Writer 与离线宿主把它们写入独立证据文件，不参与候选裁决。原始玩家包与完整输出只留在 `.local`。对照器先核对根、政策和固定预算，再比较完整动作、续用、结果及非时序工作量；时间、分配和 GC 单列观察。
 
 本地策略迭代通过 `tools/CheckpointTool/StrategySessionRunner.cs` 持有 `start/run/status/stop` 会话和脚本单独编译。所有策略会话使用一个固定私有游戏副本；`start` 提交不建战斗的 `SessionStart` 就绪请求，`run` 直接复用其进程，`stop` 只结束进程和监控。Windows 启动器缓存稳定游戏文件的哈希，仅重算 Mod；停机后按差异替换私有副本。`run-unattended-test.ps1/.sh` 的复用入口跳过快照扫描，仍核对 PID、出生时间与可执行文件。`UnattendedTestRunner.ProtocolHost` 在每次请求开始加载冻结的脚本程序集和参数，`DevelopmentStrategyLoader` 持有可卸载加载上下文，在请求收尾释放。Search 只接收 `SearchPolicySnapshot.DevelopmentStrategy` 中的不可变策略引用和只读分支特征，不读取脚本文件或 live 设置。无脚本时保留既有候选顺序、Beam 评分和组合列表。脚本只接管中途优先级、评分、一个有界保路代表和既有组合成员编排；最终路线质量、预算、状态等价与战斗结算仍属原所有者。
@@ -273,7 +279,7 @@ RitsuLib 0.6.0 自身拥有 BaseLib 目标类型的外部登记查询、按程�
 
 `StateEvaluation.BuildProjectedDeathPrevention` 每次按分支药水槽和遗物原序读取瓶中精灵、蜥蜴尾巴的可用状态，不缓存跨快照的可变结果。意图预测携带孤注一掷的一次性致死状态：玩家实际承受正数攻击伤害后先消费该状态并置为死亡，再按原版顺序尝试保命；全额格挡不触发。Engine 的 `HookMirrors.ModifyHpLost` 返回只读修正者集合，空结果共享空数组，非空 List 独占；后续通知先取得原监听表，空集合只跳过通知遍历。回调顺序、成员身份与重复成员只调用一次的规则保持。
 
-### 3.1 请求级编排
+### 3.2 请求级编排
 
 - `SearchPolicySnapshot.cs`：主线程捕获的不可变搜索设置、逐槽药水策略，以及第一/二幕与最终 Boss 各自的血量取舍；后台不读取 UI 或玩家设置。
 - `SearchDiagnosticsSink.cs`：搜索日志和可选纯值路径观察出口。观察默认关闭，先按状态键过滤，命中后才复制完整动作/选择路径与政策标签；另可显式筛选外层 Prune 池，记录完整输入、真实 RankBest 的原排名/必保/路由/选中索引、当时的战术估值标量及最终仲裁集合。RankBest 内部同步借用列表，立即转成值副本；不向注入方暴露节点、模拟器或闭包，不重算估值或选择器，也不参与候选裁决。注入方负责并发和输出容量。
@@ -320,7 +326,7 @@ Smart 层间使用 `SmartLayerMemoryForecast` 的同窗分配和转移高水位�
 
 `NoveltySearchTelemetry` 记录纯值工作量、停止原因与改善过程；`NoveltyPortfolioTelemetry` 描述主搜索组合的两个成员，后续药水审计换结果对象时仍保留。最终请求的胜负、用药和全部工作量以 `SolverResult` / `SearchRequestWorkTotals` 为准。算法与验证见[有界新颖性组合](strategy/bounded-novelty-search-20260916.md)。
 
-### 3.2 CombatBeamSolver 分片
+### 3.3 CombatBeamSolver 分片
 
 | 文件 | 权威职责 |
 |---|---|
@@ -428,7 +434,7 @@ Smart 层间使用 `SmartLayerMemoryForecast` 的同窗分配和转移高水位�
 
 卡牌候选在进入 Beam 前按即时防御、即时输出、资源循环、持续成长、控制、目标移除和生命投资建立有上限的组合覆盖，剩余名额继续按主分数填充。多次弃牌选择按整张牌而非单次弹窗共用分支预算，并保留弃牌触发、状态/诅咒清理、保留牌与牌堆取舍代表。持续 Power 的中间价值来自 `StrategicEffectModel` 对可达触发次数和当前威胁的投影；同回合减费/过牌组合另以当前资源可打出的手牌价值和零费可执行牌数保留一个战术启动代表。用药分支按已用数量和具体药水身份分别保留有上限的代表。这些投影只参与展开与保路，不进入战斗状态键，也不替代最终实际战损。
 
-### 3.3 分支战斗状态
+### 3.4 分支战斗状态
 
 `SimulatedCombatState*.cs` 把内嵌引擎状态适配为搜索所需的战斗领域视图：
 

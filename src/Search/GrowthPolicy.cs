@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Powers;
@@ -26,15 +27,19 @@ internal static class MadScienceGrowth
     // Existing stacks have already reserved that many targets at this search root.
     public static int CaptureRemainingCapacity(CombatState combat)
     {
-        var player = combat.Players.Single();
-        int upgradable = PileType.Deck.GetPile(player).Cards.Count(card => card.IsUpgradable);
-        int committed = 0;
-        foreach (ImprovementPower power in player.Creature.Powers.OfType<ImprovementPower>())
+        int capacity = 0;
+        foreach (Player player in combat.Players)
         {
-            if (power.Amount > 0)
-                committed = checked(committed + checked((int)decimal.Ceiling(power.Amount)));
+            int upgradable = PileType.Deck.GetPile(player).Cards.Count(card => card.IsUpgradable);
+            int committed = 0;
+            foreach (ImprovementPower power in player.Creature.Powers.OfType<ImprovementPower>())
+            {
+                if (power.Amount > 0)
+                    committed = checked(committed + checked((int)decimal.Ceiling(power.Amount)));
+            }
+            capacity = checked(capacity + Math.Max(0, upgradable - committed));
         }
-        return Math.Max(0, upgradable - committed);
+        return capacity;
     }
 }
 

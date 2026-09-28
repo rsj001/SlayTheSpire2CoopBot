@@ -1,6 +1,6 @@
 # CombatSolver 测试清单
 
-## Co-op Bot 离线多 Actor 联合搜索：P0-P4（2026-09-28）
+## Co-op Bot 离线多 Actor 联合搜索：P0-P11（2026-09-29）
 
 计划入口：[Co-op Bot 离线多 Actor 联合搜索开发计划](refactoring/coop-multi-actor-offline-search-plan-20260928.md)。
 
@@ -14,7 +14,20 @@
 - 动态证据：`COOP-ACTOR-PLAN-CONTRACT` 使用 1 CPU / 1 GiB 隔离实例，检查单人默认 Actor0、双 Actor 合法动作、越界 Actor 和跨 Actor 选牌拒绝，结果 `status=Passed`，完成检查 `CoopActorPlan:SingleDefault:ActorOne:OutOfRange:ChoiceOwner`，实例已清理。该场景随后按无人测试默认流程完成并非联合搜索的普通战斗，不能解释为多人行为验证。
 - P4 源码改动：新增 `JointTurnState` 和 `JointActorTurnPhase`，显式建模 Actor 可行动、已结束、死亡以及全员结束回合屏障；`JointPlan.ValidateComplete` 拒绝未完成屏障的跨回合动作。
 - 动态证据：`COOP-JOINT-TURN-BARRIER` 使用 `-VerifyCombatRootSnapshot -StopAfterCombatRootSnapshotAssertion`、1 CPU / 1 GiB 隔离实例，验证 Actor1 先结束、Actor0 后结束、死亡 Actor 不阻塞、未完成屏障不能进入下一回合，结果 `status=Passed`，实例 `.local/headless-instances/coop-p4-barrier-fix-lowmem` 已删除。第一次同场景断言失败是夹具在存活 Actor0 仍为 `Playing` 时提前断言死亡屏障，修正夹具后通过。
-- 未执行：多人根注入、离线联合 fixture、完整多 Actor strict diff、部署、Steam、联网客户端控制。P1-P4 不改变单人动作结算；下一批进入 Actor-aware 候选展开与联合状态快照。
+- P5 源码改动：`JointActionExpander` 按 Actor、手牌实例顺序、目标 CombatId 和 EndTurn 生成确定性候选，保持原版 `AnyAlly` 排除施法者自身的目标语义。
+- 动态证据：`COOP-ACTOR-CANDIDATES` 使用 `-StopAfterCombatRootSnapshotAssertion`、1 CPU / 1 GiB 和清理开关，在现有单人根上验证 Actor-aware 字段、目标归属、结束动作和重复展开稳定性，`status=Passed`，实例已删除；不外推真实双玩家根行为。
+- P6 源码改动：`JointCombatSnapshot` 冻结每个 Actor 的资源/牌堆投影、联合回合状态、预测 `ContinuationStamp` 与状态指纹；Fork 只改变子分支。
+- 动态证据：`COOP-JOINT-SNAPSHOT-KEY` 在现有单人根上验证等价 Fork 同键、分支 GainBlock 改变键和续用文本、屏障阶段进入键，`status=Passed`，实例已删除；不外推真实多玩家严格差分。
+- P7 源码改动：`JointObjectiveScore` 按胜负、总战损、逐 Actor 战损、药水、回合和动作进行确定性比较。总战损暂为 workaround；角色 HP 的可比价值不同，未在本批替换该口径，作为后续研究问题记录。
+- 动态证据：`COOP-JOINT-OBJECTIVE` 使用同一低内存隔离配置通过胜负优先、战损分布、药水/回合/动作和确定性排序，`status=Passed`，实例已删除。
+- P8 源码改动：`JointPlanReplayer` 从同一根 Fork，逐 Actor 定位手牌实例和目标，拒绝未解决选择、不可支付动作、错误屏障和错误 Actor。
+- 动态证据：`COOP-JOINT-REPLAY` 通过 Actor 卡牌、目标、EndTurn 与严格快照变化，`status=Passed`，实例已删除。该证据是同一预测战斗内的严格动作回放，不代表完整敌方回合或网络部署。
+- P9 动态证据：`COOP-JOINT-ORACLE` 以有限 toy fixture 穷举双 Actor 全部动作序，验证胜利、全局最优动作和展开计数，`status=Passed`，实例已删除。oracle 不复制生产战斗结算语义。
+- P10 动态证据：`COOP-JOINT-FOUR-ACTOR` 将同一有限 oracle 扩展到四 Actor，验证四名 Actor 全局最优动作序和确定性，`status=Passed`，实例已删除；不外推正常规模全局最优。
+- P11 源码改动：生产 `CombatBeamSolver` 使用显式单人边界辅助，ActorCount=1 接受且 ActorCount=2 稳定拒绝；联合类型仅供离线/Testing 使用。
+- 动态证据：`COOP-PRODUCTION-SINGLE-BOUNDARY` 通过接受 1、拒绝 2，`status=Passed`，实例已删除。
+- 多 Actor 根夹具：首次 `COOP-MULTI-ACTOR-ROOT` 在 2 Actor 根捕获阶段发现 `MadScienceGrowth.CaptureRemainingCapacity` 对 `CombatState.Players` 使用 `Single()`；改为逐 Actor 计算并求和后，使用 1 CPU / 1 GiB 与清理开关重新运行，2/4 Actor 根目录、候选、联合快照、状态键和非本地 Actor 回放均 `status=Passed`，实例 `.local/headless-instances/coop-multi-actor-root-final` 已删除。
+- 未执行：完整多 Actor actual/simulated strict diff、敌方跨回合联合结算、部署、Steam、联网客户端控制。P12 收尾将执行最终 Release 构建、Windows 结构门禁、提交和同源码本地 Mod 部署。
 
 ## PR #144 最终修复与合并验证（2026-09-28）
 

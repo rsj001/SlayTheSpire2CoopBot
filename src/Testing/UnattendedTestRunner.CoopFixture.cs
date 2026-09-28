@@ -1,0 +1,100 @@
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Monsters;
+using MegaCrit.Sts2.Core.Runs;
+using CombatSolver.Engine.InCombat.Simulation;
+
+namespace CombatSolver;
+
+internal sealed partial class UnattendedTestRunner
+{
+    private static void AssertCoopMultiActorRoots(CombatState source)
+    {
+        AssertActorCount(2);
+        AssertActorCount(4);
+
+        void AssertActorCount(int actorCount)
+        {
+            CombatRootSnapshot root = CreateOfflineJointRoot(source, actorCount);
+            if (root.Actors.Count != actorCount || root.PlayerCount != actorCount
+                || root.LocalActorId.Index != 0)
+                throw new InvalidOperationException($"离线联合根未捕获 {actorCount} 个稳定 Actor。 ");
+
+            CombatPredictionSimulator simulator = root.ForkSimulator();
+            JointTurnState turns = JointTurnState.Start(actorCount, root.StartTurnNumber);
+            IReadOnlyList<JointActionCandidate> candidates = JointActionExpander.Expand(simulator, turns);
+            for (int index = 0; index < actorCount; index++)
+            {
+                CombatActorId actor = new(index);
+                if (!candidates.Any(candidate => candidate.Action.Actor == actor
+                        && candidate.Action.Kind == PlanActionKind.EndTurn)
+                    || !candidates.Any(candidate => candidate.Action.Actor == actor
+                        && candidate.Action.Kind == PlanActionKind.PlayCard))
+                    throw new InvalidOperationException($"离线联合根缺少 {actor} 的出牌或结束候选。");
+            }
+
+            JointCombatSnapshot before = JointCombatSnapshot.Capture(root, simulator, turns);
+            JointActionCandidate selected = candidates.First(candidate =>
+                candidate.Action.Actor.Index == actorCount - 1
+                && candidate.Action.Kind == PlanActionKind.PlayCard);
+            JointReplayResult replay = JointPlanReplayer.Replay(
+                root,
+                new JointPlan(actorCount, [selected.Action]));
+            if (replay.Snapshot.StateKey == before.StateKey
+                || replay.AppliedActions.Count != 1
+                || replay.AppliedActions[0].Actor.Index != actorCount - 1)
+                throw new InvalidOperationException($"离线 {actorCount} Actor 的非本地动作未被严格回放。");
+        }
+    }
+
+    private static CombatRootSnapshot CreateOfflineJointRoot(CombatState source, int actorCount)
+    {
+        if (actorCount is < 1 or > 4)
+            throw new ArgumentOutOfRangeException(nameof(actorCount));
+        Player liveLocal = source.Players.First(player => player.NetId
+            == (MegaCrit.Sts2.Core.Context.LocalContext.GetMe(source)?.NetId
+                ?? throw new InvalidOperationException("当前测试战斗没有本地玩家。")));
+        HashSet<ulong> netIds = [];
+        Player[] players = new Player[actorCount];
+        for (int index = 0; index < actorCount; index++)
+        {
+            ulong netId = index == 0 ? liveLocal.NetId : checked(liveLocal.NetId + (ulong)index);
+            while (!netIds.Add(netId))
+                netId++;
+            players[index] = Player.CreateForNewRun(liveLocal.Character, liveLocal.UnlockState, netId);
+        }
+
+        RunState run = RunState.CreateForTest(players, seed: $"COOP-OFFLINE-{actorCount}");
+        CombatState state = new(
+            runState: run,
+            modifiers: run.Modifiers,
+            badgeModels: run.BadgeModels,
+            multiplayerScalingModel: run.MultiplayerScalingModel);
+        foreach (Player player in players)
+            state.AddPlayer(player);
+        foreach (Player player in players)
+        {
+            player.ResetCombatState();
+            player.PopulateCombatState(run.Rng.Shuffle, state);
+            PlayerCombatState combat = player.PlayerCombatState
+                ?? throw new InvalidOperationException("离线 Actor 没有战斗状态。");
+            CardModel card = combat.DrawPile.Cards.First(candidate => candidate.Type == CardType.Attack);
+            combat.DrawPile.RemoveInternal(card, silent: true);
+            combat.Hand.AddInternal(card, silent: true);
+            combat.Energy = player.MaxEnergy;
+            combat.Phase = PlayerTurnPhase.Play;
+        }
+
+        MonsterModel sourceMonster = source.Enemies.FirstOrDefault()?.Monster
+            ?? throw new InvalidOperationException("当前测试战斗没有可复用的怪物模型。");
+        MonsterModel monster = ModelDb.GetById<MonsterModel>(sourceMonster.Id).ToMutable();
+        Creature enemy = state.CreateCreature(monster, CombatSide.Enemy, slot: null);
+        state.AddCreature(enemy);
+        monster.SetUpForCombat();
+        monster.RollMove(players.Select(static player => player.Creature));
+        return CombatRootSnapshot.Capture(state);
+    }
+}
