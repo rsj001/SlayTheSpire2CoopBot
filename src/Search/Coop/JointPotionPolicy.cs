@@ -59,12 +59,12 @@ internal sealed class JointPotionSearchPolicy
             MinimumUses,
             MaximumUses);
 
-    internal JointPotionSearchPolicy ForSmartCandidate(int baselineUses)
+    internal JointPotionSearchPolicy ForSmartCandidate(int exactUses)
         => new(
             DefaultPolicy,
             Directives,
-            Math.Max(MinimumUses, checked(baselineUses + 1)),
-            MaximumUses);
+            exactUses,
+            exactUses);
 
     internal bool Allows(PlanAction action, IReadOnlyList<PlanAction> priorActions)
     {

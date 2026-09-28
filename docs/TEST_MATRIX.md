@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F4c2c：Smart 药量分层（2026-09-29）
+
+- Smart 候选按精确总用药数逐层搜索，每层只获得剩余状态预算的公平份额；合格层再按联合终局政策选优。
+- 2 Actor Beam/BFWS 继续拒绝无收益药水并保持总展开不超过请求预算；`runId=345dfe4be93c4a71828230133a695f81` Passed，实例已删除。
+- 奖励替换额度、Ambergris、Boss HP relief、Linux 及可见 Steam 未覆盖。
+
 ## 离线四 Actor 完整迁移 F4c2b：Smart 搜索预算（2026-09-29）
 
 - Beam/BFWS 先搜索保留 Force 的无可选药基线，再只使用实际剩余状态预算搜索至少多一瓶的候选；两段展开数合并报告。

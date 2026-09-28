@@ -62,7 +62,7 @@
 | 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | F7c1 支持无登记后效的纯攻击行动；特殊后效明确拒绝 | 待迁移 | 纯攻击已通过；死亡/召唤/特殊后效待逐类严格对照 |
 | 单人终局政策 | `FinalPlanOrdering`、`RouteQualityPolicy` | 联合比较器独立位于 `Search/Coop`，单人入口未改 | 已保留 | 结构门禁 + 最终 F12 单人等价哨兵 |
 | 团队目标 | 无单人对应 | `JointObjective` 完整字典序；总战损仍为 workaround | 已迁移 | 终局边界、存活、分布、资源、成长、偷窃和稳定决胜通过 |
-| 药水政策、战略成本、成长、偷窃和强制目标 | `PotionUsePolicy`、`FinalPlanOrdering` | F4c1 已接入硬政策；F4c2a 复用单人 Smart 阈值；F4c2b 接入 Beam/BFWS 共享预算反事实；F8 终局完成 | 部分迁移 | 无收益 Smart 路线拒绝通过；按用药数分层待补 |
+| 药水政策、战略成本、成长、偷窃和强制目标 | `PotionUsePolicy`、`FinalPlanOrdering` | F4c1 已接入硬政策；F4c2a 复用基础 Smart 阈值；F4c2b 接入共享预算和精确药量层；F8 终局完成 | 部分迁移 | 无收益拒绝与药量分层通过；奖励额度、Ambergris、Boss relief 待补 |
 | BFS/DFS 有限 oracle | 无生产对应 | `JointOfflineSearch` | 已迁移 | 2 Actor 同值/同动作/同键 |
 | 生产规模 Beam/BFWS、Pareto、保路、多样性 | `CombatBeamSolver.*` | 有界联合 Beam/BFWS、共享预算/转置、Actor/药水/Pareto 保路与固定 lane | 已迁移 | 2 Actor 两动作、4 Actor 一动作 oracle 及串并行等价通过 |
 | 串行/固定 lane 并行、预算、取消、内存压力 | `AdmittedJobScheduler`、`SearchBudgetLedger` | 尚无联合实现 | 待迁移 | DOP1/DOPN 同动作/同键、无泄漏 |

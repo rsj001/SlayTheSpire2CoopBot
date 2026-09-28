@@ -377,39 +377,47 @@ internal static partial class JointOfflineSearch
             PotionPolicy = policy.ForSmartBaseline(),
         });
         int remaining = request.MaximumStates - baseline.ExpandedStates;
-        if (remaining <= 0)
-            return baseline;
-        JointPotionSearchPolicy candidatePolicy = policy.ForSmartCandidate(
-            baseline.Score.PotionUses);
-        if (candidatePolicy.MaximumUses is { } maximum
-            && candidatePolicy.MinimumUses > maximum)
+        int maximumUses = root.Actors.Sum(static actor => actor.SearchablePotions.Count);
+        if (policy.MaximumUses is { } configuredMaximum)
+            maximumUses = Math.Min(maximumUses, configuredMaximum);
+        int firstUses = Math.Max(policy.MinimumUses, checked(baseline.Score.PotionUses + 1));
+        JointOfflineSearchResult selected = baseline;
+        int candidateExpanded = 0;
+        for (int exactUses = firstUses; exactUses <= maximumUses && remaining > 0; exactUses++)
         {
-            return baseline;
-        }
-        JointOfflineSearchResult candidate;
-        try
-        {
-            candidate = solve(request with
+            int layersRemaining = maximumUses - exactUses + 1;
+            int layerBudget = Math.Max(1, remaining / layersRemaining);
+            JointOfflineSearchResult candidate;
+            try
             {
-                MaximumStates = remaining,
-                PotionPolicy = candidatePolicy,
-            });
+                candidate = solve(request with
+                {
+                    MaximumStates = layerBudget,
+                    PotionPolicy = policy.ForSmartCandidate(exactUses),
+                });
+            }
+            catch (JointPotionPolicyUnsatisfiedException)
+            {
+                remaining -= layerBudget;
+                candidateExpanded += layerBudget;
+                continue;
+            }
+            remaining -= candidate.ExpandedStates;
+            candidateExpanded += candidate.ExpandedStates;
+            if (!policy.IsSmartCandidateEligible(baseline, candidate, root.Actors))
+                continue;
+            int comparison = JointObjectiveScore.Compare(candidate.Score, selected.Score);
+            if (comparison > 0
+                || comparison == 0 && CompareActions(candidate.Actions, selected.Actions) < 0)
+            {
+                selected = candidate;
+            }
         }
-        catch (JointPotionPolicyUnsatisfiedException)
-        {
-            return baseline;
-        }
-        JointOfflineSearchResult selected = policy.IsSmartCandidateEligible(
-            baseline,
-            candidate,
-            root.Actors)
-            ? candidate
-            : baseline;
         return selected with
         {
-            ExpandedStates = checked(baseline.ExpandedStates + candidate.ExpandedStates),
+            ExpandedStates = checked(baseline.ExpandedStates + candidateExpanded),
             Termination = baseline.Termination == JointSearchTermination.StateBudget
-                || candidate.Termination == JointSearchTermination.StateBudget
+                || remaining == 0
                     ? JointSearchTermination.StateBudget
                     : JointSearchTermination.Completed,
         };
