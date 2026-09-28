@@ -10,6 +10,137 @@ namespace CombatSolver;
 
 internal static class JointRoundTransition
 {
+    internal static JointTurnState StartBasicPlayerSide(
+        CombatPredictionSimulator simulator,
+        JointTurnState turns,
+        ForkableSet<uint> processedEnemyDeaths)
+    {
+        if (!turns.IsBarrierReached)
+            throw new InvalidOperationException("联合玩家侧尚未完成上一轮屏障。");
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Player[] players = simulator.State.Players
+            .Where(player => simulator.State.GetCreature(player.Creature).IsAlive)
+            .ToArray();
+        Creature[] participants = players.Select(static player => player.Creature).ToArray();
+        combat.BeginActionChoices((IReadOnlyList<PlanCardChoice>?)null);
+        try
+        {
+            combat.SetActionChoiceTiming(PlanChoiceTiming.PlayerTurnStart);
+            combat.CurrentSide = CombatSide.Player;
+            combat.RoundNumber++;
+            foreach (Player player in players)
+            {
+                combat.AdvancePlayerTurn(player);
+                combat.BeginSideTurn(player.Creature);
+            }
+            combat.SnapshotPowerAmountsAtTurnStart(participants);
+            RequireNoChoice(
+                HookMirrors.BeforeSideTurnStart(simulator, CombatSide.Player, participants),
+                combat,
+                "BeforeSideTurnStart");
+
+            foreach (Player player in players)
+            {
+                SimCreatureState creature = simulator.State.GetCreature(player.Creature);
+                if (creature.Block > 0)
+                {
+                    if (combat.ShouldClearBlock(player.Creature, out AbstractModel? preventer))
+                        creature.DamageBlock(creature.Block, ValueProp.Move);
+                    else
+                        PersistentRelicSupport.TriggerAfterPreventingBlockClear(
+                            simulator,
+                            preventer,
+                            player.Creature);
+                }
+                RequireNoChoice(
+                    CorePowerSupport.TriggerAfterBlockCleared(simulator, combat, player.Creature),
+                    combat,
+                    "AfterBlockCleared");
+            }
+
+            foreach (Player player in players)
+            {
+                SimPlayerCombatState state = simulator.State.GetPlayerCombatState(player);
+                if (PersistentRelicSupport.ShouldPlayerResetEnergy(combat, player))
+                    state.LoseEnergy(state.Energy);
+                state.GainEnergy(PersistentPowerSupport.GetModifiedMaxEnergy(combat, player)
+                    + combat.ConsumeEnergyNextTurn(player));
+                RequireNoChoice(
+                    !combat.HasPendingChoice
+                    && PersistentPowerSupport.TriggerAfterEnergyReset(simulator, combat, player),
+                    combat,
+                    "AfterEnergyReset");
+                TurnStartRelicSupport.TriggerAfterEnergyReset(simulator, combat, player);
+                RequireNoChoice(!combat.HasPendingChoice, combat, "AfterEnergyReset relic");
+                TurnStartRelicSupport.TriggerAfterEnergyResetLate(simulator, combat, player);
+                RequireNoChoice(!combat.HasPendingChoice, combat, "AfterEnergyResetLate");
+
+                TurnStartChoiceCursor choices = combat.ActiveExecutionChoices;
+                combat.PrepareBeforeHandDraw(simulator, player, choices);
+                RequireNoChoice(!combat.HasPendingChoice, combat, "BeforeHandDraw");
+                using (simulator.BeginExecutionDispatch())
+                    PowerLifecycleSupport.ResolvePowerAmountChanges(simulator, combat);
+                RequireNoChoice(!combat.HasPendingChoice, combat, "BeforeHandDraw power resolution");
+                int drawCount = PersistentPowerSupport.ConsumeModifiedHandDraw(
+                    combat,
+                    player,
+                    CombatManager.baseHandDrawCount);
+                int historyStart = simulator.History.Entries.Count;
+                simulator.Draw(player, drawCount, fromHandDraw: true);
+                RequireNoChoice(!combat.HasPendingChoice, combat, "hand draw");
+                using (simulator.BeginExecutionDispatch())
+                    TriggeredPowerSupport.CompensateHistorySince(
+                        simulator,
+                        combat,
+                        historyStart);
+                RequireNoChoice(!combat.HasPendingChoice, combat, "hand draw compensation");
+                combat.TriggerAfterPlayerTurnStart(simulator, player.Creature, choices);
+                RequireNoChoice(!combat.HasPendingChoice, combat, "AfterPlayerTurnStart");
+            }
+
+            RequireNoChoice(
+                combat.TriggerSideTurnStart(
+                    simulator,
+                    CombatSide.Player,
+                    participants,
+                    decrementPlating: players.Any(player => combat.GetPlayerTurnNumber(player) != 1)),
+                combat,
+                "AfterSideTurnStart");
+            RequireNoChoice(
+                CorePowerSupport.ApplyEnemyDeathPowers(
+                    simulator,
+                    combat,
+                    combat.KnownEnemies,
+                    processedEnemyDeaths),
+                combat,
+                "player-side enemy deaths");
+            foreach (Player player in players)
+            {
+                EnchantmentLifecycleSupport.TriggerAfterTurnStartOrbs(simulator, player);
+                RequireNoChoice(!combat.HasPendingChoice, combat, "turn-start orbs");
+                combat.TriggerAutoPrePlayEarly(
+                    simulator,
+                    player,
+                    combat.GetPlayerTurnNumber(player),
+                    combat.ActiveExecutionChoices,
+                    processedEnemyDeaths);
+                RequireNoChoice(!combat.HasPendingChoice, combat, "auto pre-play");
+            }
+            combat.ActiveExecutionChoices.AssertConsumed();
+            combat.NormalizeAeonglassWithers(simulator);
+            combat.NormalizeCardAfflictions(simulator);
+            IReadOnlyList<ForecastMove> moves = combat.CurrentMonsterMoves();
+            combat.SetPredictedEnemyIntents(
+                moves.Where(move => move.AttackHits.Count > 0).Select(move => move.Owner));
+            simulator.CheckWinCondition(combat.GetPlayerTurnNumber(players[0]));
+            return turns.AdvanceTurn();
+        }
+        finally
+        {
+            combat.EndActionChoices();
+        }
+    }
+
     internal static void CompleteBasicEnemySide(
         CombatPredictionSimulator simulator,
         ForkableSet<uint> processedEnemyDeaths)
@@ -186,4 +317,13 @@ internal static class JointRoundTransition
 
     private static InvalidOperationException PendingEnemyChoice(SimulatedCombatState combat)
         => new($"联合敌方轮产生待处理选择：{combat.PendingTurnStartChoice?.SourceId ?? "unknown"}。");
+
+    private static void RequireNoChoice(bool completed, SimulatedCombatState combat, string stage)
+    {
+        if (completed && !combat.HasPendingChoice)
+            return;
+        throw new InvalidOperationException(
+            $"联合下一玩家轮在 {stage} 产生待处理选择：" +
+            $"{combat.PendingTurnStartChoice?.SourceId ?? "unknown"}。");
+    }
 }

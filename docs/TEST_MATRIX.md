@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F7d1：无选择下一玩家轮（2026-09-29）
+
+- 完整执行两 Actor 的玩家侧结束、纯攻击敌方侧和下一玩家侧开始；共享 round 只递增一次，每名 Actor 的独立回合号递增一次，并恢复能量、重新抽牌。
+- 玩家侧共享 Hook 以完整参与者列表触发一次，能量/抽牌/`AfterPlayerTurnStart`/球/自动阶段按 Actor 稳定顺序执行；任一阶段产生选择时显式拒绝，选择恢复归 F6b。
+- `COOP-MULTI-ACTOR-ROOT`：`runId=9ad70ea00a2d493ead5c090991c9d263`，Passed，实例已删除；Release 构建 0 警告/0 错误。特殊敌方后效、回合开始选择、Linux 或可见 Steam 未覆盖。
+
 ## 离线四 Actor 完整迁移 F7c1：纯攻击敌方侧（2026-09-29）
 
 - 联合屏障后的敌方侧按冻结行动名单执行开始 Hook、格挡清理、纯攻击、结束 Hook、毒与下一行动准备；Fuzzy Wurm Crawler 的纯攻击分别结算到两个存活 Actor，伤害一致。

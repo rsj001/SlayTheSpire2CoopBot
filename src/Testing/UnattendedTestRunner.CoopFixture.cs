@@ -96,6 +96,7 @@ internal sealed partial class UnattendedTestRunner
                 AssertJointPlayerEndBarrier(root);
                 AssertDeadActorBarrier(root);
                 AssertBasicEnemySide(root);
+                AssertBasicNextPlayerSide(root);
             }
             JointActionCandidate selected = candidates.First(candidate =>
                 candidate.Action.Actor.Index == actorCount - 1
@@ -225,6 +226,42 @@ internal sealed partial class UnattendedTestRunner
             throw new InvalidOperationException(
                 $"纯攻击敌方轮未对全部 Actor 同序结算：before={string.Join(',', hpBefore)} " +
                 $"after={string.Join(',', hpAfter)}。");
+        }
+    }
+
+    private static void AssertBasicNextPlayerSide(CombatRootSnapshot root)
+    {
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+        int roundBefore = ((SimulatedCombatState)simulator.State.CombatState).RoundNumber;
+        int[] turnsBefore = simulator.State.Players
+            .Select(player => ((SimulatedCombatState)simulator.State.CombatState).GetPlayerTurnNumber(player))
+            .ToArray();
+        JointTurnState next = JointRoundTransition.StartBasicPlayerSide(simulator, turns, deaths);
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        if (next.Turn != turns.Turn + 1
+            || !next.Phases.All(static phase => phase == JointActorTurnPhase.Playing)
+            || combat.RoundNumber != roundBefore + 1)
+        {
+            throw new InvalidOperationException("基础下一玩家轮未推进联合屏障或共享轮数。");
+        }
+        for (int index = 0; index < simulator.State.Players.Count; index++)
+        {
+            Player player = simulator.State.Players[index];
+            SimPlayerCombatState state = simulator.State.GetPlayerCombatState(player);
+            if (combat.GetPlayerTurnNumber(player) != turnsBefore[index] + 1
+                || state.Hand.Cards.Count == 0
+                || state.Energy <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"Actor{index} 下一轮资源未恢复：turn={combat.GetPlayerTurnNumber(player)} " +
+                    $"hand={state.Hand.Cards.Count} energy={state.Energy}。");
+            }
         }
     }
 

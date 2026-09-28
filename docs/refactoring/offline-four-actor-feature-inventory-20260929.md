@@ -57,7 +57,7 @@
 | 功能面 | 单人权威入口 | 联合入口 | F0 状态 | 最低关闭证据 |
 |---|---|---|---|---|
 | Actor 独立结束与全员屏障 | 单人 `EndTurn` 尾部 | `JointTurnState` | 已迁移 | 任意顺序、死亡 Actor、提前跨回合拒绝 |
-| 玩家回合尾 Hook、敌方回合、下一回合开始/抽牌 | `CombatBeamSolver.Terminal.cs`、simulation commands | F7a 已完成玩家侧，F7c1 已完成纯攻击敌方侧；特殊敌方后效与下一回合待补 | 待迁移 | 2 Actor 屏障与纯攻击敌方轮通过；完整两回合待 F7b-d |
+| 玩家回合尾 Hook、敌方回合、下一回合开始/抽牌 | `CombatBeamSolver.Terminal.cs`、simulation commands | F7a 玩家侧、F7c1 纯攻击敌方侧、F7d1 无选择下一轮已接通；选择恢复与特殊敌方后效待补 | 待迁移 | 2 Actor 基础两轮通过；回合选择与特殊后效待 F6b/F7c-d |
 | 额外回合、死亡、复活、逃跑和失去资格 | `Prediction/*`、`SimulatedCombatState*.cs` | F7b 已通过死亡 Actor 候选/屏障/玩家侧参与者；其余待补 | 待迁移 | 死亡代表通过；复活/逃跑/额外回合待验证 |
 | 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | F7c1 支持无登记后效的纯攻击行动；特殊后效明确拒绝 | 待迁移 | 纯攻击已通过；死亡/召唤/特殊后效待逐类严格对照 |
 | 单人终局政策 | `FinalPlanOrdering`、`RouteQualityPolicy` | 未复用 | 待迁移 | ActorCount=1 结果逐位等价 |
