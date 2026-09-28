@@ -36,7 +36,7 @@
 | AnyPlayer、Self、全体、无目标及动态目标 | `CombatBeamSolver.Expansion*.cs`、card mirrors | F3a 已覆盖全部当前 TargetType；AnyPlayer/AnyAlly 显式枚举 | 已迁移 | 2/4 Actor 手动目标集合；非手动目标由 mirror 解析 |
 | 自动牌、重复牌、复制牌、生成牌、回手与临时牌 | `CombatBeamSolver.CardChoiceContinuation.cs`、`Prediction/*` | F3b 可探测并补全动作内动态/嵌套选择；完整跨回合 continuation 待 F6 | 待迁移 | Havoc→Second Wind 动态嵌套通过；其余代表集与跨回合仍待验证 |
 | 卡牌实例 identity、升级、附魔和状态 occurrence | `PreparedCardAction`、`CombatPlan.cs` | F3a 使用同一 `ChoiceCardKey`/state occurrence 回放 | 已迁移 | Armaments/Strike 候选回放与搜索单步同键 |
-| 药水使用、目标、槽位、生成、复制和替换 | `CombatBeamSolver.*Potion*.cs`、`Prediction/Potion*` | F4a/F4b 已按 Actor 枚举槽位/目标、九类主选择，并验证 Entropic Brew 生成；F4d 跨回合槽位/消耗已完成 | 部分迁移 | 2/4 Actor 独立候选、九类选择及第二轮药水严格回放通过；Smart 策略待补 |
+| 药水使用、目标、槽位、生成、复制和替换 | `CombatBeamSolver.*Potion*.cs`、`Prediction/Potion*` | F4a/F4b 按 Actor 枚举槽位/目标、九类主选择和 Entropic Brew 生成；F4d 跨回合槽位/消耗完成 | 已迁移 | 2/4 Actor 独立候选、九类选择、生成及第二轮药水严格回放通过 |
 | 主动遗物动作 | 原版无战斗内独立提交入口；遗物由 Hook 触发 | 不新增伪造动作；`PlanRelicEffect` 仍是路线注释 | 明确不支持 | F1 反编译检索无 `UseRelic`/`ActivateRelic` 战斗动作；遗物触发归 F5 |
 | 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | F6a frame 保存 owner/source；F6c 支持多 Actor 唯一帧与原序消费；Power 回合开始选择前缀已接通 | 部分迁移 | 动态嵌套、双 Actor 药水帧队列及 Tools of the Trade 跨回合恢复通过；EndTurn、自动/重复出牌和遗物选择待 F6b |
 | opening、fixed-prefix、cycle、cross-turn、plan continuation | `CombatSearchCoordinator.*`、`FrontierContinuationScheduler` | F3c 已接入同回合 fixed-prefix 请求并由 BFS/DFS 对照；opening/cycle/cross-turn 尚未接入 | 待迁移 | 单人候选序哨兵与 2/4 Actor 联合成员；跨回合待 F7 |
@@ -62,7 +62,7 @@
 | 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | F7c1 支持无登记后效的纯攻击行动；特殊后效明确拒绝 | 待迁移 | 纯攻击已通过；死亡/召唤/特殊后效待逐类严格对照 |
 | 单人终局政策 | `FinalPlanOrdering`、`RouteQualityPolicy` | 联合比较器独立位于 `Search/Coop`，单人入口未改 | 已保留 | 结构门禁 + 最终 F12 单人等价哨兵 |
 | 团队目标 | 无单人对应 | `JointObjective` 完整字典序；总战损仍为 workaround | 已迁移 | 终局边界、存活、分布、资源、成长、偷窃和稳定决胜通过 |
-| 药水政策、战略成本、成长、偷窃和强制目标 | `PotionUsePolicy`、`FinalPlanOrdering` | F4c1 已接入硬政策；F4c2a 复用基础 Smart 阈值；F4c2b 接入共享预算和精确药量层；F8 终局完成 | 部分迁移 | 无收益拒绝与药量分层通过；奖励额度、Ambergris、Boss relief 待补 |
+| 药水政策、战略成本、成长、偷窃和强制目标 | `PotionUsePolicy`、`FinalPlanOrdering` | F4c 完成硬政策、共享预算 Smart 反事实、精确药量层、逐 Actor 奖励/Ambergris/Boss relief；F8 终局完成 | 已迁移 | 无收益拒绝、用药层、奖励抵扣及专门阈值通过 |
 | BFS/DFS 有限 oracle | 无生产对应 | `JointOfflineSearch` | 已迁移 | 2 Actor 同值/同动作/同键 |
 | 生产规模 Beam/BFWS、Pareto、保路、多样性 | `CombatBeamSolver.*` | 有界联合 Beam/BFWS、共享预算/转置、Actor/药水/Pareto 保路与固定 lane | 已迁移 | 2 Actor 两动作、4 Actor 一动作 oracle 及串并行等价通过 |
 | 串行/固定 lane 并行、预算、取消、内存压力 | `AdmittedJobScheduler`、`SearchBudgetLedger` | 尚无联合实现 | 待迁移 | DOP1/DOPN 同动作/同键、无泄漏 |

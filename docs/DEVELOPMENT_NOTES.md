@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F4 完成（2026-09-29）
+
+Smart 专门政策补齐动态证据：奖励替换额度按用药 Actor 且每条路线只抵扣一次；ActClear 会降低战斗内 HP 节省的持久价值，因此相同战略成本需要比普通战斗更多原始 HP 改善；Ambergris 要求用药 Actor 自身达到按其最大生命计算的改善。开发期 `5b8846ec5e2e4928b5d18dc011e3e229` 暴露合并断言不可诊断，`41701aa9f20f484b86d0896fd85f5e69` 证明测试把 ActClear 门槛方向理解反了；修正预期后 `runId=2c75864c21834e68b41cf1ab51dba777` Passed，实例已删除。结合既有槽位、九类选择、生成、硬政策、药量层和跨回合证据，F4 关闭。
+
 ## 离线四 Actor 完整迁移 F4c2d（2026-09-29）
 
 药水奖励展望从仅有根级本地玩家视图迁入每个 `CombatActorRoot`，Smart 候选按实际用药 Actor 各自应用一次奖励替换额度；旧 `CombatRootSnapshot.PotionRewardOutlook` 直接映射本地 Actor，保持单人兼容。Ambergris 额外阈值按所属 Actor 最大生命计算，Boss relief 继续使用冻结战斗根政策。基础联合根与 Smart 回归 `runId=195ebba7e6de4801a5363e30bcc4a78e` Passed，实例已删除；三个专门数值分支仍待独立证据。

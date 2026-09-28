@@ -1,5 +1,12 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F4：Smart 专门政策（2026-09-29）
+
+- 每 Actor 奖励替换额度把一瓶付费药的阈值降至单人政策的一点下限；未错误按瓶重复抵扣。
+- 同样节省普通战斗所需 `18 HP` 时，普通政策接受而 ActClear 的 `90 HP` 原始门槛拒绝，证明 Boss relief 方向与单人持久价值换算一致。
+- Ambergris 恰好达到用药 Actor 自身最大生命阈值时接受，少 1 HP 时拒绝。开发期失败 `5b8846ec5e2e4928b5d18dc011e3e229`、`41701aa9f20f484b86d0896fd85f5e69`；最终 `runId=2c75864c21834e68b41cf1ab51dba777` Passed，实例已删除。
+- F4a-d 至此关闭；未运行 Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F4c2d：逐 Actor 奖励元数据（2026-09-29）
 
 - `CombatActorRoot` 逐 Actor 捕获药水奖励展望；旧根级字段与 LocalActor 逐值相同，远端用药成本不再读取本地替换额度。

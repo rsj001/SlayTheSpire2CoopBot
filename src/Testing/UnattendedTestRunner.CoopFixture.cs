@@ -330,6 +330,123 @@ internal sealed partial class UnattendedTestRunner
                     throw new InvalidOperationException(
                         "联合 Smart 药水没有按同根无药基线和单人 HP 阈值裁决。");
                 }
+                CombatActorRoot[] creditedActors = root.Actors.ToArray();
+                creditedActors[1] = creditedActors[1] with
+                {
+                    PotionRewardOutlook = new PotionRewardOutlook(
+                        1f,
+                        true,
+                        false,
+                        PotionRewardForecast.Drop,
+                        "BLOCK_POTION",
+                        expectedCost)
+                    {
+                        Enabled = true,
+                    },
+                };
+                JointOfflineSearchResult oneHpSaved = forcedResult with
+                {
+                    Score = forcedResult.Score with { Outcome = null, TotalHpLost = requiredSaved - 1 },
+                };
+                int relievedRequired = PotionUsePolicy.SmartRequiredHpSaved(
+                    expectedCost,
+                    BossHpRelief.ActClearHeal);
+                JointOfflineSearchResult bossReliefBaseline = disabledResult with
+                {
+                    Score = disabledResult.Score with
+                    {
+                        Outcome = null,
+                        TotalHpLost = requiredSaved,
+                    },
+                };
+                JointOfflineSearchResult bossReliefCandidate = forcedResult with
+                {
+                    Score = forcedResult.Score with { Outcome = null, TotalHpLost = 0 },
+                };
+                bool replacementEligible = smartPolicy.IsSmartCandidateEligible(
+                    smartBaseline,
+                    oneHpSaved,
+                    creditedActors,
+                    BossHpRelief.None);
+                bool reliefEligible = smartPolicy.IsSmartCandidateEligible(
+                    bossReliefBaseline,
+                    bossReliefCandidate,
+                    root.Actors,
+                    BossHpRelief.ActClearHeal);
+                bool normalEligible = smartPolicy.IsSmartCandidateEligible(
+                    bossReliefBaseline,
+                    bossReliefCandidate,
+                    root.Actors,
+                    BossHpRelief.None);
+                if (!replacementEligible
+                    || relievedRequired <= requiredSaved
+                    || reliefEligible
+                    || !normalEligible)
+                {
+                    throw new InvalidOperationException(
+                        "联合 Smart 奖励/Boss 政策不符：" +
+                        $"replacement={replacementEligible} relief={reliefEligible} " +
+                        $"normal={normalEligible} required={requiredSaved}/{relievedRequired}。");
+                }
+
+                int ambergrisCost = PotionUsePolicy.StrategicHpCost(
+                    "AMBERGRIS",
+                    root.Actors[1].HasRenewablePotionShapedRock);
+                int ambergrisRequired = PotionUsePolicy.EffectiveStrategicHpCost(
+                    ambergrisCost,
+                    ambergrisCount: 1,
+                    root.Actors[1].InitialMaxHp);
+                PlanAction[] ambergrisActions = forcedResult.Actions
+                    .Select(action => action.Kind == PlanActionKind.UsePotion
+                        ? action with { PotionId = "AMBERGRIS" }
+                        : action)
+                    .ToArray();
+                JointActorSnapshot[] ambergrisBaselineActors = disabledResult.Snapshot.Actors.ToArray();
+                JointActorSnapshot[] ambergrisCandidateActors = disabledResult.Snapshot.Actors.ToArray();
+                ambergrisBaselineActors[1] = ambergrisBaselineActors[1] with { Hp = 1 };
+                ambergrisCandidateActors[1] = ambergrisCandidateActors[1] with
+                {
+                    Hp = 1 + ambergrisRequired,
+                };
+                JointOfflineSearchResult ambergrisBaseline = disabledResult with
+                {
+                    Snapshot = disabledResult.Snapshot with { Actors = ambergrisBaselineActors },
+                    Score = disabledResult.Score with
+                    {
+                        Outcome = null,
+                        TotalHpLost = ambergrisRequired,
+                    },
+                };
+                JointOfflineSearchResult ambergrisCandidate = forcedResult with
+                {
+                    Actions = ambergrisActions,
+                    Snapshot = forcedResult.Snapshot with { Actors = ambergrisCandidateActors },
+                    Score = forcedResult.Score with { Outcome = null, TotalHpLost = 0 },
+                };
+                JointActorSnapshot[] shortAmbergrisActors = ambergrisCandidateActors.ToArray();
+                shortAmbergrisActors[1] = shortAmbergrisActors[1] with
+                {
+                    Hp = ambergrisCandidateActors[1].Hp - 1,
+                };
+                JointOfflineSearchResult shortAmbergris = ambergrisCandidate with
+                {
+                    Snapshot = ambergrisCandidate.Snapshot with { Actors = shortAmbergrisActors },
+                    Score = ambergrisCandidate.Score with { TotalHpLost = 1 },
+                };
+                if (!smartPolicy.IsSmartCandidateEligible(
+                        ambergrisBaseline,
+                        ambergrisCandidate,
+                        root.Actors,
+                        BossHpRelief.None)
+                    || smartPolicy.IsSmartCandidateEligible(
+                        ambergrisBaseline,
+                        shortAmbergris,
+                        root.Actors,
+                        BossHpRelief.None))
+                {
+                    throw new InvalidOperationException(
+                        "联合 Ambergris 未按用药 Actor 最大生命和自身 HP 改善裁决。");
+                }
                 JointOfflineSearchRequest smartRequest = new(
                     [],
                     MaximumActions: 2,

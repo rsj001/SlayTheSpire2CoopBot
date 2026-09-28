@@ -1,6 +1,6 @@
 # 从单人 CombatSolver 到离线四 Actor 完整自动规划开发计划
 
-> 状态：执行中；前置联合模型 P0-P12、F0-F2、F5、F8-F9 已完成，F3-F4、F6-F7 进行中，F10-F12 待完成
+> 状态：执行中；前置联合模型 P0-P12、F0-F2、F4-F5、F8-F9 已完成，F3、F6-F7 进行中，F10-F12 待完成
 > 日期：2026-09-29  
 > 基线提交：`f14acea6`  
 > 目标：在不改变单人 CombatSolver 语义的前提下，建立一个可以控制最多四名 Actor、完整覆盖单人战斗机制的离线联合自动规划器。  
@@ -14,7 +14,7 @@
 | F1 统一联合单步转移 | 已完成 | `JointActionTransition` 统一卡牌/选择/药水/EndTurn；`COOP-JOINT-REPLAY` 通过 |
 | F2 Actor 状态/Fork/快照/续用 | 已完成 | 2/4 Actor 远端字段扰动与 Fork 隔离通过；修复多人敌人格挡缩放 mirror |
 | F3 完整卡牌与目标 | 进行中 | F3a/F3b 已接入目标/实例身份、基础及动态嵌套选择；F3c fixed-prefix 与 F3d cross-turn 前缀已通过；opening/cycle 和单人候选序仍待完成 |
-| F4 完整药水 | 进行中 | F4a/F4b 独立槽位/选择、F4c1 指令/药量/成本及 F4d 跨回合药水已通过；Smart 反事实待完成 |
+| F4 完整药水 | 已完成 | F4a/F4b 独立槽位/九类选择/生成、F4c 硬政策与完整 Smart 反事实、F4d 跨回合均通过 |
 | F5 Power/遗物/球/宠物/角色资源 | 已完成 | F5a-F5e：根元数据、Power/全队/Hook、遗物触发/消耗、五角色资源、真实召唤所有权及第三方拒绝边界均有动态证据 |
 | F6 选择与嵌套 continuation | 进行中 | F6a frame、F6c 多 Actor 原序队列、F6d 前缀相对同名实例回放已通过；F6b 已接通 Power 回合开始选择前缀，EndTurn、自动/重复出牌及遗物选择仍待补 |
 | F7 联合回合与敌方生命周期 | 进行中 | F7a 玩家侧屏障、F7b 死亡资格、F7c1 纯攻击敌方侧与 F7d1 无选择下一轮已通过；复活/逃跑/额外回合、特殊后效及回合选择待补 |
@@ -204,7 +204,7 @@
 
 - F4a（已完成）：`JointActionExpander` 按 Actor 模拟槽位枚举可搜索药水和目标；需要选择的药水先由权威 transition 执行生成阶段，再把主选择写入 `PlanAction.Choice`，后续选择才进入 nested 链。`COOP-MULTI-ACTOR-ROOT` 运行 `cf7241344aa044cbbe3bbdff233257fb` 通过 2/4 Actor 独立 Block Potion/Gambler's Brew 候选、选择 owner 与 BFS/DFS 对照。
 - F4b（已完成）：四种生成牌药水和 Ashwater、Droplet of Precognition、Gambler's Brew、Liquid Memories、Touch of Insanity 九类主选择均由 Actor1 严格回放；Entropic Brew 生成改变联合状态键和续用戳。`COOP-MULTI-ACTOR-ROOT` 运行 `35794e9d204e4a11b8b54607dbeca5d7` 通过。
-- F4c（进行中）：F4c1 已完成 Actor+槽位指令、Disabled/Force、最少/最多用药数及单人战略成本复用。F4c2a 已建立 Force/Smart 分离的无药基线政策和基础 HP 阈值合同，`runId=12601915c77d43888b98927f30a5d817` Passed；F4c2b 的 Beam/BFWS 共享状态预算、无收益拒绝及按精确总用药数分层已通过，最终 `runId=345dfe4be93c4a71828230133a695f81` Passed。F4c2d 已把奖励展望迁入每个 `CombatActorRoot`，旧根字段保持本地兼容，`runId=195ebba7e6de4801a5363e30bcc4a78e` Passed；奖励抵扣、Ambergris 与 Boss relief 专门分支仍待动态证据。
+- F4c（已完成）：F4c1 完成 Actor+槽位指令、Disabled/Force、用药上下界和单人战略成本。F4c2 建立保留 Force 的无可选药基线，Beam/BFWS 在共享状态预算内按精确总用药数分层，并按动作 Actor 的可再生遗物、一次性奖励替换额度、Ambergris 自身最大生命阈值与冻结 Boss relief 裁决。基础阈值 `runId=12601915c77d43888b98927f30a5d817`、分层预算 `345dfe4be93c4a71828230133a695f81`、专门政策 `2c75864c21834e68b41cf1ab51dba777` 均 Passed；专门测试开发期失败 `5b8846ec5e2e4928b5d18dc011e3e229` 和 `41701aa9f20f484b86d0896fd85f5e69` 分别用于拆分诊断和修正 ActClear 预期。
 - F4d（已完成）：Actor0 的药水动作作为第二轮固定前缀，经 F7 生命周期推进后仍保持 Actor/槽位身份、单次消耗、联合目标计数和完整状态键；BFS/DFS oracle 一致，`runId=6e70211973b3400fb77bea4b41fbd6fb` Passed。
 
 ### F5：Power、遗物、球、宠物和角色专属资源
