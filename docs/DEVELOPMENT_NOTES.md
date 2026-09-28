@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F6c（2026-09-29）
+
+新增不可变 `JointChoiceContinuation`：每个 Actor 最多拥有一个 pending frame，消费必须匹配队首 OwnerActor 和完整 SourceAction，错误重入/抢占不会修改父队列。Actor0/1 的真实 Gambler's Brew 主选择帧完成双 Actor 原序验证，`COOP-MULTI-ACTOR-ROOT` 的 `runId=ddf9af571fc24faba81fb18eccbd3805` Passed，实例已删除，Release 构建 0/0。F6 回合边界和实例身份仍待完成。
+
 ## 离线四 Actor 完整迁移 F6a（2026-09-29）
 
 联合动作选择不再只用零散 Actor/source 字段抛出边界，而是生成不可变 `JointPendingChoiceFrame`，携带 OwnerActor、完整 SourceAction、选择 spec 与 placement。候选扩展在分支前核对 frame 确实属于当前 Actor 和动作，防止嵌套/药水选择被错误附加到兄弟动作。`COOP-JOINT-REPLAY` 的 Havoc → Second Wind 动态嵌套链 `runId=78cfa14e6d98479fa14d2104166c5b95` Passed，实例已删除，Release 构建 0/0。F6 保持进行中。

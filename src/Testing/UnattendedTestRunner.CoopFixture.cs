@@ -83,6 +83,17 @@ internal sealed partial class UnattendedTestRunner
             AssertRemoteActorPowerLifecycle(root, before, turns, actorCount - 1);
             AssertCharacterResources(root, before, turns);
             AssertMultiplayerBlockScaling(root, actorCount);
+            if (actorCount == 2)
+            {
+                CombatRootSnapshot choiceRoot = CreateOfflineJointRoot(
+                    source,
+                    2,
+                    CanonicalModels.Potion<GamblersBrew>(),
+                    localPotion: CanonicalModels.Potion<GamblersBrew>());
+                AssertJointChoiceContinuation(
+                    choiceRoot,
+                    JointTurnState.Start(2, choiceRoot.StartTurnNumber));
+            }
             JointActionCandidate selected = candidates.First(candidate =>
                 candidate.Action.Actor.Index == actorCount - 1
                 && candidate.Action.Kind == PlanActionKind.PlayCard);
@@ -188,6 +199,69 @@ internal sealed partial class UnattendedTestRunner
                 }
             }
         }
+    }
+
+    private static void AssertJointChoiceContinuation(
+        CombatRootSnapshot root,
+        JointTurnState turns)
+    {
+        JointPendingChoiceFrame[] frames = new JointPendingChoiceFrame[2];
+        for (int index = 0; index < frames.Length; index++)
+        {
+            PlanAction action = new(
+                PlanActionKind.UsePotion,
+                turns.Turn,
+                PotionSlot: 0,
+                PotionId: "GAMBLERS_BREW",
+                Actor: new CombatActorId(index));
+            CombatPredictionSimulator probe = root.ForkSimulator();
+            try
+            {
+                _ = JointActionTransition.Apply(
+                    probe,
+                    turns,
+                    action,
+                    JointActionTransition.CaptureProcessedEnemyDeaths(root, probe));
+                throw new InvalidOperationException("缺少选择的联合药水没有产生 pending frame。");
+            }
+            catch (JointPendingActionChoiceException pending)
+            {
+                frames[index] = pending.Frame;
+            }
+        }
+
+        JointChoiceContinuation continuation = JointChoiceContinuation.Empty
+            .Enqueue(frames[0])
+            .Enqueue(frames[1]);
+        try
+        {
+            _ = continuation.Enqueue(frames[0]);
+            throw new InvalidOperationException("同 Actor 的第二个 pending frame 未被拒绝。");
+        }
+        catch (InvalidOperationException exception) when (
+            exception.Message.Contains("已有待处理", StringComparison.Ordinal))
+        {
+        }
+        try
+        {
+            _ = continuation.Consume(frames[1].OwnerActor, frames[1].SourceAction, out _);
+            throw new InvalidOperationException("联合选择允许后置 Actor 抢先消费。");
+        }
+        catch (InvalidOperationException exception) when (
+            exception.Message.Contains("按原序", StringComparison.Ordinal))
+        {
+        }
+        continuation = continuation.Consume(
+            frames[0].OwnerActor,
+            frames[0].SourceAction,
+            out JointPendingChoiceFrame first);
+        continuation = continuation.Consume(
+            frames[1].OwnerActor,
+            frames[1].SourceAction,
+            out JointPendingChoiceFrame second);
+        if (first.OwnerActor.Index != 0 || second.OwnerActor.Index != 1
+            || continuation.Frames.Count != 0)
+            throw new InvalidOperationException("联合选择 continuation 未按 Actor 原序耗尽。");
     }
 
     private static void AssertThirdPartySubscriberBoundary()
@@ -652,7 +726,8 @@ internal sealed partial class UnattendedTestRunner
         bool includeRemoteTeamPowerFixture = false,
         bool includeRelicConsumptionFixture = false,
         bool includeCharacterMechanismFixture = false,
-        IReadOnlyList<CharacterModel>? characterRoster = null)
+        IReadOnlyList<CharacterModel>? characterRoster = null,
+        PotionModel? localPotion = null)
     {
         if (actorCount is < 1 or > 4)
             throw new ArgumentOutOfRangeException(nameof(actorCount));
@@ -706,7 +781,7 @@ internal sealed partial class UnattendedTestRunner
             combat.Phase = PlayerTurnPhase.Play;
             PotionModel potion = PredictionUtils.CreatePotion(
                 index == 0
-                    ? CanonicalModels.Potion<BlockPotion>()
+                    ? localPotion ?? CanonicalModels.Potion<BlockPotion>()
                     : remotePotion ?? CanonicalModels.Potion<GamblersBrew>(),
                 player);
             if (!player.AddPotionInternal(potion, 0, silent: true).success)

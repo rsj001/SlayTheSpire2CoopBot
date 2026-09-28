@@ -38,7 +38,7 @@
 | 卡牌实例 identity、升级、附魔和状态 occurrence | `PreparedCardAction`、`CombatPlan.cs` | F3a 使用同一 `ChoiceCardKey`/state occurrence 回放 | 已迁移 | Armaments/Strike 候选回放与搜索单步同键 |
 | 药水使用、目标、槽位、生成、复制和替换 | `CombatBeamSolver.*Potion*.cs`、`Prediction/Potion*` | F4a/F4b 已按 Actor 枚举槽位/目标、九类主选择，并验证 Entropic Brew 生成；策略与跨回合待完成 | 待迁移 | 2/4 Actor 独立候选、九类选择严格回放、生成后的状态键/续用戳已通过 |
 | 主动遗物动作 | 原版无战斗内独立提交入口；遗物由 Hook 触发 | 不新增伪造动作；`PlanRelicEffect` 仍是路线注释 | 明确不支持 | F1 反编译检索无 `UseRelic`/`ActivateRelic` 战斗动作；遗物触发归 F5 |
-| 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | F6a 动作内 frame 已保存 OwnerActor/SourceAction；回合边界与独立 continuation 待补 | 待迁移 | 动态嵌套 frame owner/source 严格核对通过；其余待 F6b-d |
+| 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | F6a frame 保存 owner/source；F6c 支持多 Actor 唯一帧与原序消费；回合边界待补 | 待迁移 | 动态嵌套与双 Actor 药水帧队列通过；其余待 F6b/d |
 | opening、fixed-prefix、cycle、cross-turn、plan continuation | `CombatSearchCoordinator.*`、`FrontierContinuationScheduler` | F3c 已接入同回合 fixed-prefix 请求并由 BFS/DFS 对照；opening/cycle/cross-turn 尚未接入 | 待迁移 | 单人候选序哨兵与 2/4 Actor 联合成员；跨回合待 F7 |
 
 ## 结算机制

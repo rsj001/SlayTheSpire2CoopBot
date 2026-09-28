@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F6c：多 Actor 选择 continuation（2026-09-29）
+
+- Actor0/Actor1 均持 Gambler's Brew，分别经权威 transition 捕获真实主选择帧；`JointChoiceContinuation` 每 Actor 最多一帧，并绑定完整 SourceAction。
+- 同 Actor 第二帧、Actor1 抢在 Actor0 前消费均明确拒绝；按 Actor0→Actor1 原序消费后队列为空，失败尝试未改变不可变父队列。
+- `COOP-MULTI-ACTOR-ROOT`：`runId=ddf9af571fc24faba81fb18eccbd3805`，Passed，实例已删除；Release 构建 0 警告/0 错误。回合边界接线待 F6b/F7；未运行 Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F6a：联合选择帧（2026-09-29）
 
 - `JointPendingChoiceFrame` 保存 OwnerActor、完整 SourceAction、source/spec 与主/嵌套 placement；expander 在产生分支前要求 frame 的 owner 和 SourceAction 与当前探测动作逐值一致。
