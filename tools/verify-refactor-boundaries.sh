@@ -1755,6 +1755,11 @@ for token in \
 done
 require_fixed "$joint_transition" 'CombatBeamSolver.FindCardForReplay' \
     'joint transition restored a second card-instance matcher:'
+require_fixed "$joint_transition" 'JointPendingActionChoiceException' \
+    'joint dynamic choice expansion missing F3b boundary:'
+for token in 'MaximumNestedChoiceDepth = 16' 'AddResolvedCandidates(' 'AppendNestedChoice('; do
+    require_fixed "$joint_expander" "$token" 'joint dynamic choice expansion missing F3b boundary:'
+done
 
 if ((${#violations[@]} > 0)); then
     printf '%s\n' "${violations[@]}" >&2

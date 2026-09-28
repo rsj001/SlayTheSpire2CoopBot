@@ -13,7 +13,7 @@
 | F0 单人全功能清单与基线 | 已完成 | [功能迁移库存](offline-four-actor-feature-inventory-20260929.md)；Windows 结构门禁通过；复用同源码五项动态基线 |
 | F1 统一联合单步转移 | 已完成 | `JointActionTransition` 统一卡牌/选择/药水/EndTurn；`COOP-JOINT-REPLAY` 通过 |
 | F2 Actor 状态/Fork/快照/续用 | 已完成 | 2/4 Actor 远端字段扰动与 Fork 隔离通过；修复多人敌人格挡缩放 mirror |
-| F3 完整卡牌与目标 | 进行中 | F3a 已接入完整 TargetType 分类、state-key 实例身份和基础选择候选；continuation/政策入口待完成 |
+| F3 完整卡牌与目标 | 进行中 | F3a/F3b 已接入目标/实例身份、基础及动态嵌套选择；opening/cross-turn/fixed-prefix 政策入口待完成 |
 | F4 完整药水 | 未开始 | - |
 | F5 Power/遗物/球/宠物/角色资源 | 未开始 | - |
 | F6 选择与嵌套 continuation | 未开始 | - |

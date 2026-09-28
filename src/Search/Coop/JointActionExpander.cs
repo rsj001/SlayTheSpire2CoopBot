@@ -17,6 +17,8 @@ internal sealed record JointActionCandidate(
 /// </summary>
 internal static class JointActionExpander
 {
+    private const int MaximumNestedChoiceDepth = 16;
+
     internal static IReadOnlyList<JointActionCandidate> Expand(
         CombatPredictionSimulator simulator,
         JointTurnState turnState)
@@ -63,7 +65,11 @@ internal static class JointActionExpander
                     CardChoiceSpec? spec = CardChoiceSupport.GetSpec(simulator, card);
                     if (spec == null)
                     {
-                        candidates.Add(new JointActionCandidate(
+                        AddResolvedCandidates(
+                            candidates,
+                            simulator,
+                            turnState,
+                            new JointActionCandidate(
                             targeted with
                             {
                                 Choice = CardChoiceSupport.BuildRequiredEmptyChoice(card.Preview)
@@ -79,7 +85,11 @@ internal static class JointActionExpander
                                  maxPileBranches: 32,
                                  maxHandBranches: 32))
                     {
-                        candidates.Add(new JointActionCandidate(
+                        AddResolvedCandidates(
+                            candidates,
+                            simulator,
+                            turnState,
+                            new JointActionCandidate(
                             targeted with { Choice = choice with { Actor = actor } },
                             card,
                             target));
@@ -93,6 +103,62 @@ internal static class JointActionExpander
                 Target: null));
         }
         return candidates;
+    }
+
+    private static void AddResolvedCandidates(
+        List<JointActionCandidate> output,
+        CombatPredictionSimulator parent,
+        JointTurnState turns,
+        JointActionCandidate seed)
+    {
+        Queue<(JointActionCandidate Candidate, int Depth)> open = new();
+        open.Enqueue((seed, 0));
+        while (open.TryDequeue(out var item))
+        {
+            CombatPredictionSimulator probe = parent.Fork();
+            ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(probe);
+            try
+            {
+                _ = JointActionTransition.Apply(probe, turns, item.Candidate.Action, deaths);
+                output.Add(item.Candidate);
+            }
+            catch (JointPendingActionChoiceException pending)
+            {
+                if (item.Depth >= MaximumNestedChoiceDepth)
+                {
+                    throw new InvalidOperationException(
+                        $"联合动作选择深度超过 {MaximumNestedChoiceDepth}：" +
+                        $"Actor {pending.Actor} source={pending.SourceId}。",
+                        pending);
+                }
+                IReadOnlyList<PlanCardChoice> branches = CardChoiceSupport.BuildChoices(
+                    pending.Spec,
+                    static _ => string.Empty,
+                    maxPileBranches: 32,
+                    maxHandBranches: 32);
+                if (branches.Count == 0)
+                    throw new InvalidOperationException(
+                        $"联合动作选择没有合法分支：Actor {pending.Actor} source={pending.SourceId}。",
+                        pending);
+                foreach (PlanCardChoice branch in branches)
+                {
+                    PlanCardChoice owned = branch with
+                    {
+                        Actor = pending.Actor,
+                        SourceId = pending.SourceId,
+                    };
+                    PlanAction expanded = AppendNestedChoice(item.Candidate.Action, owned);
+                    open.Enqueue((item.Candidate with { Action = expanded }, item.Depth + 1));
+                }
+            }
+        }
+    }
+
+    private static PlanAction AppendNestedChoice(PlanAction action, PlanCardChoice choice)
+    {
+        List<PlanCardChoice> nested = [.. action.NestedChoices ?? []];
+        nested.Add(choice);
+        return action with { NestedChoices = nested.AsReadOnly() };
     }
 
     private static IEnumerable<Creature?> ResolveTargets(

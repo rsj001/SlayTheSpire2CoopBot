@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F3b（2026-09-29）
+
+- 动态动作选择：联合 expander 从父状态探测权威 transition，按类型化 pending choice 的 Actor/source/spec 生成分支，最多 16 层；普通异常仍传播。
+- `COOP-JOINT-REPLAY`：Havoc → Second Wind → Defend 动态嵌套选择，`runId=dd5c6722fb854a41b4738e292957c0ac`，Passed；完成 `DynamicNestedChoice`、严格回放和同状态检查，实例已删除。
+- Release 构建 0 警告/0 错误。未覆盖跨回合选择 continuation、联合前缀政策、Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F3a（2026-09-29）
 
 - 候选：卡牌 action 带 state key/occurrence、升级、附魔和 replay count；目标覆盖完整 `TargetType` 分类；基础选择分支复用单人 `CardChoiceSupport.BuildChoices`。

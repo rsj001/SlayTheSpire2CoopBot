@@ -206,6 +206,17 @@ internal sealed partial class UnattendedTestRunner
                 throw new InvalidOperationException("联合 transition 没有消费指定 Actor 的卡牌选择。");
         }
 
+        JointActionCandidate? nestedCandidate = candidates.FirstOrDefault(candidate =>
+            candidate.Action.NestedChoices is { Count: > 0 });
+        if (nestedCandidate is { } nested)
+        {
+            JointReplayResult nestedReplay = JointPlanReplayer.Replay(
+                root,
+                new JointPlan(root.Actors.Count, [nested.Action]));
+            if (nestedReplay.Snapshot.Simulator.HasPendingChoice)
+                throw new InvalidOperationException("联合 transition 没有消费动态嵌套选择链。");
+        }
+
         SimulatedCombatState rootCombat = (SimulatedCombatState)simulator.State.CombatState;
         Player potionOwner = simulator.State.Players[root.LocalActorId.Index];
         for (int slot = 0; slot < root.PotionSlotCount; slot++)

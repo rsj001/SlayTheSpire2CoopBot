@@ -22,6 +22,12 @@
 
 Armaments + Strike 的 `COOP-JOINT-REPLAY` 通过 choice candidate、实例定位和搜索/回放同状态，`runId=78e1c6845f4646fb8e244b7747304738`，实例已删除；显式路径 Release 构建 0/0。F3 尚未完成动态/嵌套选择 continuation、自动/重复子出牌以及 opening/cross-turn/fixed-prefix 政策接入，因此计划仍标为进行中。
 
+## 离线四 Actor 完整迁移 F3b（2026-09-29）
+
+联合候选现在会从同一父状态探测完整动作；首次动态选择以类型化边界返回 Actor/source/spec，复用单人组合算法追加选择后重新执行，直至稳定。嵌套选择固定最多 16 层，超过上限或没有合法分支显式失败。探针不提交状态，也不吞普通执行异常；每个兄弟分支从父模拟器和死亡集合重新 Fork。
+
+`COOP-JOINT-REPLAY` 使用 Havoc 自动打出抽牌堆的 Second Wind，并由 Second Wind 对手牌 Defend 产生动态嵌套选择；候选已带完整 nested choice，搜索单步和计划回放状态一致，`runId=dd5c6722fb854a41b4738e292957c0ac`，Passed，实例已删除。Release 构建 0/0。该证据不覆盖回合开始/结束选择或 opening/cross-turn 搜索政策，F3 仍为进行中。
+
 ## 下一版本（开发中，2026-09-28）
 
 后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。

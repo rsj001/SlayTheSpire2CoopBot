@@ -2238,6 +2238,21 @@ if (-not (Select-String -LiteralPath $jointTransitionPath `
         -SimpleMatch 'CombatBeamSolver.FindCardForReplay' -Quiet)) {
     $violations.Add('Joint transition restored a second card-instance matcher.')
 }
+foreach ($text in @(
+    'JointPendingActionChoiceException',
+    'MaximumNestedChoiceDepth = 16',
+    'AddResolvedCandidates(',
+    'AppendNestedChoice('
+)) {
+    $path = if ($text -eq 'JointPendingActionChoiceException') {
+        $jointTransitionPath
+    } else {
+        $jointExpanderPath
+    }
+    if (-not (Select-String -LiteralPath $path -SimpleMatch $text -Quiet)) {
+        $violations.Add("Joint dynamic choice expansion missing F3b boundary: $text")
+    }
+}
 
 if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Error $_ }

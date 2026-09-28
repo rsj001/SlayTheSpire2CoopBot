@@ -6,6 +6,17 @@ using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver;
 
+internal sealed class JointPendingActionChoiceException(
+    CombatActorId actor,
+    string sourceId,
+    CardChoiceSpec spec) : InvalidOperationException(
+        $"联合动作等待选择：Actor {actor} source={sourceId} effect={spec.Effect}。")
+{
+    internal CombatActorId Actor { get; } = actor;
+    internal string SourceId { get; } = sourceId;
+    internal CardChoiceSpec Spec { get; } = spec;
+}
+
 /// <summary>
 /// Authoritative one-action transition shared by offline joint search and strict replay.
 /// Enumeration policy is intentionally kept out of this type.
@@ -18,6 +29,19 @@ internal static class JointActionTransition
     {
         ForkableSet<uint> deaths = [];
         foreach (Creature enemy in root.Enemies)
+        {
+            if (enemy.CombatId is uint combatId && simulator.State.GetCreature(enemy).IsDead)
+                deaths.Add(combatId);
+        }
+        return deaths;
+    }
+
+    internal static ForkableSet<uint> CaptureProcessedEnemyDeaths(
+        CombatPredictionSimulator simulator)
+    {
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        ForkableSet<uint> deaths = [];
+        foreach (Creature enemy in combat.KnownEnemies)
         {
             if (enemy.CombatId is uint combatId && simulator.State.GetCreature(enemy).IsDead)
                 deaths.Add(combatId);
@@ -82,12 +106,15 @@ internal static class JointActionTransition
         using IDisposable cardScope = combat.BeginCardExecutionScope(processedEnemyDeaths);
         try
         {
-            if (!simulator.ManualPlay(card, target, out _)
-                || !CorePowerSupport.ApplyEnemyDeathPowers(
+            if (!simulator.ManualPlay(card, target, out _))
+                throw PendingChoice(simulator, combat, player, action);
+            if (!CorePowerSupport.ApplyEnemyDeathPowers(
                     simulator, combat, combat.KnownEnemies, processedEnemyDeaths)
                 || !CombatBeamSolver.SettleReplayActionBoundary(simulator, combat)
                 || simulator.HasPendingChoice)
             {
+                if (combat.PendingTurnStartChoice != null)
+                    throw PendingChoice(simulator, combat, player, action);
                 throw new InvalidOperationException(
                     $"联合动作产生未解决的选择：Actor {action.Actor} card={action.CardId}。" );
             }
@@ -99,6 +126,19 @@ internal static class JointActionTransition
         return action.EndsPlayerTurn || combat.ConsumePlayerTurnEndRequest()
             ? turnState.EndTurn(action.Actor)
             : turnState;
+    }
+
+    private static JointPendingActionChoiceException PendingChoice(
+        CombatPredictionSimulator simulator,
+        SimulatedCombatState combat,
+        Player player,
+        PlanAction action)
+    {
+        TurnStartChoiceRequest request = combat.PendingTurnStartChoice
+            ?? throw new InvalidOperationException(
+                $"联合动作挂起但没有选择请求：Actor {action.Actor} card={action.CardId}。");
+        CardChoiceSpec spec = TurnStartChoiceSupport.BuildSpec(simulator, player, request);
+        return new JointPendingActionChoiceException(action.Actor, request.SourceId, spec);
     }
 
     private static JointTurnState ApplyPotion(
@@ -131,6 +171,8 @@ internal static class JointActionTransition
                 || !CombatBeamSolver.SettleReplayActionBoundary(simulator, combat)
                 || simulator.HasPendingChoice)
             {
+                if (combat.PendingTurnStartChoice != null)
+                    throw PendingChoice(simulator, combat, player, action);
                 throw new InvalidOperationException(
                     $"联合药水动作产生未解决的选择：Actor {action.Actor} potion={action.PotionId}。" );
             }
