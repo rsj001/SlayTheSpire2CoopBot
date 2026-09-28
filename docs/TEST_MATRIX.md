@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F5b：通用 Power 生命周期（2026-09-29）
+
+- 远端 Actor StrengthPower：Actor0 applier、Actor1/末 Actor target，创建→叠加→移除；完整键/续用戳变化，父 Fork 与兄弟 Actor 隔离。
+- `COOP-MULTI-ACTOR-ROOT`：`runId=3d0afccd1afc4501b3108ea1519039f6`，Passed，实例已删除；Release 构建 0 警告/0 错误。
+- 未覆盖全队 Power、回合 Hook、具体 mirror strict diff、Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F5a（2026-09-29）
 
 - 根元数据：每个 `CombatActorRoot` 捕获可搜索药水、Throwing Axe、Petrified Toad 与战后遗物回血；旧单人根字段保持为本地 Actor 等价值。

@@ -46,7 +46,7 @@
 | 功能面 | 单人权威入口 | 联合入口 | F0 状态 | 最低关闭证据 |
 |---|---|---|---|---|
 | 卡牌和伤害/格挡基础结算 | `Engine/InCombat/Simulation/*`、`Mirrors/*` | 复用同一 simulator/mirror | 已迁移 | Actor0-3 同机制 strict diff |
-| Power 创建、叠加、减少、移除和生命周期 | `Mirrors/Power*`、`Prediction/*Power*` | 复用模拟器，Actor 审计未完成 | 待迁移 | applier/target/时序逐字段差分 |
+| Power 创建、叠加、减少、移除和生命周期 | `Mirrors/Power*`、`Prediction/*Power*` | F5b 已通过通用跨 Actor StrengthPower 生命周期；全队效果/Hook 时序待补 | 待迁移 | applier/target、叠加/移除、Fork/键已通过；具体 Hook strict diff 待补 |
 | 被动遗物、计数、消耗和共享遗物 | `Mirrors/Relic*`、`Prediction/*Relic*` | 复用模拟器，Actor 审计未完成 | 待迁移 | 每 Actor 与共享边界对照 |
 | 球槽、球序、触发和角色资源 | `SimulatedCombatState*Orb*`、角色 mirrors | 复用模拟器，联合投影未完成 | 待迁移 | Defect 与各角色资源代表 fixture |
 | 宠物和召唤物所有权 | `Prediction/*`、相关 card/power mirrors | 未建立统一 Actor owner 合同 | 需要真实原版证据 | 原版多玩家所有权/死亡时序证据 |

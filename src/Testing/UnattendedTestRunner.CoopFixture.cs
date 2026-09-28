@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Potions;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Models.Singleton;
 using MegaCrit.Sts2.Core.Runs;
@@ -70,6 +71,7 @@ internal sealed partial class UnattendedTestRunner
 
             JointCombatSnapshot before = JointCombatSnapshot.Capture(root, simulator, turns);
             AssertRemoteActorStateKeyCoverage(root, before, turns, actorCount - 1);
+            AssertRemoteActorPowerLifecycle(root, before, turns, actorCount - 1);
             AssertMultiplayerBlockScaling(root, actorCount);
             JointActionCandidate selected = candidates.First(candidate =>
                 candidate.Action.Actor.Index == actorCount - 1
@@ -175,6 +177,51 @@ internal sealed partial class UnattendedTestRunner
                     return bfs;
                 }
             }
+        }
+    }
+
+    private static void AssertRemoteActorPowerLifecycle(
+        CombatRootSnapshot root,
+        JointCombatSnapshot baseline,
+        JointTurnState turns,
+        int targetActorIndex)
+    {
+        CombatPredictionSimulator applied = root.ForkSimulator();
+        SimulatedCombatState appliedCombat = (SimulatedCombatState)applied.State.CombatState;
+        Player target = applied.State.Players[targetActorIndex];
+        Player applier = applied.State.Players[0];
+        appliedCombat.Apply<StrengthPower>(target.Creature, 2, applier.Creature);
+        PowerLifecycleSupport.ResolvePowerAmountChanges(applied, appliedCombat);
+        JointCombatSnapshot first = JointCombatSnapshot.Capture(root, applied, turns);
+        if (first.StateKey == baseline.StateKey
+            || first.Continuation.StateText == baseline.Continuation.StateText)
+        {
+            throw new InvalidOperationException("远端 Actor Power 创建没有进入联合状态键和续用戳。");
+        }
+
+        CombatPredictionSimulator stacked = applied.Fork();
+        SimulatedCombatState stackedCombat = (SimulatedCombatState)stacked.State.CombatState;
+        stackedCombat.Apply<StrengthPower>(target.Creature, 3, applier.Creature);
+        PowerLifecycleSupport.ResolvePowerAmountChanges(stacked, stackedCombat);
+        JointCombatSnapshot second = JointCombatSnapshot.Capture(root, stacked, turns);
+        if (second.StateKey == first.StateKey
+            || second.Continuation.StateText == first.Continuation.StateText)
+        {
+            throw new InvalidOperationException("远端 Actor Power 叠加没有改变联合状态。");
+        }
+
+        CombatPredictionSimulator removed = stacked.Fork();
+        SimulatedCombatState removedCombat = (SimulatedCombatState)removed.State.CombatState;
+        removedCombat.SetAmount<StrengthPower>(target.Creature, 0);
+        PowerLifecycleSupport.ResolvePowerAmountChanges(removed, removedCombat);
+        JointCombatSnapshot third = JointCombatSnapshot.Capture(root, removed, turns);
+        JointCombatSnapshot parentAgain = JointCombatSnapshot.Capture(root, applied, turns);
+        if (third.StateKey == second.StateKey
+            || parentAgain.StateKey != first.StateKey
+            || third.Actors[0] != baseline.Actors[0])
+        {
+            throw new InvalidOperationException(
+                "远端 Actor Power 移除、Fork 父隔离或兄弟 Actor 所有权错误。");
         }
     }
 

@@ -58,6 +58,12 @@ Armaments + Strike 的 `COOP-JOINT-REPLAY` 通过 choice candidate、实例定�
 
 `COOP-MULTI-ACTOR-ROOT` 只给 Actor1 注入 Petrified Toad，验证 Actor1 为可再生、Actor0 不受污染、本地兼容字段相等且 Actor1 可搜索药水仍被捕获；`runId=f6a9adae0f5b4dc49e472f21747659af`，Passed，实例已删除。Release 构建 0/0。该证据只关闭根元数据所有权，不代表动态 Power、遗物触发、球、宠物或角色资源已完成。
 
+## 离线四 Actor 完整迁移 F5b（通用 Power 生命周期，2026-09-29）
+
+双/四 Actor 根从父模拟器在远端 Actor 上创建 StrengthPower，并使用 Actor0 作为 applier；随后在子 Fork 叠加并在孙 Fork 归零移除。每一步要求完整状态键和续用戳变化，父 Fork 保持创建后的状态，Actor0 诊断快照不变。该 fixture 直接使用 `SimulatedCombatState.Apply/SetAmount` 与 `PowerLifecycleSupport`，不复制 Power 语义。
+
+`COOP-MULTI-ACTOR-ROOT` 的 `runId=3d0afccd1afc4501b3108ea1519039f6` Passed，完成 `RemotePowerLifecycle`，实例已删除；Release 构建 0/0。该证据只覆盖通用创建、叠加、移除和所有权，不外推全队 Power、回合 Hook 或具体 Power mirror 的 actual/simulated 等价。
+
 ## 下一版本（开发中，2026-09-28）
 
 后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。
