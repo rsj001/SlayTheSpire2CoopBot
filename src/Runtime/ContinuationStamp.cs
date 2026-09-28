@@ -95,6 +95,7 @@ internal sealed record ContinuationStamp(string StateText)
         AppendPotions(text, player, player.GetPotionAtSlotIndex);
         SimulatedCombatState.AppendLiveStatefulRelics(text, player);
         RelicPredictionStateSupport.AppendLiveContinuation(text, player);
+        AppendAdditionalActorContinuations(text, state);
         ModelPredictionStateMirrors.AppendLiveContinuation(text, state);
         if (AdaptedCardOnPlayMirrors.CaptureLiveStamp() is { } onPlayStamp)
             text.Append(";onplay_configuration=").Append(onPlayStamp);
@@ -159,6 +160,7 @@ internal sealed record ContinuationStamp(string StateText)
             text,
             simulator,
             combat.RelicsOf(player));
+        AppendAdditionalActorContinuations(text, combat, simulator);
         StateFingerprintBuilder adapterFingerprint = new();
         ModelPredictionStateMirrors.AppendPredicted(ref adapterFingerprint, text, simulator, combat);
         if (combat.AdaptedOnPlay is { } adaptedOnPlay)
@@ -177,6 +179,116 @@ internal sealed record ContinuationStamp(string StateText)
             simulator.Rng.MonsterAiState,
             simulator.Rng.NicheState);
         return new ContinuationStamp(text.ToString());
+    }
+
+    private static void AppendAdditionalActorContinuations(
+        StringBuilder text,
+        CombatState state)
+    {
+        if (state.Players.Count <= 1)
+            return;
+
+        text.Append(";actor_count=").Append(state.Players.Count);
+        for (int index = 0; index < state.Players.Count; index++)
+        {
+            Player player = state.Players[index];
+            AppendActorContinuation(text, index, CaptureLiveActorContinuation(state, player));
+        }
+    }
+
+    private static void AppendAdditionalActorContinuations(
+        StringBuilder text,
+        SimulatedCombatState combat,
+        CombatPredictionSimulator simulator)
+    {
+        if (combat.Players.Count <= 1)
+            return;
+
+        text.Append(";actor_count=").Append(combat.Players.Count);
+        for (int index = 0; index < combat.Players.Count; index++)
+        {
+            Player player = combat.Players[index];
+            AppendActorContinuation(text, index, CapturePredictedActorContinuation(combat, simulator, player));
+        }
+    }
+
+    private static string CaptureLiveActorContinuation(CombatState state, Player player)
+    {
+        PlayerCombatState combatState = player.PlayerCombatState
+            ?? throw new InvalidOperationException(
+                $"玩家 {player.Creature.Name} 没有战斗状态，无法捕获 Actor 续用状态。");
+        StringBuilder actor = Begin(
+            combatState.TurnNumber,
+            player.Creature.CurrentHp,
+            player.Creature.MaxHp,
+            player.Creature.Block,
+            combatState.Energy,
+            combatState.Stars,
+            player.Gold);
+        actor.Append(";phase=").Append(combatState.Phase);
+        AppendOsty(actor, player.Osty, player.Osty?.CurrentHp ?? 0, player.Osty?.MaxHp ?? 0);
+        AppendLivePile(actor, combatState.Hand, 'H');
+        AppendLivePile(actor, combatState.DrawPile, 'D');
+        AppendLivePile(actor, combatState.DiscardPile, 'C');
+        AppendLivePile(actor, combatState.ExhaustPile, 'X');
+        AppendLivePile(actor, combatState.PlayPile, 'P');
+        SimulatedCombatState.AppendLiveTurnCardHistory(actor, state, player);
+        AppendOrbs(actor, combatState.OrbQueue.Capacity, combatState.OrbQueue.Orbs);
+        AppendPotions(actor, player, player.GetPotionAtSlotIndex);
+        SimulatedCombatState.AppendLiveStatefulRelics(actor, player);
+        RelicPredictionStateSupport.AppendLiveContinuation(actor, player);
+        return actor.ToString();
+    }
+
+    private static string CapturePredictedActorContinuation(
+        SimulatedCombatState combat,
+        CombatPredictionSimulator simulator,
+        Player player)
+    {
+        SimPlayerCombatState combatState = simulator.State.GetPlayerCombatState(player);
+        SimCreatureState creature = simulator.State.GetCreature(player.Creature);
+        StringBuilder actor = Begin(
+            combat.GetPlayerTurnNumber(player),
+            creature.CurrentHp,
+            creature.MaxHp,
+            creature.Block,
+            combatState.Energy,
+            combatState.Stars,
+            combat.GetPlayerGold(player));
+        actor.Append(";phase=").Append(combatState.Phase);
+        Creature? osty = combat.GetOsty(player);
+        AppendOsty(
+            actor,
+            osty,
+            osty is { } pet ? simulator.State.GetCreature(pet).CurrentHp : 0,
+            combat.GetOstyMaxHp(simulator, player));
+        AppendPredictedPile(actor, combatState.Hand, 'H');
+        AppendPredictedPile(actor, combatState.DrawPile, 'D');
+        AppendPredictedPile(actor, combatState.DiscardPile, 'C');
+        AppendPredictedPile(actor, combatState.ExhaustPile, 'X');
+        AppendPredictedPile(actor, combatState.PlayPile, 'P');
+        combat.AppendPredictedTurnCardHistory(actor, player);
+        AppendPredictedOrbs(actor, simulator, combatState.OrbQueue.Capacity, combatState.OrbQueue.Orbs);
+        AppendPotions(actor, player, slot => combat.GetPotionAtSlot(player, slot));
+        combat.AppendPredictedStatefulRelics(actor, player);
+        RelicPredictionStateSupport.AppendPredictedContinuation(
+            actor,
+            simulator,
+            combat.RelicsOf(player));
+        return actor.ToString();
+    }
+
+    private static void AppendActorContinuation(StringBuilder text, int index, string actorText)
+    {
+        foreach (string field in actorText.Split(';', StringSplitOptions.RemoveEmptyEntries))
+        {
+            int separator = field.IndexOf('=');
+            if (separator < 0)
+                throw new InvalidOperationException(
+                    $"Actor {index} 续用字段缺少名称和值分隔符：{field}");
+            text.Append(";A").Append(index).Append('.')
+                .Append(field[..separator]).Append(field[separator..]);
+        }
     }
 
     private static StringBuilder Begin(int turn, int hp, int maxHp, int block, int energy, int stars, int gold)

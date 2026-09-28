@@ -6,9 +6,11 @@
 
 - P0 静态盘点完成：`CombatPredictionState` 已拥有按 `Player` 索引的多玩家模拟状态；`CombatRootSnapshot`、`CombatBeamSolver`、`PlanAction`、`SimulationSnapshot`、`ContinuationStamp` 仍以本地玩家为搜索权威。未把静态搜索结果写成多人语义通过。
 - P1 源码改动：`CombatRootSnapshot` 新增按 `CombatState.Players` 固定顺序捕获的 `CombatActorRoot` 列表和 `CombatActorId`，并保留 `LocalActorId`；捕获的卡牌与药水仅为不可变根元数据，现有单人搜索没有消费这些字段。
+- P2 源码改动：`ContinuationStamp` 对多人根和预测状态追加 `actor_count` 与 `A{index}.*` 字段，覆盖阶段、五个牌堆、HP/格挡/资源、奥斯提、球、药水、回合历史、状态遗物和跨回合遗物状态；单人 stamp 不追加字段，预测与 live 使用相同 Actor 顺序和字段结构。
 - 静态证据：新文档链接、标题结构和 `git diff --check` 通过。
-- 构建证据：`dotnet build CombatSolver.csproj -c Release --no-restore` 因缺少 `project.assets.json` 失败；带还原的 `dotnet build CombatSolver.csproj -c Release` 已完成还原，但随后因本机缺少 `C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64\sts2.dll` 失败。桌面反编译目录只有 `sts2.dll`，没有项目要求的 RitsuLib 引用，因此本批尚无源码编译证据。
-- 未执行：无人测试、离线联合 fixture、完整多 Actor strict diff、部署、Steam、联网客户端控制。P1 不改变动作结算，下一批需先恢复可用的项目引用，再验证单人根捕获等价和多 Actor 根目录。
+- 构建证据：初次默认路径构建因缺少 `project.assets.json` 和 Steam 引用失败；随后使用已确认的 `D:\SteamLibrary\steamapps\common\Slay the Spire 2` 与 `mods\RitsuLib` 路径运行 `dotnet build CombatSolver.csproj -c Release -p:Sts2Dir=... -p:Sts2DataDir=... -p:RitsuWorkshopRoot=... -p:RitsuLibDir=...`，Release 构建 0 警告/0 错误，并生成 MemoryCleaner。
+- 动态证据：`COOP-P2-SINGLE-ROOT` 使用 `-VerifyCombatRootSnapshot -StopAfterCombatRootSnapshotAssertion -HeadlessMemoryReservationMiB 1024 -HeadlessCpuReservation 1 -CleanupInstanceOnExit`，结果 `status=Passed`，完成 `CombatRootSnapshot` 检查，实例 `.local/headless-instances/coop-p2-single-root-lowmem` 已删除。首次 4 GiB/2 CPU 请求因主机准入资源约束超时并清理，未进入游戏，不计为战斗失败。
+- 未执行：多人根注入、离线联合 fixture、完整多 Actor strict diff、部署、Steam、联网客户端控制。P1/P2 不改变单人动作结算；下一批进入 Actor 动作与联合状态模型。
 
 ## PR #144 最终修复与合并验证（2026-09-28）
 

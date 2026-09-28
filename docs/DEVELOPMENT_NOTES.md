@@ -2,7 +2,7 @@
 
 ## 下一版本（开发中，2026-09-28）
 
-开始执行 [Co-op Bot 离线多 Actor 联合搜索开发计划](refactoring/coop-multi-actor-offline-search-plan-20260928.md)。P0 静态盘点确认 `CombatPredictionState` 已按 `Player` 保存并 Fork 多名玩家；当前单人假设主要集中在根快照、搜索快照/状态键和计划动作。P1 新增不可变 `CombatActorRoot` 目录与根内 `CombatActorId`：根捕获按 `CombatState.Players` 固定顺序记录每名玩家的身份、HP、回合、阶段、卡牌 ID 与药水 ID，并记录本地 Actor 索引；现有 `PlayerIdentity`、单人字段和生产搜索入口保持不变。该批只建立根元数据，不代表多人搜索、多人部署或网络控制已实现。完整 Release 构建暂未取得：当前机器缺少项目所需的正式 `sts2.dll`/RitsuLib 安装引用，详见测试矩阵。
+开始执行 [Co-op Bot 离线多 Actor 联合搜索开发计划](refactoring/coop-multi-actor-offline-search-plan-20260928.md)。P0 静态盘点确认 `CombatPredictionState` 已按 `Player` 保存并 Fork 多名玩家；当前单人假设主要集中在根快照、搜索快照/状态键和计划动作。P1 新增不可变 `CombatActorRoot` 目录与根内 `CombatActorId`：根捕获按 `CombatState.Players` 固定顺序记录每名玩家的身份、HP、回合、阶段、卡牌 ID 与药水 ID，并记录本地 Actor 索引；现有 `PlayerIdentity`、单人字段和生产搜索入口保持不变。P2 将续用合同扩展为 Actor 目录：多人根与预测状态按同一玩家顺序记录 Actor 数量、阶段、五个牌堆、HP/格挡/资源、奥斯提、球、药水、回合历史、状态遗物和跨回合遗物状态；单人 `ContinuationStamp` 文本保持不变。该批只建立根与续用边界，不代表多人搜索、多人部署或网络控制已实现。使用已确认的 `D:\SteamLibrary\steamapps\common\Slay the Spire 2` 与 `mods\RitsuLib` 路径完成 Release 构建，0 警告/0 错误；`COOP-P2-SINGLE-ROOT` 根捕获无人场景 Passed（1 CPU / 1 GiB 隔离实例，实例已清理），尚未运行多人行为验证。
 
 整合 PR #144 最新提交 `1e914b38`：内存原因导致的 NoGC 回退按指数退避继续尝试恢复，冷却上限为 60 秒，计数跨回退段累计；成功恢复后仍可处理后续内存变化。补齐主动退出调用处：单次不可分割提交主动切至普通 GC、取消或回收超时后保持普通 GC，平台／尺寸不支持也永久退出。真实 CLR 合同覆盖主动退出后已完成新 Gen2 且冷却已到的边界。此改动不证明 ServerGC 卡顿或内存耗尽已解决；0.47.2 发布内容保持冻结，本轮只修复合并和本地部署。
 

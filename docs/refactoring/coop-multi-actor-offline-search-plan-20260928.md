@@ -1,6 +1,6 @@
 # Co-op Bot 离线多 Actor 联合搜索开发计划
 
-> 状态：提案，尚未实施  
+> 状态：分阶段实施中（P0-P2 已完成）  
 > 日期：2026-09-28  
 > 目标：把 CombatSolver 的战斗根与搜索节点推广为 Actor 数量可变的离线模型，同时保持单人模式等价。  
 > 当前边界：本计划不启用生产多人模式，不控制其他客户端，不发送网络动作，不启动可见 Steam，不提升版本、不发包或上传创意工坊。
@@ -8,9 +8,9 @@
 ## 当前进度
 
 - P0：静态盘点完成，确认模拟器已按 `Player` 保存多玩家分支状态，单人假设集中于根快照、搜索和计划层。
-- P1：已实现根内 `CombatActorId`、不可变 `CombatActorRoot` 列表和 `LocalActorId`；现有单人代理字段、搜索入口和部署边界未改变。
-- P1 验证：文档/静态检查通过；源码编译受本机缺少正式游戏与 RitsuLib 引用阻断，尚未声称构建或行为通过。
-- 后续：恢复可用项目引用后，先取得单人根捕获等价证据，再进入 P2 严格状态扩展。
+- P1：已实现根内 `CombatActorId`、不可变 `CombatActorRoot` 列表和 `LocalActorId`；现有单人代理字段、搜索入口和部署边界未改变。显式游戏/RitsuLib 路径 Release 构建 0/0，根捕获无人检查通过。
+- P2：已实现多人 `ContinuationStamp` 的 Actor 目录，live/predicted 均覆盖阶段、五个牌堆、HP/格挡/资源、奥斯提、球、药水、回合历史、状态遗物和跨回合遗物状态；单人 stamp 保持逐字不变。Release 构建、Windows 结构门禁和 `COOP-P2-SINGLE-ROOT` 根捕获无人检查通过，实例已清理。
+- 后续：进入 P3 Actor-aware `PlanAction` 与选择模型。
 
 [返回重构路线与核验](README.md) · [返回文档导航](../README.md)
 
