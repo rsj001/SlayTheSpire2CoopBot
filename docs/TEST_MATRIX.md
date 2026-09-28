@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F6b/F7d2：回合开始选择前缀（2026-09-29）
+
+- Actor1 持有必备工具 Power；两名 Actor 完成玩家屏障和基础敌方侧后，下一玩家轮先产生绑定 Actor1 与上一轮 EndTurn 的 `TurnStart` frame，再从稳定父状态携带一项选择前缀重放。
+- 首次 frame 未保存 `ContextId/Timing`，计划选择无法消费，`runId=0a2554c9ae244ae7b0217ab67e7856c4` Failed；补齐后新回合号递增且无残留 pending choice。
+- `COOP-MULTI-ACTOR-ROOT`：`runId=2cf1ac4368ab4ad58ac2c056708b6842`，Passed，实例已删除；F6b 的 EndTurn、自动/重复出牌和遗物选择、Linux 及可见 Steam 未覆盖。
+
 ## 离线四 Actor 完整迁移 F9a：有界联合 Beam（2026-09-29）
 
 - 新联合 Beam 按动作深度逐层展开，全部 Actor 共享状态预算和完整状态键转置集合；候选按联合目标及稳定动作序确定性截宽，终局不再继续展开。

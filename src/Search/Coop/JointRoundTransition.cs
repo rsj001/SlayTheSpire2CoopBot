@@ -13,7 +13,8 @@ internal static class JointRoundTransition
     internal static JointTurnState StartBasicPlayerSide(
         CombatPredictionSimulator simulator,
         JointTurnState turns,
-        ForkableSet<uint> processedEnemyDeaths)
+        ForkableSet<uint> processedEnemyDeaths,
+        IReadOnlyList<PlanCardChoice>? turnStartChoices = null)
     {
         if (!turns.IsBarrierReached)
             throw new InvalidOperationException("联合玩家侧尚未完成上一轮屏障。");
@@ -22,7 +23,7 @@ internal static class JointRoundTransition
             .Where(player => simulator.State.GetCreature(player.Creature).IsAlive)
             .ToArray();
         Creature[] participants = players.Select(static player => player.Creature).ToArray();
-        combat.BeginActionChoices((IReadOnlyList<PlanCardChoice>?)null);
+        combat.BeginActionChoices(turnStartChoices);
         try
         {
             combat.SetActionChoiceTiming(PlanChoiceTiming.PlayerTurnStart);
@@ -60,6 +61,7 @@ internal static class JointRoundTransition
 
             foreach (Player player in players)
             {
+                CombatActorId actor = ActorOf(combat, player);
                 SimPlayerCombatState state = simulator.State.GetPlayerCombatState(player);
                 if (PersistentRelicSupport.ShouldPlayerResetEnergy(combat, player))
                     state.LoseEnergy(state.Energy);
@@ -69,33 +71,35 @@ internal static class JointRoundTransition
                     !combat.HasPendingChoice
                     && PersistentPowerSupport.TriggerAfterEnergyReset(simulator, combat, player),
                     combat,
-                    "AfterEnergyReset");
+                    "AfterEnergyReset",
+                    actor,
+                    turns);
                 TurnStartRelicSupport.TriggerAfterEnergyReset(simulator, combat, player);
-                RequireNoChoice(!combat.HasPendingChoice, combat, "AfterEnergyReset relic");
+                RequireNoChoice(!combat.HasPendingChoice, combat, "AfterEnergyReset relic", actor, turns);
                 TurnStartRelicSupport.TriggerAfterEnergyResetLate(simulator, combat, player);
-                RequireNoChoice(!combat.HasPendingChoice, combat, "AfterEnergyResetLate");
+                RequireNoChoice(!combat.HasPendingChoice, combat, "AfterEnergyResetLate", actor, turns);
 
                 TurnStartChoiceCursor choices = combat.ActiveExecutionChoices;
                 combat.PrepareBeforeHandDraw(simulator, player, choices);
-                RequireNoChoice(!combat.HasPendingChoice, combat, "BeforeHandDraw");
+                RequireNoChoice(!combat.HasPendingChoice, combat, "BeforeHandDraw", actor, turns);
                 using (simulator.BeginExecutionDispatch())
                     PowerLifecycleSupport.ResolvePowerAmountChanges(simulator, combat);
-                RequireNoChoice(!combat.HasPendingChoice, combat, "BeforeHandDraw power resolution");
+                RequireNoChoice(!combat.HasPendingChoice, combat, "BeforeHandDraw power resolution", actor, turns);
                 int drawCount = PersistentPowerSupport.ConsumeModifiedHandDraw(
                     combat,
                     player,
                     CombatManager.baseHandDrawCount);
                 int historyStart = simulator.History.Entries.Count;
                 simulator.Draw(player, drawCount, fromHandDraw: true);
-                RequireNoChoice(!combat.HasPendingChoice, combat, "hand draw");
+                RequireNoChoice(!combat.HasPendingChoice, combat, "hand draw", actor, turns);
                 using (simulator.BeginExecutionDispatch())
                     TriggeredPowerSupport.CompensateHistorySince(
                         simulator,
                         combat,
                         historyStart);
-                RequireNoChoice(!combat.HasPendingChoice, combat, "hand draw compensation");
+                RequireNoChoice(!combat.HasPendingChoice, combat, "hand draw compensation", actor, turns);
                 combat.TriggerAfterPlayerTurnStart(simulator, player.Creature, choices);
-                RequireNoChoice(!combat.HasPendingChoice, combat, "AfterPlayerTurnStart");
+                RequireNoChoice(!combat.HasPendingChoice, combat, "AfterPlayerTurnStart", actor, turns);
             }
 
             RequireNoChoice(
@@ -117,14 +121,15 @@ internal static class JointRoundTransition
             foreach (Player player in players)
             {
                 EnchantmentLifecycleSupport.TriggerAfterTurnStartOrbs(simulator, player);
-                RequireNoChoice(!combat.HasPendingChoice, combat, "turn-start orbs");
+                CombatActorId actor = ActorOf(combat, player);
+                RequireNoChoice(!combat.HasPendingChoice, combat, "turn-start orbs", actor, turns);
                 combat.TriggerAutoPrePlayEarly(
                     simulator,
                     player,
                     combat.GetPlayerTurnNumber(player),
                     combat.ActiveExecutionChoices,
                     processedEnemyDeaths);
-                RequireNoChoice(!combat.HasPendingChoice, combat, "auto pre-play");
+                RequireNoChoice(!combat.HasPendingChoice, combat, "auto pre-play", actor, turns);
             }
             combat.ActiveExecutionChoices.AssertConsumed();
             combat.NormalizeAeonglassWithers(simulator);
@@ -325,5 +330,36 @@ internal static class JointRoundTransition
         throw new InvalidOperationException(
             $"联合下一玩家轮在 {stage} 产生待处理选择：" +
             $"{combat.PendingTurnStartChoice?.SourceId ?? "unknown"}。");
+    }
+
+    private static void RequireNoChoice(
+        bool completed,
+        SimulatedCombatState combat,
+        string stage,
+        CombatActorId actor,
+        JointTurnState turns)
+    {
+        if (completed && !combat.HasPendingChoice)
+            return;
+        TurnStartChoiceRequest request = combat.PendingTurnStartChoice
+            ?? throw new InvalidOperationException(
+                $"联合下一玩家轮在 {stage} 挂起但没有选择请求。");
+        PlanAction source = new(PlanActionKind.EndTurn, turns.Turn, Actor: actor);
+        throw new JointPendingActionChoiceException(new(
+            actor,
+            source,
+            request.SourceId,
+            request.Spec ?? throw new InvalidOperationException("联合回合开始选择缺少 spec。"),
+            JointPendingChoicePlacement.TurnStart,
+            request.ContextId,
+            request.Timing));
+    }
+
+    private static CombatActorId ActorOf(SimulatedCombatState combat, Player player)
+    {
+        for (int index = 0; index < combat.Players.Count; index++)
+            if (ReferenceEquals(combat.Players[index], player))
+                return new CombatActorId(index);
+        throw new InvalidOperationException("联合回合开始选择 owner 不在 Actor 目录中。");
     }
 }

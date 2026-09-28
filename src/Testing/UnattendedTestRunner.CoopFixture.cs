@@ -97,6 +97,7 @@ internal sealed partial class UnattendedTestRunner
                 AssertDeadActorBarrier(root);
                 AssertBasicEnemySide(root);
                 AssertBasicNextPlayerSide(root);
+                AssertTurnStartChoiceContinuation(root);
             }
             JointActionCandidate selected = candidates.First(candidate =>
                 candidate.Action.Actor.Index == actorCount - 1
@@ -349,6 +350,67 @@ internal sealed partial class UnattendedTestRunner
                     $"Actor{index} 下一轮资源未恢复：turn={combat.GetPlayerTurnNumber(player)} " +
                     $"hand={state.Hand.Cards.Count} energy={state.Energy}。");
             }
+        }
+    }
+
+    private static void AssertTurnStartChoiceContinuation(CombatRootSnapshot root)
+    {
+        CombatPredictionSimulator parent = root.ForkSimulator();
+        SimulatedCombatState parentCombat = (SimulatedCombatState)parent.State.CombatState;
+        Player owner = parent.State.Players[1];
+        parentCombat.Apply<ToolsOfTheTradePower>(owner.Creature, 1, owner.Creature);
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> parentDeaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, parent);
+        JointRoundTransition.CompletePlayerSide(parent, turns, parentDeaths);
+        JointRoundTransition.CompleteBasicEnemySide(parent, parentDeaths);
+
+        JointPendingChoiceFrame frame;
+        CombatPredictionSimulator probe = parent.Fork();
+        try
+        {
+            _ = JointRoundTransition.StartBasicPlayerSide(
+                probe,
+                turns,
+                parentDeaths.Fork());
+            throw new InvalidOperationException("Tools of the Trade 未产生联合回合开始选择。");
+        }
+        catch (JointPendingActionChoiceException pending)
+        {
+            frame = pending.Frame;
+        }
+        if (frame.OwnerActor != new CombatActorId(1)
+            || frame.SourceAction != new PlanAction(
+                PlanActionKind.EndTurn,
+                turns.Turn,
+                Actor: new CombatActorId(1))
+            || frame.Placement != JointPendingChoicePlacement.TurnStart)
+        {
+            throw new InvalidOperationException("联合回合开始选择未保留 owner、SourceAction 或 placement。");
+        }
+        PlanCardChoice choice = CardChoiceSupport.BuildChoices(
+                frame.Spec,
+                static _ => string.Empty,
+                maxPileBranches: 32,
+                maxHandBranches: 32)
+            .First() with
+        {
+            Actor = frame.OwnerActor,
+            SourceId = frame.SourceId,
+            ContextId = frame.ContextId,
+            Timing = frame.Timing,
+        };
+        CombatPredictionSimulator resumed = parent.Fork();
+        JointTurnState next = JointRoundTransition.StartBasicPlayerSide(
+            resumed,
+            turns,
+            parentDeaths.Fork(),
+            [choice]);
+        if (next.Turn != turns.Turn + 1
+            || ((SimulatedCombatState)resumed.State.CombatState).HasPendingChoice)
+        {
+            throw new InvalidOperationException("联合回合开始选择前缀未完成下一轮恢复。");
         }
     }
 

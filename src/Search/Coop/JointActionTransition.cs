@@ -11,7 +11,9 @@ internal sealed record JointPendingChoiceFrame(
     PlanAction SourceAction,
     string sourceId,
     CardChoiceSpec spec,
-    JointPendingChoicePlacement Placement = JointPendingChoicePlacement.Nested)
+    JointPendingChoicePlacement Placement = JointPendingChoicePlacement.Nested,
+    string ContextId = "",
+    PlanChoiceTiming Timing = PlanChoiceTiming.Action)
 {
     internal string SourceId { get; } = sourceId;
     internal CardChoiceSpec Spec { get; } = spec;
@@ -29,6 +31,7 @@ internal enum JointPendingChoicePlacement
 {
     Primary,
     Nested,
+    TurnStart,
 }
 
 /// <summary>
@@ -156,7 +159,9 @@ internal static class JointActionTransition
             action.Actor,
             action,
             request.SourceId,
-            spec));
+            spec,
+            ContextId: request.ContextId,
+            Timing: request.Timing));
     }
 
     private static JointTurnState ApplyPotion(

@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F6b/F7d2（2026-09-29）
+
+联合下一玩家轮现在能把逐 Actor 回合开始选择提升为带 owner、EndTurn 来源动作、source/context/timing 和 spec 的稳定帧，并从敌方回合结束后的同一父状态按选择前缀恢复。Actor1 的必备工具 Power 首次因帧遗漏 `ContextId/Timing` 而留下未消费计划选择，`runId=0a2554c9ae244ae7b0217ab67e7856c4` Failed；补齐身份后 `COOP-MULTI-ACTOR-ROOT` 的 `runId=2cf1ac4368ab4ad58ac2c056708b6842` Passed，实例已删除。F6b 仍需 EndTurn、自动/重复出牌和遗物选择代表。
+
 ## 离线四 Actor 完整迁移 F9a（2026-09-29）
 
 新增有界的确定性联合 Beam：按动作深度逐层展开，全体 Actor 共享状态预算与完整状态键转置集合，按联合终局目标和稳定动作序截宽，并记录 `Completed`/`StateBudget` 停止原因。2 Actor 小根的宽 Beam 与独立 DFS oracle 得到相同分数、动作序和状态键，`COOP-MULTI-ACTOR-ROOT` 的 `runId=2ba973750d1a4b41998970ba7058a880` Passed，实例已删除，Release 构建 0/0。F9 的 Pareto/多样性、药水配额、固定并行 lane、4 Actor 与 BFWS 仍待完成。

@@ -184,6 +184,8 @@ internal static class JointActionExpander
                     {
                         Actor = frame.OwnerActor,
                         SourceId = frame.SourceId,
+                        ContextId = frame.ContextId,
+                        Timing = frame.Timing,
                     };
                     PlanAction expanded = frame.Placement switch
                     {
