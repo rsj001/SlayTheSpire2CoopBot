@@ -31,7 +31,7 @@ internal sealed record JointOfflineSearchRequest(
         => PotionPolicy ?? JointPotionSearchPolicy.Unrestricted;
 }
 
-internal static class JointOfflineSearch
+internal static partial class JointOfflineSearch
 {
     private sealed record Node(
         CombatPredictionSimulator Simulator,

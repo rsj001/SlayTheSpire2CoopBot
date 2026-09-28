@@ -136,6 +136,18 @@ internal sealed partial class UnattendedTestRunner
                     throw new InvalidOperationException(
                         "联合 Beam 与 DFS oracle 的最优值、动作序或终局状态不一致。");
                 }
+                JointOfflineSearchResult bfws = JointOfflineSearch.SolveBfws(
+                    root,
+                    JointOfflineSearchRequest.Default(maximumActions: 2, maximumStates: 2_000),
+                    maximumOpen: 2_000);
+                if (bfws.Termination != JointSearchTermination.Completed
+                    || JointObjectiveScore.Compare(bfws.Score, oracle.Score) != 0
+                    || bfws.Snapshot.StateKey != oracle.Snapshot.StateKey
+                    || ComparePlanActions(bfws.Actions, oracle.Actions) != 0)
+                {
+                    throw new InvalidOperationException(
+                        "联合 BFWS 与 DFS oracle 的最优值、动作序或终局状态不一致。");
+                }
                 JointOfflineSearchResult repeatedBeam = JointOfflineSearch.SolveBeam(
                     root,
                     JointOfflineSearchRequest.Default(maximumActions: 2, maximumStates: 2_000),
@@ -260,12 +272,21 @@ internal sealed partial class UnattendedTestRunner
                     JointOfflineSearch.SolveDepthFirstOracle(root, oneAction);
                 JointOfflineSearchResult fourActorBeam =
                     JointOfflineSearch.SolveBeam(root, oneAction, beamWidth: 2_000);
+                JointOfflineSearchResult fourActorBfws =
+                    JointOfflineSearch.SolveBfws(root, oneAction, maximumOpen: 2_000);
                 if (JointObjectiveScore.Compare(fourActorBeam.Score, fourActorOracle.Score) != 0
                     || fourActorBeam.Snapshot.StateKey != fourActorOracle.Snapshot.StateKey
                     || ComparePlanActions(fourActorBeam.Actions, fourActorOracle.Actions) != 0)
                 {
                     throw new InvalidOperationException(
                         "四 Actor 一层 Beam 与 DFS oracle 的最优值、动作序或状态不一致。");
+                }
+                if (JointObjectiveScore.Compare(fourActorBfws.Score, fourActorOracle.Score) != 0
+                    || fourActorBfws.Snapshot.StateKey != fourActorOracle.Snapshot.StateKey
+                    || ComparePlanActions(fourActorBfws.Actions, fourActorOracle.Actions) != 0)
+                {
+                    throw new InvalidOperationException(
+                        "四 Actor 一层 BFWS 与 DFS oracle 的最优值、动作序或状态不一致。");
                 }
             }
         }

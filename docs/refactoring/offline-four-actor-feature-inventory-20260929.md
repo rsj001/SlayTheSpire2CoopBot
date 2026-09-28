@@ -64,7 +64,7 @@
 | 团队目标 | 无单人对应 | `JointObjective` 完整字典序；总战损仍为 workaround | 已迁移 | 终局边界、存活、分布、资源、成长、偷窃和稳定决胜通过 |
 | 药水政策、战略成本、成长、偷窃和强制目标 | `PotionUsePolicy`、`FinalPlanOrdering` | F4c1 已接入 Actor+槽位 Disabled/Force、药量上下界和战略成本；Smart 反事实及其余终局政策待完成 | 待迁移 | 硬政策 BFS/DFS 已通过；单人 Smart 等价及联合反事实待补 |
 | BFS/DFS 有限 oracle | 无生产对应 | `JointOfflineSearch` | 已迁移 | 2 Actor 同值/同动作/同键 |
-| 生产规模 Beam/BFWS、Pareto、保路、多样性 | `CombatBeamSolver.*` | F9a 有界 Beam/共享预算/转置；F9b Actor、药水和资源 Pareto 保路；BFWS/并行待补 | 待迁移 | 2 Actor Beam/DFS、4 Actor 一层、保路合同通过；并行与 BFWS 待补 |
+| 生产规模 Beam/BFWS、Pareto、保路、多样性 | `CombatBeamSolver.*` | 有界联合 Beam/BFWS、共享预算/转置、Actor/药水/Pareto 保路与固定 lane | 已迁移 | 2 Actor 两动作、4 Actor 一动作 oracle 及串并行等价通过 |
 | 串行/固定 lane 并行、预算、取消、内存压力 | `AdmittedJobScheduler`、`SearchBudgetLedger` | 尚无联合实现 | 待迁移 | DOP1/DOPN 同动作/同键、无泄漏 |
 | 严格回放 | `ReplayAction`、无人测试差分 | 仅同一模拟根基础动作 | 待迁移 | 2/4 Actor 完整 actual/simulated 逐步对照 |
 
