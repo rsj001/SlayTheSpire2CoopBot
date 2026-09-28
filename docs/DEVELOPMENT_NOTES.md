@@ -28,6 +28,12 @@ Armaments + Strike 的 `COOP-JOINT-REPLAY` 通过 choice candidate、实例定�
 
 `COOP-JOINT-REPLAY` 使用 Havoc 自动打出抽牌堆的 Second Wind，并由 Second Wind 对手牌 Defend 产生动态嵌套选择；候选已带完整 nested choice，搜索单步和计划回放状态一致，`runId=dd5c6722fb854a41b4738e292957c0ac`，Passed，实例已删除。Release 构建 0/0。该证据不覆盖回合开始/结束选择或 opening/cross-turn 搜索政策，F3 仍为进行中。
 
+## 离线四 Actor 完整迁移 F3c（2026-09-29）
+
+联合搜索请求现在显式携带固定前缀、动作上限和状态上限。BFS 与独立 DFS oracle 都从冻结根 Fork，通过权威联合 transition 回放同一 Actor-aware 前缀，再从所得严格状态继续搜索；前缀 Actor 越界、长度越界和跨回合均明确失败。跨回合拒绝是 F7 生命周期完成前的边界，不用伪造的回合推进掩盖缺口。
+
+`COOP-MULTI-ACTOR-ROOT` 在 Actor1 出牌前缀后验证 BFS/DFS 的最优值和完整动作序一致，且结果首动作保持该前缀；`runId=5f14e64a366e4ad286cc03099b4bc8c4`，Passed，实例已删除。Release 构建 0/0。opening/cycle/cross-turn 与单人候选序哨兵仍未完成，F3 保持进行中。
+
 ## 下一版本（开发中，2026-09-28）
 
 后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。

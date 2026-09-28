@@ -2253,6 +2253,18 @@ foreach ($text in @(
         $violations.Add("Joint dynamic choice expansion missing F3b boundary: $text")
     }
 }
+$jointOfflineSearchPath = Join-Path $repositoryRoot 'src/Search/Coop/JointOfflineSearch.cs'
+foreach ($text in @(
+    'internal sealed record JointOfflineSearchRequest(',
+    'Node seed = ReplayFixedPrefix(root, request.FixedPrefix);',
+    'private static Node ReplayFixedPrefix(',
+    'JointActionTransition.Apply(simulator, turns, action, deaths)',
+    '等待 F7 联合回合生命周期'
+)) {
+    if (-not (Select-String -LiteralPath $jointOfflineSearchPath -SimpleMatch $text -Quiet)) {
+        $violations.Add("Joint fixed-prefix search missing F3c boundary: $text")
+    }
+}
 
 if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Error $_ }

@@ -1,6 +1,6 @@
 # 从单人 CombatSolver 到离线四 Actor 完整自动规划开发计划
 
-> 状态：执行中；前置联合模型 P0-P12、F0-F2 已完成，F3-F12 待完成
+> 状态：执行中；前置联合模型 P0-P12、F0-F2 已完成，F3 进行中，F4-F12 待完成
 > 日期：2026-09-29  
 > 基线提交：`f14acea6`  
 > 目标：在不改变单人 CombatSolver 语义的前提下，建立一个可以控制最多四名 Actor、完整覆盖单人战斗机制的离线联合自动规划器。  
@@ -13,7 +13,7 @@
 | F0 单人全功能清单与基线 | 已完成 | [功能迁移库存](offline-four-actor-feature-inventory-20260929.md)；Windows 结构门禁通过；复用同源码五项动态基线 |
 | F1 统一联合单步转移 | 已完成 | `JointActionTransition` 统一卡牌/选择/药水/EndTurn；`COOP-JOINT-REPLAY` 通过 |
 | F2 Actor 状态/Fork/快照/续用 | 已完成 | 2/4 Actor 远端字段扰动与 Fork 隔离通过；修复多人敌人格挡缩放 mirror |
-| F3 完整卡牌与目标 | 进行中 | F3a/F3b 已接入目标/实例身份、基础及动态嵌套选择；opening/cross-turn/fixed-prefix 政策入口待完成 |
+| F3 完整卡牌与目标 | 进行中 | F3a/F3b 已接入目标/实例身份、基础及动态嵌套选择；F3c 已接入同回合 fixed-prefix 请求并通过 BFS/DFS；opening/cycle/cross-turn 仍待完成 |
 | F4 完整药水 | 未开始 | - |
 | F5 Power/遗物/球/宠物/角色资源 | 未开始 | - |
 | F6 选择与嵌套 continuation | 未开始 | - |
@@ -173,6 +173,13 @@
 - 同名卡牌逐实例匹配；
 - 复杂卡牌的选择链可严格回放；
 - 单人候选序和结果不退化。
+
+执行拆分：
+
+- F3a（已完成）：卡牌实例身份、完整 `TargetType` 分类与基础动作选择。
+- F3b（已完成）：动作执行时出现的动态／嵌套选择，最多 16 层且普通执行错误继续传播。
+- F3c（已完成）：`JointOfflineSearchRequest` 携带同回合固定前缀、动作上限和状态上限；BFS 与独立 DFS oracle 从同一权威 transition 回放前缀后继续搜索。`COOP-MULTI-ACTOR-ROOT` 运行 `5f14e64a366e4ad286cc03099b4bc8c4` 通过 `FixedPrefix:BfsVsDfs`，实例已删除。
+- F3d（待完成）：opening/cycle 成员和单人候选序哨兵；跨回合前缀必须等待 F7 的联合回合生命周期，当前入口显式拒绝，不把同回合证据外推。
 
 ### F4：完整药水迁移
 

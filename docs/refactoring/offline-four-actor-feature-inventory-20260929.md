@@ -39,7 +39,7 @@
 | 药水使用、目标、槽位、生成、复制和替换 | `CombatBeamSolver.*Potion*.cs`、`Prediction/Potion*` | transition 已执行已选药水；完整候选/政策未迁移 | 待迁移 | 四 Actor 独立药水槽及搜索/回放同键 |
 | 主动遗物动作 | 原版无战斗内独立提交入口；遗物由 Hook 触发 | 不新增伪造动作；`PlanRelicEffect` 仍是路线注释 | 明确不支持 | F1 反编译检索无 `UseRelic`/`ActivateRelic` 战斗动作；遗物触发归 F5 |
 | 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | F3b 已完成动作内探测/补全；回合边界与独立 continuation 待 F6 | 待迁移 | owner/source/实例/原序及兄弟 Fork 隔离 |
-| opening、fixed-prefix、cycle、cross-turn、plan continuation | `CombatSearchCoordinator.*`、`FrontierContinuationScheduler` | 尚未接入联合搜索 | 待迁移 | 单人候选序哨兵与 2/4 Actor 联合成员 |
+| opening、fixed-prefix、cycle、cross-turn、plan continuation | `CombatSearchCoordinator.*`、`FrontierContinuationScheduler` | F3c 已接入同回合 fixed-prefix 请求并由 BFS/DFS 对照；opening/cycle/cross-turn 尚未接入 | 待迁移 | 单人候选序哨兵与 2/4 Actor 联合成员；跨回合待 F7 |
 
 ## 结算机制
 

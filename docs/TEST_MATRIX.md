@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F3c（2026-09-29）
+
+- 请求合同：`JointOfflineSearchRequest` 携带 Actor-aware 固定前缀、动作上限和状态上限；BFS/DFS 均经权威 transition 回放前缀，跨回合在 F7 前显式拒绝。
+- `COOP-MULTI-ACTOR-ROOT`：Actor1 出牌前缀后的 BFS 与独立 DFS oracle 保持同最优值、同完整动作序，且首动作仍为固定前缀；`runId=5f14e64a366e4ad286cc03099b4bc8c4`，Passed，实例已删除。
+- Release 构建 0 警告/0 错误。未覆盖 opening/cycle/cross-turn、单人候选序、Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F3b（2026-09-29）
 
 - 动态动作选择：联合 expander 从父状态探测权威 transition，按类型化 pending choice 的 Actor/source/spec 生成分支，最多 16 层；普通异常仍传播。

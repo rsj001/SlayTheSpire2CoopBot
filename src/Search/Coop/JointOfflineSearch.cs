@@ -9,6 +9,15 @@ internal sealed record JointOfflineSearchResult(
     IReadOnlyList<PlanAction> Actions,
     int ExpandedStates);
 
+internal sealed record JointOfflineSearchRequest(
+    IReadOnlyList<PlanAction> FixedPrefix,
+    int MaximumActions = 12,
+    int MaximumStates = 100_000)
+{
+    internal static JointOfflineSearchRequest Default(int maximumActions, int maximumStates)
+        => new([], maximumActions, maximumStates);
+}
+
 internal static class JointOfflineSearch
 {
     private sealed record Node(
@@ -22,26 +31,29 @@ internal static class JointOfflineSearch
         CombatRootSnapshot root,
         int maximumActions = 12,
         int maximumStates = 100_000)
+        => SolveBreadthFirst(
+            root,
+            JointOfflineSearchRequest.Default(maximumActions, maximumStates));
+
+    internal static JointOfflineSearchResult SolveBreadthFirst(
+        CombatRootSnapshot root,
+        JointOfflineSearchRequest request)
     {
-        ValidateLimits(maximumActions, maximumStates);
+        ValidateRequest(root, request);
+        Node seed = ReplayFixedPrefix(root, request.FixedPrefix);
         Queue<Node> open = new();
-        CombatPredictionSimulator rootSimulator = root.ForkSimulator();
-        open.Enqueue(new Node(
-            rootSimulator,
-            JointActionTransition.CaptureProcessedEnemyDeaths(root, rootSimulator),
-            JointTurnState.Start(root.Actors.Count, root.StartTurnNumber),
-            []));
+        open.Enqueue(seed);
         HashSet<StateFingerprint> seen = [];
         JointOfflineSearchResult? best = null;
         int expanded = 0;
         while (open.TryDequeue(out Node? node))
         {
-            if (++expanded > maximumStates)
-                throw new InvalidOperationException($"联合 BFS 超过状态上限 {maximumStates}。");
+            if (++expanded > request.MaximumStates)
+                throw new InvalidOperationException($"联合 BFS 超过状态上限 {request.MaximumStates}。");
             JointCombatSnapshot snapshot = JointCombatSnapshot.Capture(root, node.Simulator, node.Turns);
             if (!seen.Add(snapshot.StateKey))
                 continue;
-            if (IsBoundary(node, maximumActions))
+            if (IsBoundary(node, request.MaximumActions))
             {
                 best = SelectBetter(root, best, snapshot, node.Actions, expanded);
                 continue;
@@ -64,16 +76,23 @@ internal static class JointOfflineSearch
         CombatRootSnapshot root,
         int maximumActions = 12,
         int maximumStates = 100_000)
+        => SolveDepthFirstOracle(
+            root,
+            JointOfflineSearchRequest.Default(maximumActions, maximumStates));
+
+    internal static JointOfflineSearchResult SolveDepthFirstOracle(
+        CombatRootSnapshot root,
+        JointOfflineSearchRequest request)
     {
-        ValidateLimits(maximumActions, maximumStates);
+        ValidateRequest(root, request);
         JointOfflineSearchResult? best = null;
         int expanded = 0;
-        CombatPredictionSimulator rootSimulator = root.ForkSimulator();
+        Node seed = ReplayFixedPrefix(root, request.FixedPrefix);
         Visit(
-            rootSimulator,
-            JointActionTransition.CaptureProcessedEnemyDeaths(root, rootSimulator),
-            JointTurnState.Start(root.Actors.Count, root.StartTurnNumber),
-            []);
+            seed.Simulator,
+            seed.ProcessedEnemyDeaths,
+            seed.Turns,
+            seed.Actions);
         return best ?? throw new InvalidOperationException("联合 DFS oracle 没有到达终局或回合屏障。");
 
         void Visit(
@@ -82,10 +101,10 @@ internal static class JointOfflineSearch
             JointTurnState turns,
             IReadOnlyList<PlanAction> actions)
         {
-            if (++expanded > maximumStates)
-                throw new InvalidOperationException($"联合 DFS oracle 超过状态上限 {maximumStates}。");
+            if (++expanded > request.MaximumStates)
+                throw new InvalidOperationException($"联合 DFS oracle 超过状态上限 {request.MaximumStates}。");
             Node node = new(simulator, processedEnemyDeaths, turns, actions);
-            if (IsBoundary(node, maximumActions))
+            if (IsBoundary(node, request.MaximumActions))
             {
                 JointCombatSnapshot snapshot = JointCombatSnapshot.Capture(root, simulator, turns);
                 best = SelectBetter(root, best, snapshot, actions, expanded);
@@ -100,6 +119,26 @@ internal static class JointOfflineSearch
                 Visit(child, deaths, childTurns, [.. actions, candidate.Action]);
             }
         }
+    }
+
+    private static Node ReplayFixedPrefix(
+        CombatRootSnapshot root,
+        IReadOnlyList<PlanAction> prefix)
+    {
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        JointTurnState turns = JointTurnState.Start(root.Actors.Count, root.StartTurnNumber);
+        foreach (PlanAction action in prefix)
+        {
+            if (action.Turn != turns.Turn)
+            {
+                throw new NotSupportedException(
+                    $"F3 固定前缀不能跨回合：current={turns.Turn} action={action.Turn}；" +
+                    "等待 F7 联合回合生命周期。");
+            }
+            turns = JointActionTransition.Apply(simulator, turns, action, deaths);
+        }
+        return new Node(simulator, deaths, turns, prefix.ToArray());
     }
 
     private static bool IsBoundary(Node node, int maximumActions)
@@ -152,11 +191,17 @@ internal static class JointOfflineSearch
         return left.Count.CompareTo(right.Count);
     }
 
-    private static void ValidateLimits(int maximumActions, int maximumStates)
+    private static void ValidateRequest(
+        CombatRootSnapshot root,
+        JointOfflineSearchRequest request)
     {
-        if (maximumActions <= 0)
-            throw new ArgumentOutOfRangeException(nameof(maximumActions));
-        if (maximumStates <= 0)
-            throw new ArgumentOutOfRangeException(nameof(maximumStates));
+        if (request.MaximumActions <= 0)
+            throw new ArgumentOutOfRangeException(nameof(request.MaximumActions));
+        if (request.MaximumStates <= 0)
+            throw new ArgumentOutOfRangeException(nameof(request.MaximumStates));
+        if (request.FixedPrefix.Count > request.MaximumActions)
+            throw new ArgumentException("联合固定前缀超过动作上限。", nameof(request));
+        foreach (PlanAction action in request.FixedPrefix)
+            action.ValidateActor(root.Actors.Count);
     }
 }

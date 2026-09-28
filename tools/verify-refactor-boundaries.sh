@@ -1760,6 +1760,15 @@ require_fixed "$joint_transition" 'JointPendingActionChoiceException' \
 for token in 'MaximumNestedChoiceDepth = 16' 'AddResolvedCandidates(' 'AppendNestedChoice('; do
     require_fixed "$joint_expander" "$token" 'joint dynamic choice expansion missing F3b boundary:'
 done
+joint_offline_search="$repository_root/src/Search/Coop/JointOfflineSearch.cs"
+for token in \
+    'internal sealed record JointOfflineSearchRequest(' \
+    'Node seed = ReplayFixedPrefix(root, request.FixedPrefix);' \
+    'private static Node ReplayFixedPrefix(' \
+    'JointActionTransition.Apply(simulator, turns, action, deaths)' \
+    '等待 F7 联合回合生命周期'; do
+    require_fixed "$joint_offline_search" "$token" 'joint fixed-prefix search missing F3c boundary:'
+done
 
 if ((${#violations[@]} > 0)); then
     printf '%s\n' "${violations[@]}" >&2
