@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F8（2026-09-29）
+
+联合终局比较器补齐明确的终局边界和团队政策：胜利优先，未完成路线优于已失败路线；死亡 Actor 数先于总战损，之后依次比较逐 Actor 战损、药水战略成本、保命资源、药水次数、成长、长期资源、偷窃回收、回合和动作，最后仍由稳定联合动作序决胜。实现仅位于 `Search/Coop`，单人 `FinalPlanOrdering` 未改。`COOP-JOINT-OBJECTIVE` 的 `runId=0661a8fe6b954efe947351377d65f4ae` Passed，实例已删除，Release 构建 0/0。总战损仍是不同角色 HP 价值模型完成前的 workaround。
+
 ## 离线四 Actor 完整迁移 F7d1（2026-09-29）
 
 新增无选择的联合下一玩家轮：共享玩家侧 Hook 对全体存活参与者只执行一次，各 Actor 则依原版多人顺序独立重置能量、执行抽牌前效果、抽牌、玩家开始 Hook、球与自动阶段。两 Actor 从结束屏障穿过纯攻击敌方轮后，共享 round 与各自回合号、手牌和能量均正确推进，`COOP-MULTI-ACTOR-ROOT` 的 `runId=9ad70ea00a2d493ead5c090991c9d263` Passed，实例已删除，Release 构建 0/0。当前一旦出现回合开始选择即显式失败，等待 F6b continuation 接线。

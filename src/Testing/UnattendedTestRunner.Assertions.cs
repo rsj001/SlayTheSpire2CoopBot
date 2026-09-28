@@ -52,7 +52,7 @@ internal sealed partial class UnattendedTestRunner
             {
                 runner.SetStage("coop_joint_objective");
                 AssertCoopObjectiveContract();
-                runner._completedChecks.Add("JointObjective:Victory:TeamLoss:PerActorLoss:Potions:Turns");
+                runner._completedChecks.Add("JointObjective:OutcomeBoundary:Survival:TeamLoss:PerActorLoss:PotionCost:DeathSaves:Growth:Theft:Turns:Actions");
             }
             if (request.ScenarioId == "COOP-JOINT-REPLAY")
             {

@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F8：联合终局政策（2026-09-29）
+
+- 比较器依次覆盖胜利/未完成/失败边界、死亡 Actor 数、总战损、逐 Actor 战损、药水战略成本、保命资源、药水次数、成长、长期资源、偷窃回收、回合和动作；每一级均作正反向断言。
+- 稳定动作序继续作为分数完全相同时的最终决胜；联合实现局限于 `Search/Coop`，未修改单人 `FinalPlanOrdering`。总战损仍明确为跨角色 HP 价值研究前的 workaround。
+- `COOP-JOINT-OBJECTIVE`：`runId=0661a8fe6b954efe947351377d65f4ae`，Passed，实例已删除；Release 构建 0 警告/0 错误。Linux 或可见 Steam 未覆盖。
+
 ## 离线四 Actor 完整迁移 F7d1：无选择下一玩家轮（2026-09-29）
 
 - 完整执行两 Actor 的玩家侧结束、纯攻击敌方侧和下一玩家侧开始；共享 round 只递增一次，每名 Actor 的独立回合号递增一次，并恢复能量、重新抽牌。

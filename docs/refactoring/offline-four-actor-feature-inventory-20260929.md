@@ -60,8 +60,8 @@
 | 玩家回合尾 Hook、敌方回合、下一回合开始/抽牌 | `CombatBeamSolver.Terminal.cs`、simulation commands | F7a 玩家侧、F7c1 纯攻击敌方侧、F7d1 无选择下一轮已接通；选择恢复与特殊敌方后效待补 | 待迁移 | 2 Actor 基础两轮通过；回合选择与特殊后效待 F6b/F7c-d |
 | 额外回合、死亡、复活、逃跑和失去资格 | `Prediction/*`、`SimulatedCombatState*.cs` | F7b 已通过死亡 Actor 候选/屏障/玩家侧参与者；其余待补 | 待迁移 | 死亡代表通过；复活/逃跑/额外回合待验证 |
 | 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | F7c1 支持无登记后效的纯攻击行动；特殊后效明确拒绝 | 待迁移 | 纯攻击已通过；死亡/召唤/特殊后效待逐类严格对照 |
-| 单人终局政策 | `FinalPlanOrdering`、`RouteQualityPolicy` | 未复用 | 待迁移 | ActorCount=1 结果逐位等价 |
-| 团队目标 | 无单人对应 | `JointObjective` 临时总战损 + 向量 | 待迁移 | 存活、分布、资源、成长和稳定决胜 |
+| 单人终局政策 | `FinalPlanOrdering`、`RouteQualityPolicy` | 联合比较器独立位于 `Search/Coop`，单人入口未改 | 已保留 | 结构门禁 + 最终 F12 单人等价哨兵 |
+| 团队目标 | 无单人对应 | `JointObjective` 完整字典序；总战损仍为 workaround | 已迁移 | 终局边界、存活、分布、资源、成长、偷窃和稳定决胜通过 |
 | 药水政策、战略成本、成长、偷窃和强制目标 | `PotionUsePolicy`、`FinalPlanOrdering` | F4c1 已接入 Actor+槽位 Disabled/Force、药量上下界和战略成本；Smart 反事实及其余终局政策待完成 | 待迁移 | 硬政策 BFS/DFS 已通过；单人 Smart 等价及联合反事实待补 |
 | BFS/DFS 有限 oracle | 无生产对应 | `JointOfflineSearch` | 已迁移 | 2 Actor 同值/同动作/同键 |
 | 生产规模 Beam/BFWS、Pareto、保路、多样性 | `CombatBeamSolver.*` | 尚无联合实现 | 待迁移 | 小根 oracle、固定预算确定性和质量哨兵 |
