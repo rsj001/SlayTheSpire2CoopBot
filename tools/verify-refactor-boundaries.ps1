@@ -2256,7 +2256,7 @@ foreach ($text in @(
 $jointOfflineSearchPath = Join-Path $repositoryRoot 'src/Search/Coop/JointOfflineSearch.cs'
 foreach ($text in @(
     'internal sealed record JointOfflineSearchRequest(',
-    'Node seed = ReplayFixedPrefix(root, request.FixedPrefix);',
+    'Node seed = ReplayFixedPrefix(root, request);',
     'private static Node ReplayFixedPrefix(',
     'JointActionTransition.Apply(simulator, turns, action, deaths)',
     '等待 F7 联合回合生命周期'
@@ -2283,6 +2283,19 @@ foreach ($text in @(
 )) {
     if (-not (Select-String -LiteralPath $jointTransitionPath -SimpleMatch $text -Quiet)) {
         $violations.Add("Joint potion transition missing F4a choice boundary: $text")
+    }
+}
+$jointPotionPolicyPath = Join-Path $repositoryRoot 'src/Search/Coop/JointPotionPolicy.cs'
+foreach ($text in @(
+    'CombatActorId Actor,',
+    'SolverPotionDirective Directive',
+    'internal bool Allows(',
+    'internal bool IsBoundaryEligible(',
+    'PotionUsePolicy.StrategicHpCost(',
+    'directive.Actor.Index < 0 || directive.Actor.Index >= actorCount'
+)) {
+    if (-not (Select-String -LiteralPath $jointPotionPolicyPath -SimpleMatch $text -Quiet)) {
+        $violations.Add("Joint potion policy missing F4c1 boundary: $text")
     }
 }
 

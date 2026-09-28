@@ -46,6 +46,12 @@ Armaments + Strike 的 `COOP-JOINT-REPLAY` 通过 choice candidate、实例定�
 
 首次无头启动在进入游戏前命中私有实例校验失败，实例已删除，不计战斗结果；按既有串行重试授权再次运行后，`COOP-MULTI-ACTOR-ROOT` 的 `runId=35794e9d204e4a11b8b54607dbeca5d7` Passed，完成 `NinePotionChoices:EntropicGeneration`，实例已删除。Release 构建 0/0。Smart/Force、精确药量、战略成本与跨回合药水 continuation 仍待 F4c/F4d。
 
+## 离线四 Actor 完整迁移 F4c1（2026-09-29）
+
+新增联合药水政策快照，以 Actor+槽位+药水 ID 标识 Smart/Force/Disabled 指令，并在请求开始前验证 Actor、槽位和 ID。候选准入执行 Disabled 与最大用量，终局/屏障准入执行最少用量和全部 Force 指令；同槽位的另一个 Actor 不能替代强制目标。路线战略成本复用单人 `PotionUsePolicy.StrategicHpCost`。
+
+`COOP-MULTI-ACTOR-ROOT` 分别运行 Disabled/max=0 与默认 Disabled、Actor1 Gambler's Brew Force、min=max=1 的 BFS/DFS，请求均同值同终态，强制路线恰好使用 Actor1 的一瓶药且成本与单人函数一致；`runId=d1fc4875e9ef4dd1806a6b9be8438627`，Passed，实例已删除。Release 构建 0/0。Smart 相对无药基线、联合反事实和跨回合 continuation 尚未完成；根级 `HasRenewablePotionShapedRock` 的 Actor 归属记为 F5/F8 缺口。
+
 ## 下一版本（开发中，2026-09-28）
 
 后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。

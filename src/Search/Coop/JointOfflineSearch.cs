@@ -12,10 +12,14 @@ internal sealed record JointOfflineSearchResult(
 internal sealed record JointOfflineSearchRequest(
     IReadOnlyList<PlanAction> FixedPrefix,
     int MaximumActions = 12,
-    int MaximumStates = 100_000)
+    int MaximumStates = 100_000,
+    JointPotionSearchPolicy? PotionPolicy = null)
 {
     internal static JointOfflineSearchRequest Default(int maximumActions, int maximumStates)
         => new([], maximumActions, maximumStates);
+
+    internal JointPotionSearchPolicy EffectivePotionPolicy
+        => PotionPolicy ?? JointPotionSearchPolicy.Unrestricted;
 }
 
 internal static class JointOfflineSearch
@@ -40,7 +44,7 @@ internal static class JointOfflineSearch
         JointOfflineSearchRequest request)
     {
         ValidateRequest(root, request);
-        Node seed = ReplayFixedPrefix(root, request.FixedPrefix);
+        Node seed = ReplayFixedPrefix(root, request);
         Queue<Node> open = new();
         open.Enqueue(seed);
         HashSet<StateFingerprint> seen = [];
@@ -55,12 +59,15 @@ internal static class JointOfflineSearch
                 continue;
             if (IsBoundary(node, request.MaximumActions))
             {
-                best = SelectBetter(root, best, snapshot, node.Actions, expanded);
+                if (request.EffectivePotionPolicy.IsBoundaryEligible(node.Actions))
+                    best = SelectBetter(root, best, snapshot, node.Actions, expanded);
                 continue;
             }
 
             foreach (JointActionCandidate candidate in JointActionExpander.Expand(node.Simulator, node.Turns))
             {
+                if (!request.EffectivePotionPolicy.Allows(candidate.Action, node.Actions))
+                    continue;
                 CombatPredictionSimulator child = node.Simulator.Fork();
                 ForkableSet<uint> deaths = node.ProcessedEnemyDeaths.Fork();
                 JointTurnState turns = JointActionTransition.Apply(
@@ -87,7 +94,7 @@ internal static class JointOfflineSearch
         ValidateRequest(root, request);
         JointOfflineSearchResult? best = null;
         int expanded = 0;
-        Node seed = ReplayFixedPrefix(root, request.FixedPrefix);
+        Node seed = ReplayFixedPrefix(root, request);
         Visit(
             seed.Simulator,
             seed.ProcessedEnemyDeaths,
@@ -107,11 +114,14 @@ internal static class JointOfflineSearch
             if (IsBoundary(node, request.MaximumActions))
             {
                 JointCombatSnapshot snapshot = JointCombatSnapshot.Capture(root, simulator, turns);
-                best = SelectBetter(root, best, snapshot, actions, expanded);
+                if (request.EffectivePotionPolicy.IsBoundaryEligible(actions))
+                    best = SelectBetter(root, best, snapshot, actions, expanded);
                 return;
             }
             foreach (JointActionCandidate candidate in JointActionExpander.Expand(simulator, turns))
             {
+                if (!request.EffectivePotionPolicy.Allows(candidate.Action, actions))
+                    continue;
                 CombatPredictionSimulator child = simulator.Fork();
                 ForkableSet<uint> deaths = processedEnemyDeaths.Fork();
                 JointTurnState childTurns = JointActionTransition.Apply(
@@ -123,12 +133,13 @@ internal static class JointOfflineSearch
 
     private static Node ReplayFixedPrefix(
         CombatRootSnapshot root,
-        IReadOnlyList<PlanAction> prefix)
+        JointOfflineSearchRequest request)
     {
         CombatPredictionSimulator simulator = root.ForkSimulator();
         ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
         JointTurnState turns = JointTurnState.Start(root.Actors.Count, root.StartTurnNumber);
-        foreach (PlanAction action in prefix)
+        List<PlanAction> applied = [];
+        foreach (PlanAction action in request.FixedPrefix)
         {
             if (action.Turn != turns.Turn)
             {
@@ -136,9 +147,12 @@ internal static class JointOfflineSearch
                     $"F3 固定前缀不能跨回合：current={turns.Turn} action={action.Turn}；" +
                     "等待 F7 联合回合生命周期。");
             }
+            if (!request.EffectivePotionPolicy.Allows(action, applied))
+                throw new InvalidOperationException($"联合固定前缀违反药水政策：{action}。");
             turns = JointActionTransition.Apply(simulator, turns, action, deaths);
+            applied.Add(action);
         }
-        return new Node(simulator, deaths, turns, prefix.ToArray());
+        return new Node(simulator, deaths, turns, applied.ToArray());
     }
 
     private static bool IsBoundary(Node node, int maximumActions)
@@ -203,5 +217,6 @@ internal static class JointOfflineSearch
             throw new ArgumentException("联合固定前缀超过动作上限。", nameof(request));
         foreach (PlanAction action in request.FixedPrefix)
             action.ValidateActor(root.Actors.Count);
+        request.EffectivePotionPolicy.Validate(root.Actors.Count);
     }
 }

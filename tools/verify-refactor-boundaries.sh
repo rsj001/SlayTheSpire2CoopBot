@@ -1763,7 +1763,7 @@ done
 joint_offline_search="$repository_root/src/Search/Coop/JointOfflineSearch.cs"
 for token in \
     'internal sealed record JointOfflineSearchRequest(' \
-    'Node seed = ReplayFixedPrefix(root, request.FixedPrefix);' \
+    'Node seed = ReplayFixedPrefix(root, request);' \
     'private static Node ReplayFixedPrefix(' \
     'JointActionTransition.Apply(simulator, turns, action, deaths)' \
     '等待 F7 联合回合生命周期'; do
@@ -1782,6 +1782,16 @@ for token in \
     'PotionChoiceSupport.RequiresChoice(potion) && action.Choice == null' \
     'JointPendingChoicePlacement.Primary'; do
     require_fixed "$joint_transition" "$token" 'joint potion transition missing F4a choice boundary:'
+done
+joint_potion_policy="$repository_root/src/Search/Coop/JointPotionPolicy.cs"
+for token in \
+    'CombatActorId Actor,' \
+    'SolverPotionDirective Directive' \
+    'internal bool Allows(' \
+    'internal bool IsBoundaryEligible(' \
+    'PotionUsePolicy.StrategicHpCost(' \
+    'directive.Actor.Index < 0 || directive.Actor.Index >= actorCount'; do
+    require_fixed "$joint_potion_policy" "$token" 'joint potion policy missing F4c1 boundary:'
 done
 
 if ((${#violations[@]} > 0)); then

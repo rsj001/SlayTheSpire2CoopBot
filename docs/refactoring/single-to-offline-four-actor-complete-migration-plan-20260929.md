@@ -204,7 +204,7 @@
 
 - F4a（已完成）：`JointActionExpander` 按 Actor 模拟槽位枚举可搜索药水和目标；需要选择的药水先由权威 transition 执行生成阶段，再把主选择写入 `PlanAction.Choice`，后续选择才进入 nested 链。`COOP-MULTI-ACTOR-ROOT` 运行 `cf7241344aa044cbbe3bbdff233257fb` 通过 2/4 Actor 独立 Block Potion/Gambler's Brew 候选、选择 owner 与 BFS/DFS 对照。
 - F4b（已完成）：四种生成牌药水和 Ashwater、Droplet of Precognition、Gambler's Brew、Liquid Memories、Touch of Insanity 九类主选择均由 Actor1 严格回放；Entropic Brew 生成改变联合状态键和续用戳。`COOP-MULTI-ACTOR-ROOT` 运行 `35794e9d204e4a11b8b54607dbeca5d7` 通过。
-- F4c（待完成）：Disabled/Smart/Force、无药基线、精确药量层、战略成本和联合反事实。
+- F4c（进行中）：F4c1 已完成 Actor+槽位指令、Disabled/Force、最少/最多用药数及单人战略成本复用；Smart 相对无药基线和联合反事实待 F4c2/F8。
 - F4d（待完成）：跨回合药水 continuation，依赖 F7 生命周期与 F8 终局政策。
 
 ### F5：Power、遗物、球、宠物和角色专属资源

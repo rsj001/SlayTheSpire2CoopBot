@@ -106,6 +106,63 @@ internal sealed partial class UnattendedTestRunner
                     throw new InvalidOperationException(
                         "联合固定前缀没有由 BFS/DFS 从同一严格状态继续搜索。");
                 }
+
+                JointOfflineSearchRequest disabledRequest = new(
+                    [],
+                    MaximumActions: 2,
+                    MaximumStates: 2_000,
+                    PotionPolicy: new JointPotionSearchPolicy(
+                        SolverPotionPolicy.Disabled,
+                        maximumUses: 0));
+                AssertPolicySearch(disabledRequest, static actions =>
+                    actions.All(action => action.Kind != PlanActionKind.UsePotion),
+                    "Disabled 联合药水政策仍使用了药水");
+
+                JointPotionSearchPolicy forcedPolicy = new(
+                    SolverPotionPolicy.Disabled,
+                    [new JointPotionSlotDirective(
+                        new CombatActorId(1),
+                        0,
+                        "GAMBLERS_BREW",
+                        SolverPotionDirective.Force)],
+                    minimumUses: 1,
+                    maximumUses: 1);
+                JointOfflineSearchResult forcedResult = AssertPolicySearch(
+                    new JointOfflineSearchRequest(
+                        [],
+                        MaximumActions: 2,
+                        MaximumStates: 2_000,
+                        PotionPolicy: forcedPolicy),
+                    static actions => actions.Count(action =>
+                        action.Kind == PlanActionKind.UsePotion
+                        && action.Actor.Index == 1
+                        && action.PotionSlot == 0
+                        && action.PotionId == "GAMBLERS_BREW") == 1
+                        && actions.Count(action => action.Kind == PlanActionKind.UsePotion) == 1,
+                    "Actor1 强制药水政策没有精确满足");
+                int expectedCost = PotionUsePolicy.StrategicHpCost("GAMBLERS_BREW");
+                if (forcedPolicy.StrategicHpCost(
+                        forcedResult.Actions,
+                        root.HasRenewablePotionShapedRock) != expectedCost)
+                {
+                    throw new InvalidOperationException("联合药水政策没有复用单人战略成本。" );
+                }
+
+                JointOfflineSearchResult AssertPolicySearch(
+                    JointOfflineSearchRequest policyRequest,
+                    Func<IReadOnlyList<PlanAction>, bool> assertActions,
+                    string message)
+                {
+                    JointOfflineSearchResult bfs = JointOfflineSearch.SolveBreadthFirst(root, policyRequest);
+                    JointOfflineSearchResult dfs = JointOfflineSearch.SolveDepthFirstOracle(root, policyRequest);
+                    if (!assertActions(bfs.Actions)
+                        || JointObjectiveScore.Compare(bfs.Score, dfs.Score) != 0
+                        || bfs.Snapshot.StateKey != dfs.Snapshot.StateKey)
+                    {
+                        throw new InvalidOperationException(message);
+                    }
+                    return bfs;
+                }
             }
         }
     }

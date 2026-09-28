@@ -62,7 +62,7 @@
 | 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | 基础 win check | 待迁移 | 首个差异定位到动作/Hook/字段 |
 | 单人终局政策 | `FinalPlanOrdering`、`RouteQualityPolicy` | 未复用 | 待迁移 | ActorCount=1 结果逐位等价 |
 | 团队目标 | 无单人对应 | `JointObjective` 临时总战损 + 向量 | 待迁移 | 存活、分布、资源、成长和稳定决胜 |
-| 药水政策、战略成本、成长、偷窃和强制目标 | `PotionUsePolicy`、`FinalPlanOrdering` | 未接入 | 待迁移 | 单人政策等价及联合反事实 |
+| 药水政策、战略成本、成长、偷窃和强制目标 | `PotionUsePolicy`、`FinalPlanOrdering` | F4c1 已接入 Actor+槽位 Disabled/Force、药量上下界和战略成本；Smart 反事实及其余终局政策待完成 | 待迁移 | 硬政策 BFS/DFS 已通过；单人 Smart 等价及联合反事实待补 |
 | BFS/DFS 有限 oracle | 无生产对应 | `JointOfflineSearch` | 已迁移 | 2 Actor 同值/同动作/同键 |
 | 生产规模 Beam/BFWS、Pareto、保路、多样性 | `CombatBeamSolver.*` | 尚无联合实现 | 待迁移 | 小根 oracle、固定预算确定性和质量哨兵 |
 | 串行/固定 lane 并行、预算、取消、内存压力 | `AdmittedJobScheduler`、`SearchBudgetLedger` | 尚无联合实现 | 待迁移 | DOP1/DOPN 同动作/同键、无泄漏 |
@@ -86,6 +86,7 @@
 | F-ISSUE-001 | 不同角色 HP 价值不可直接相加 | 保留总战损 workaround，同时保留逐 Actor 向量；不在迁移阶段重设权重 | F8 后续研究 |
 | F-ISSUE-002 | 生产 Runtime/UI/部署大量使用 `LocalContext.GetMe()` | 保持生产单人边界，不把它们纳入离线联合模型 | F12 非目标门禁 |
 | F-ISSUE-003 | 联合 BFS/DFS 在全员屏障处停止，未执行敌方生命周期 | 明确标为待迁移，不把现有 oracle 证据外推 | F7/F10 |
+| F-ISSUE-004 | `CombatRootSnapshot.HasRenewablePotionShapedRock` 仍是根级布尔值，尚未证明多 Actor 遗物归属 | F4c1 只复用现有战略成本参数并记录边界，不伪造逐 Actor 可再生性 | F5 遗物审计、F8 联合药水成本 |
 | F-ISSUE-004 | `PlanRelicEffect` 是路线显示证据，不等于主动遗物动作 | 反编译原版未发现战斗内 `UseRelic`/`ActivateRelic` 提交入口；不新增动作类型，遗物 Hook 触发语义归 F5 | F1 已定边界，F5 验证触发 |
 | F-ISSUE-005 | 多 Actor 远端玩家获得格挡时，multiplayer scaling mirror 直接按玩家数拒绝 | 按原版精确镜像：玩家目标/非 powered 不缩放；主次敌人按人数及 Act/Boss 系数缩放 | F2 已修复；失败 `e62462a1435d4bbbbe0c48965528985b`，通过 `34221092e12f40f5addc9fb89219ff94` |
 

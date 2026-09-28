@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F4c1（2026-09-29）
+
+- 政策：Actor+槽位+药水 ID 指令；Disabled/Force、最少/最多用量在候选与边界两端执行；战略成本复用单人 `PotionUsePolicy`。
+- `COOP-MULTI-ACTOR-ROOT`：Disabled/max=0 无药路线，以及 Actor1 Gambler's Brew Force、min=max=1 路线均通过 BFS/DFS 同值同终态；`runId=d1fc4875e9ef4dd1806a6b9be8438627`，Passed，实例已删除。
+- Release 构建 0 警告/0 错误。未覆盖 Smart 反事实、跨回合、逐 Actor Shaped Rock 归属、Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F4b（2026-09-29）
 
 - 九类选择：Attack/Skill/Power/Colorless Potion 及 Ashwater、Droplet of Precognition、Gambler's Brew、Liquid Memories、Touch of Insanity 均生成 Actor1 主选择并严格回放。
