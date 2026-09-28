@@ -1,5 +1,15 @@
 # CombatSolver 测试清单
 
+## Co-op Bot 离线多 Actor 联合搜索：P0/P1（2026-09-28）
+
+计划入口：[Co-op Bot 离线多 Actor 联合搜索开发计划](refactoring/coop-multi-actor-offline-search-plan-20260928.md)。
+
+- P0 静态盘点完成：`CombatPredictionState` 已拥有按 `Player` 索引的多玩家模拟状态；`CombatRootSnapshot`、`CombatBeamSolver`、`PlanAction`、`SimulationSnapshot`、`ContinuationStamp` 仍以本地玩家为搜索权威。未把静态搜索结果写成多人语义通过。
+- P1 源码改动：`CombatRootSnapshot` 新增按 `CombatState.Players` 固定顺序捕获的 `CombatActorRoot` 列表和 `CombatActorId`，并保留 `LocalActorId`；捕获的卡牌与药水仅为不可变根元数据，现有单人搜索没有消费这些字段。
+- 静态证据：新文档链接、标题结构和 `git diff --check` 通过。
+- 构建证据：`dotnet build CombatSolver.csproj -c Release --no-restore` 因缺少 `project.assets.json` 失败；带还原的 `dotnet build CombatSolver.csproj -c Release` 已完成还原，但随后因本机缺少 `C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64\sts2.dll` 失败。桌面反编译目录只有 `sts2.dll`，没有项目要求的 RitsuLib 引用，因此本批尚无源码编译证据。
+- 未执行：无人测试、离线联合 fixture、完整多 Actor strict diff、部署、Steam、联网客户端控制。P1 不改变动作结算，下一批需先恢复可用的项目引用，再验证单人根捕获等价和多 Actor 根目录。
+
 ## PR #144 最终修复与合并验证（2026-09-28）
 
 以 `main@f47c447a` 整合 PR head `1e914b38`，修正 `ReclaimWithinSearch` 主动退出路径的恢复许可，并将复审夹具纳入 `GcRecoveryChecks.RunExplicitDefaultExit`。原候选同一真实 CLR 边界失败：主动退出后 `enabled=True / attempts=1 / restarts=1`；原 main 通过。修复后 `recovery-lifecycle` 3 项、`checkpoint` 1 项通过，主动退出结果 `EXPLICIT_DEFAULT_EXIT_OK attempts=0 restarts=0 forced=0`，正常恢复仍为 starts=1/restarts=1/forced=0，取消与退出清理通过。

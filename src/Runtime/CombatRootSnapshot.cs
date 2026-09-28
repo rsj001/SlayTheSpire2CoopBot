@@ -20,11 +20,33 @@ internal readonly record struct SearchablePotionSlotSnapshot(
     string PotionId,
     int StrategicHpCost);
 
+/// <summary>
+/// Immutable root metadata for one player participating in the combat.
+/// The Player reference is retained only as stable model identity; mutable combat values are
+/// captured as values and remain owned by the prediction simulator after root capture.
+/// </summary>
+internal sealed record CombatActorRoot(
+    CombatActorId Id,
+    Player PlayerIdentity,
+    int InitialHp,
+    int InitialMaxHp,
+    int StartTurnNumber,
+    PlayerTurnPhase Phase,
+    IReadOnlySet<string> CardIds,
+    IReadOnlyList<string> PotionIds);
+
+internal readonly record struct CombatActorId(int Index)
+{
+    public override string ToString() => $"Actor{Index}";
+}
+
 internal sealed class CombatRootSnapshot
 {
     private readonly CombatPredictionSimulator _rootSimulator;
 
     public Player PlayerIdentity { get; }
+    public IReadOnlyList<CombatActorRoot> Actors { get; }
+    public CombatActorId LocalActorId { get; }
     public IReadOnlyList<Creature> Enemies { get; }
     public IntentForecast Forecast { get; }
     public LiveCombatStamp LiveStamp { get; }
@@ -70,6 +92,8 @@ internal sealed class CombatRootSnapshot
 
     private CombatRootSnapshot(
         Player playerIdentity,
+        IReadOnlyList<CombatActorRoot> actors,
+        CombatActorId localActorId,
         IReadOnlyList<Creature> enemies,
         IntentForecast forecast,
         LiveCombatStamp liveStamp,
@@ -104,6 +128,8 @@ internal sealed class CombatRootSnapshot
         PotionRewardOutlook potionRewardOutlook)
     {
         PlayerIdentity = playerIdentity;
+        Actors = actors;
+        LocalActorId = localActorId;
         Enemies = enemies;
         Forecast = forecast;
         LiveStamp = liveStamp;
@@ -166,6 +192,14 @@ internal sealed class CombatRootSnapshot
             ?? throw new InvalidOperationException("找不到本地玩家。");
         PlayerCombatState playerState = player.PlayerCombatState
             ?? throw new InvalidOperationException("玩家没有战斗状态。");
+        CombatActorRoot[] actors = CaptureActors(state);
+        int localActorIndex = Array.FindIndex(
+            actors,
+            actor => ReferenceEquals(actor.PlayerIdentity, player));
+        if (localActorIndex < 0)
+        {
+            throw new InvalidOperationException("本地玩家不在战斗 Actor 根目录中。");
+        }
         AbstractModel[] liveCombatHookListeners = state.IterateHookListeners().ToArray();
         if (liveCombatHookListeners.Any(PredictionModModelSupport.IsBaseLibCardModifier))
         {
@@ -261,6 +295,8 @@ internal sealed class CombatRootSnapshot
 
         return new CombatRootSnapshot(
             player,
+            Array.AsReadOnly(actors),
+            new CombatActorId(localActorIndex),
             Array.AsReadOnly(state.Enemies.ToArray()),
             forecast,
             liveBefore,
@@ -293,6 +329,35 @@ internal sealed class CombatRootSnapshot
             hasRenewablePotionShapedRock,
             postCombatRelicHeal,
             potionRewardOutlook);
+    }
+
+    private static CombatActorRoot[] CaptureActors(CombatState state)
+    {
+        CombatActorRoot[] actors = new CombatActorRoot[state.Players.Count];
+        for (int index = 0; index < state.Players.Count; index++)
+        {
+            Player player = state.Players[index];
+            PlayerCombatState playerState = player.PlayerCombatState
+                ?? throw new InvalidOperationException(
+                    $"玩家 {player.Creature.Name} 没有战斗状态，无法捕获 Actor 根目录。");
+            IReadOnlySet<string> cardIds = playerState.AllCards
+                .Select(card => card.Id.Entry)
+                .ToFrozenSet(StringComparer.Ordinal);
+            string[] potionIds = player.PotionSlots
+                .Where(potion => potion != null)
+                .Select(potion => potion!.Id.Entry)
+                .ToArray();
+            actors[index] = new CombatActorRoot(
+                new CombatActorId(index),
+                player,
+                player.Creature.CurrentHp,
+                player.Creature.MaxHp,
+                playerState.TurnNumber,
+                playerState.Phase,
+                cardIds,
+                Array.AsReadOnly(potionIds));
+        }
+        return actors;
     }
 
     private static bool HasHealingVariables(DynamicVarSet variables)
