@@ -28,7 +28,8 @@
 - 动态证据：`COOP-PRODUCTION-SINGLE-BOUNDARY` 通过接受 1、拒绝 2，`status=Passed`，实例已删除。
 - 多 Actor 根夹具：首次 `COOP-MULTI-ACTOR-ROOT` 在 2 Actor 根捕获阶段发现 `MadScienceGrowth.CaptureRemainingCapacity` 对 `CombatState.Players` 使用 `Single()`；改为逐 Actor 计算并求和后，使用 1 CPU / 1 GiB 与清理开关重新运行，2/4 Actor 根目录、候选、联合快照、状态键和非本地 Actor 回放均 `status=Passed`，实例 `.local/headless-instances/coop-multi-actor-root-final` 已删除。
 - 联合搜索对照：同一 `COOP-MULTI-ACTOR-ROOT` 还运行 BFS（完整状态键去重）与不去重 DFS oracle，2 Actor 的最优值、动作序和终局状态键一致，完成检查含 `BfsVsDfs`；4 Actor 只运行根/候选/快照/回放，不把 toy oracle 结论外推为正常规模全局最优。
-- 未执行：完整多 Actor actual/simulated strict diff、敌方跨回合联合结算、部署、Steam、联网客户端控制。P12 收尾将执行最终 Release 构建、Windows 结构门禁、提交和同源码本地 Mod 部署。
+- 未执行：完整多 Actor actual/simulated strict diff、敌方跨回合联合结算、部署、Steam、联网客户端控制；这些属于下一阶段，不作为本批完成定义。
+- P12 收尾证据：最终显式游戏/RitsuLib 路径 Release 构建 0 警告/0 错误；Windows `verify-refactor-boundaries.ps1` 返回 `REFACTOR_BOUNDARIES_OK search_files=247`；源码分为 `6c5c7e83`（离线联合模型）和 `3b4f5cc2`（BFS/DFS 对照）两批提交；五个同源码文件已部署到 `D:\SteamLibrary\steamapps\common\Slay the Spire 2\mods\CombatSolver`。未运行 Linux、可见 Steam、发布 ZIP 或远端同步。
 
 ## PR #144 最终修复与合并验证（2026-09-28）
 

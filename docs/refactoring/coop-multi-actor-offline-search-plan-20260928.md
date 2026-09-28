@@ -1,6 +1,6 @@
 # Co-op Bot 离线多 Actor 联合搜索开发计划
 
-> 状态：分阶段实施中（P0-P11 已完成，P12 收尾中）
+> 状态：本批计划完成（P0-P12）
 > 日期：2026-09-28  
 > 目标：把 CombatSolver 的战斗根与搜索节点推广为 Actor 数量可变的离线模型，同时保持单人模式等价。  
 > 当前边界：本计划不启用生产多人模式，不控制其他客户端，不发送网络动作，不启动可见 Steam，不提升版本、不发包或上传创意工坊。
@@ -19,7 +19,7 @@
 - P9：新增真实 2 Actor 根上的 BFS 联合搜索和不去重 DFS oracle；`COOP-MULTI-ACTOR-ROOT` 通过最优值、动作序和终局状态键一致，另有 `COOP-JOINT-ORACLE` 的有限 toy 穷举证据。两者共享单步权威模拟，不共享枚举策略。
 - P10：真实 4 Actor 根在同一场景通过根目录、候选、联合快照和非本地 Actor 回放；`COOP-JOINT-FOUR-ACTOR` 继续提供有限 toy fixture 的穷举全局最优证据。正常规模多人搜索仍未宣称全局最优。
 - P11：生产 `CombatBeamSolver` 保持显式 ActorCount=1 边界；`COOP-PRODUCTION-SINGLE-BOUNDARY` 通过 ActorCount=1 接受、ActorCount=2 稳定拒绝。离线联合类型不接入 Runtime、Overlay、部署或网络。
-- P12：待完成本轮架构/测试/开发记录同步、Release 构建、Windows 结构门禁、干净提交和同源码本地 Mod 部署。
+- P12：已完成架构/测试/开发记录同步、Release 构建、Windows 结构门禁、两次职责批提交和同源码本地 Mod 部署；未提升版本、打包、推送、启动可见 Steam 或接入网络。
 
 真实多 Actor 根首个差异已定位：`MadScienceGrowth.CaptureRemainingCapacity` 原先对 `CombatState.Players` 使用 `Single()`，2 Actor 根在预测状态构造时立即失败。现改为按玩家分别计算并求和；单人结果保持等价。该项属于迁移中发现的单人假设，不改变本阶段目标函数。修复后 `COOP-MULTI-ACTOR-ROOT` 已在 2/4 Actor 通过。
 
