@@ -1,6 +1,7 @@
 # CombatSolver 文档导航
 
 - [策略重构与 PR 合并审计](refactoring/merge-audit-20260928.md)：本轮源码审查、修复、合并及验证边界。
+- [Co-op Bot 离线多 Actor 联合搜索开发计划](refactoring/coop-multi-actor-offline-search-plan-20260928.md)：保持生产单人边界，逐步建立 Actor-aware 根、搜索、联合回合、严格回放和小型穷举 oracle。
 - [固定并行度优化试验](performance/fixed-dop-20260927.md)：当前采样、撤回的列表复制原型、长路线单次收尾回放及验证限制。
 
 - [更优世界线逐包策略记录](strategy/strategy-optimization-20260923.md)：逐包同根基线、人工对照和优化结果。

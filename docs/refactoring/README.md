@@ -5,6 +5,7 @@
 - [滚动重构路线](refactor-roadmap.md)：批次进度与明确不做项。
 - [策略重构与 PR 合并审计](merge-audit-20260928.md)：本轮源码审查、失败修复、合并与定向验证。
 - [策略与搜索大重构计划](strategy-refactor-plan-20260927.md)：目标架构、P0–P8 阶段、迁移方法、门禁、验证与风险，含里程碑与完成定义。
+- [Co-op Bot 离线多 Actor 联合搜索开发计划](coop-multi-actor-offline-search-plan-20260928.md)：保持生产单人边界，分阶段推广战斗根、搜索节点、动作、状态键、严格回放与小型穷举 oracle。
 - [策略与搜索重构实施总结](strategy-search-refactor-summary-20260928.md)：P0–P6 已落地的职责、逐阶段证据，以及 P7/P8 的实际状态。
 - [P2–P6 执行计划](strategy-refactor-p2-p6-execution-plan-20260927.md)：P2–P6 的实施顺序与验收停损。
 - [策略重构待测清单](strategy-refactor-test-backlog-20260927.md)：P2 抽取时的历史待测快照；当前结果以实施总结为准。
