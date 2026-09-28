@@ -2203,6 +2203,25 @@ foreach ($file in @('JointOfflineSearch.cs', 'JointPlanReplayer.cs')) {
         $violations.Add("Offline joint consumer bypasses the authoritative transition: $file")
     }
 }
+foreach ($forbidden in @('Players.Single(', 'LocalContext.GetMe(', 'root.PlayerIdentity.PlayerCombatState')) {
+    foreach ($match in Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'src/Search/Coop') -Filter '*.cs' |
+        Select-String -SimpleMatch $forbidden) {
+        $violations.Add("Offline joint model restored a single/local-player assumption: $($match.Path):$($match.LineNumber): $forbidden")
+    }
+}
+$multiplayerBlockMirror = Join-Path $repositoryRoot 'src/Engine/InCombat/Mirrors/Hooks/Block/ModifyBlockMultiplicativeMirrors.cs'
+foreach ($text in @(
+    '!context.Target.IsPrimaryEnemy && !context.Target.IsSecondaryEnemy',
+    '!context.Props.IsPoweredCardOrMonsterMoveBlock()',
+    'MultiplayerScalingModel.GetMultiplayerScaling('
+)) {
+    if (-not (Select-String -LiteralPath $multiplayerBlockMirror -SimpleMatch $text -Quiet)) {
+        $violations.Add("Multiplayer block mirror missing original-game scaling boundary: $text")
+    }
+}
+if (Select-String -LiteralPath $multiplayerBlockMirror -SimpleMatch 'only supports single-player combat' -Quiet) {
+    $violations.Add('Multiplayer block mirror restored the obsolete blanket multiplayer rejection.')
+}
 
 if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Error $_ }

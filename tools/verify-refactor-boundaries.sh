@@ -1730,6 +1730,20 @@ for file in JointOfflineSearch.cs JointPlanReplayer.cs; do
     require_fixed "$repository_root/src/Search/Coop/$file" 'JointActionTransition.Apply(' \
         'offline joint consumer bypasses the authoritative transition:'
 done
+while IFS= read -r -d '' file; do
+    for token in 'Players.Single(' 'LocalContext.GetMe(' 'root.PlayerIdentity.PlayerCombatState'; do
+        forbid_fixed "$file" "$token" 'offline joint model restored a single/local-player assumption:'
+    done
+done < <(find "$repository_root/src/Search/Coop" -maxdepth 1 -type f -name '*.cs' -print0)
+multiplayer_block_mirror="$repository_root/src/Engine/InCombat/Mirrors/Hooks/Block/ModifyBlockMultiplicativeMirrors.cs"
+for token in \
+    '!context.Target.IsPrimaryEnemy && !context.Target.IsSecondaryEnemy' \
+    '!context.Props.IsPoweredCardOrMonsterMoveBlock()' \
+    'MultiplayerScalingModel.GetMultiplayerScaling('; do
+    require_fixed "$multiplayer_block_mirror" "$token" 'multiplayer block mirror missing original-game scaling boundary:'
+done
+forbid_fixed "$multiplayer_block_mirror" 'only supports single-player combat' \
+    'multiplayer block mirror restored the obsolete blanket multiplayer rejection:'
 
 if ((${#violations[@]} > 0)); then
     printf '%s\n' "${violations[@]}" >&2

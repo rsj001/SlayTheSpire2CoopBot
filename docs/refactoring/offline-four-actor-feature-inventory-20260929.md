@@ -19,13 +19,13 @@
 |---|---|---|---|---|
 | 稳定根与 Actor 目录 | `Runtime/CombatRootSnapshot.cs` | `CombatActorRoot` | 已迁移 | 1/2/4 Actor 根捕获及固定顺序 |
 | Actor 身份进入动作与选择 | `Search/CombatPlan.cs` | `JointPlan.cs` | 已迁移 | 越界与跨 Actor owner 稳定拒绝 |
-| 每 Actor HP、格挡、能量、Stars、金币 | `Search/SimulatedCombatState.cs` | `JointCombatSnapshot.cs` | 待迁移 | 2/4 Actor Fork 逐字段差分与状态键扰动 |
-| 每 Actor 五个牌堆与卡牌实例状态 | `Search/SimulatedCombatState*.cs` | `ContinuationStamp`、`JointCombatSnapshot` | 待迁移 | occurrence、升级、附魔、临时标志逐实例差分 |
+| 每 Actor HP、格挡、能量、Stars、金币 | `Search/SimulatedCombatState.cs` | `JointCombatSnapshot.cs`、Actor continuation | 已迁移 | 2/4 Actor 远端格挡/能量/Stars/金币扰动与 Fork 隔离 |
+| 每 Actor 五个牌堆与卡牌实例状态 | `Search/SimulatedCombatState*.cs` | `ContinuationStamp`、`JointCombatSnapshot` | 已迁移 | 五牌堆进入 Actor continuation；远端升级实例扰动通过 |
 | 每 Actor Power、遗物、药水、球、宠物、角色资源 | `Search/SimulatedCombatState*.cs`、`Prediction/*` | 尚无完整联合投影 | 待迁移 | 各 Actor 独立变更、Fork 隔离、状态键与续用戳 |
 | 敌人 roster、AI、行动和隐藏状态 | `Prediction/Monster*`、`SimulatedCombatState*.cs` | 复用模拟器，联合快照未完整投影 | 待迁移 | 敌方跨回合 strict diff 与 RNG 计数 |
 | 九条战斗 RNG、Hook 历史和战斗历史 | `Engine/InCombat/Simulation/*`、`PredictionStateStore` | 复用模拟器，联合审计未完成 | 待迁移 | 兄弟 Fork 隔离与跨回合 strict diff |
-| 续用戳 | `Runtime/ContinuationStamp.cs` | Actor 分段字段 | 待迁移 | 单人文本兼容、2/4 Actor 全字段扰动 |
-| 完整状态键 | `CombatBeamSolver.StateEvaluation.cs` | `JointCombatSnapshot.StateKey` | 待迁移 | 所有影响合法动作/结算的字段进入键 |
+| 续用戳 | `Runtime/ContinuationStamp.cs` | Actor 分段字段 | 已迁移 | 单人文本兼容；2/4 Actor 代表字段扰动通过，机制字段由 F4/F5继续验证 |
+| 完整状态键 | `CombatBeamSolver.StateEvaluation.cs` | 联合屏障 + 完整 continuation 文本 | 已迁移 | Actor 代表字段及屏障扰动改变键；机制专项由 F4-F7补证据 |
 
 ## 候选、动作和选择
 
@@ -87,4 +87,5 @@
 | F-ISSUE-002 | 生产 Runtime/UI/部署大量使用 `LocalContext.GetMe()` | 保持生产单人边界，不把它们纳入离线联合模型 | F12 非目标门禁 |
 | F-ISSUE-003 | 联合 BFS/DFS 在全员屏障处停止，未执行敌方生命周期 | 明确标为待迁移，不把现有 oracle 证据外推 | F7/F10 |
 | F-ISSUE-004 | `PlanRelicEffect` 是路线显示证据，不等于主动遗物动作 | 反编译原版未发现战斗内 `UseRelic`/`ActivateRelic` 提交入口；不新增动作类型，遗物 Hook 触发语义归 F5 | F1 已定边界，F5 验证触发 |
+| F-ISSUE-005 | 多 Actor 远端玩家获得格挡时，multiplayer scaling mirror 直接按玩家数拒绝 | 按原版精确镜像：玩家目标/非 powered 不缩放；主次敌人按人数及 Act/Boss 系数缩放 | F2 已修复；失败 `e62462a1435d4bbbbe0c48965528985b`，通过 `34221092e12f40f5addc9fb89219ff94` |
 

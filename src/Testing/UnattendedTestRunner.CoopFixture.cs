@@ -4,7 +4,10 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Monsters;
+using MegaCrit.Sts2.Core.Models.Singleton;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.ValueProps;
+using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver;
@@ -37,6 +40,8 @@ internal sealed partial class UnattendedTestRunner
             }
 
             JointCombatSnapshot before = JointCombatSnapshot.Capture(root, simulator, turns);
+            AssertRemoteActorStateKeyCoverage(root, before, turns, actorCount - 1);
+            AssertMultiplayerBlockScaling(root, actorCount);
             JointActionCandidate selected = candidates.First(candidate =>
                 candidate.Action.Actor.Index == actorCount - 1
                 && candidate.Action.Kind == PlanActionKind.PlayCard);
@@ -63,6 +68,71 @@ internal sealed partial class UnattendedTestRunner
                     || ComparePlanActions(breadthFirst.Actions, oracle.Actions) != 0)
                     throw new InvalidOperationException(
                         "联合 BFS 与独立 DFS oracle 的最优值、动作序或终局状态不一致。");
+            }
+        }
+    }
+
+    private static void AssertMultiplayerBlockScaling(CombatRootSnapshot root, int actorCount)
+    {
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Creature enemy = combat.Enemies.First(candidate =>
+            candidate.IsPrimaryEnemy || candidate.IsSecondaryEnemy);
+        decimal actual = simulator.GainBlock(enemy, 10m, ValueProp.Move);
+        decimal expectedMultiplier = actorCount <= 2
+            ? actorCount
+            : actorCount * MultiplayerScalingModel.GetMultiplayerScaling(
+                combat.Encounter,
+                combat.CurrentActIndex);
+        if (actual != 10m * expectedMultiplier)
+        {
+            throw new InvalidOperationException(
+                $"{actorCount} Actor 敌人格挡缩放错误：actual={actual} " +
+                $"expected={10m * expectedMultiplier}。");
+        }
+    }
+
+    private static void AssertRemoteActorStateKeyCoverage(
+        CombatRootSnapshot root,
+        JointCombatSnapshot baseline,
+        JointTurnState turns,
+        int actorIndex)
+    {
+        AssertMutation("block", (simulator, player) =>
+            simulator.GainBlock(player.Creature, 7, default));
+        AssertMutation("energy", (simulator, player) =>
+            simulator.State.GetPlayerCombatState(player).LoseEnergy(1));
+        AssertMutation("stars", (simulator, player) =>
+            simulator.State.GetPlayerCombatState(player).GainStars(1));
+        AssertMutation("gold", (simulator, player) =>
+            ((SimulatedCombatState)simulator.State.CombatState).GainPlayerGold(player, 1));
+        AssertMutation("card_instance", (simulator, player) =>
+        {
+            PredictedCard card = simulator.State.GetPlayerCombatState(player).Hand.Cards[0];
+            card.Upgrade();
+        });
+
+        void AssertMutation(
+            string field,
+            Action<CombatPredictionSimulator, Player> mutate)
+        {
+            CombatPredictionSimulator fork = root.ForkSimulator();
+            Player actor = fork.State.Players[actorIndex];
+            mutate(fork, actor);
+            JointCombatSnapshot changed = JointCombatSnapshot.Capture(root, fork, turns);
+            if (changed.StateKey == baseline.StateKey
+                || changed.Continuation.StateText == baseline.Continuation.StateText)
+            {
+                throw new InvalidOperationException(
+                    $"Actor{actorIndex} 的 {field} 变化未进入联合状态键和续用戳。");
+            }
+            for (int index = 0; index < baseline.Actors.Count; index++)
+            {
+                if (index == actorIndex)
+                    continue;
+                if (changed.Actors[index] != baseline.Actors[index])
+                    throw new InvalidOperationException(
+                        $"Actor{actorIndex} 的 {field} 变化污染了兄弟 Actor{index} 快照。");
             }
         }
     }

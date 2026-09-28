@@ -10,6 +10,12 @@
 
 `COOP-JOINT-REPLAY` 使用 Armaments、Strike 和 BlockPotion，通过普通卡、动作选择、药水、EndTurn、搜索单步/计划回放同状态键与续用文本，`runId=b3c20b20d3c143029720422c29bb500c`，实例已删除。显式路径 Release 构建 0 警告/0 错误；未执行跨回合、四 Actor 药水候选、Linux 或可见 Steam。
 
+## 离线四 Actor 完整迁移 F2（2026-09-29）
+
+确认联合状态键复用完整 Actor continuation，而 `JointActorSnapshot` 只保留诊断投影；新增 2/4 Actor 远端格挡、能量、Stars、金币和卡牌升级实例扰动，逐项要求状态键/续用戳变化且兄弟 Actor 快照不变。Coop 结构门禁禁止 `Players.Single()`、`LocalContext.GetMe()` 和从本地玩家 combat state 取代 Actor 目录。
+
+首次 `COOP-MULTI-ACTOR-ROOT` 在远端玩家格挡扰动处失败：multiplayer scaling mirror 对任意多人状态抛 `NotSupportedException`，`runId=e62462a1435d4bbbbe0c48965528985b`。按原版实现改为只缩放主/次敌人的 powered 格挡，并使用模拟状态冻结的玩家数、Encounter 与 Act；玩家目标保持系数 1。修复后同场景通过 2/4 Actor 资源/卡牌扰动、Fork 隔离、非本地回放、BFS/DFS 和 2/4 人敌人格挡倍率，`runId=34221092e12f40f5addc9fb89219ff94`，实例已删除。Release 构建 0/0；机制专项扰动仍由 F4/F5/F7 验证。
+
 ## 下一版本（开发中，2026-09-28）
 
 后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。

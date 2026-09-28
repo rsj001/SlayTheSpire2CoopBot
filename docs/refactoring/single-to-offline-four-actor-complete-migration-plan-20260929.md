@@ -1,6 +1,6 @@
 # 从单人 CombatSolver 到离线四 Actor 完整自动规划开发计划
 
-> 状态：执行中；前置联合模型 P0-P12、F0-F1 已完成，F2-F12 待完成
+> 状态：执行中；前置联合模型 P0-P12、F0-F2 已完成，F3-F12 待完成
 > 日期：2026-09-29  
 > 基线提交：`f14acea6`  
 > 目标：在不改变单人 CombatSolver 语义的前提下，建立一个可以控制最多四名 Actor、完整覆盖单人战斗机制的离线联合自动规划器。  
@@ -12,7 +12,7 @@
 |---|---|---|
 | F0 单人全功能清单与基线 | 已完成 | [功能迁移库存](offline-four-actor-feature-inventory-20260929.md)；Windows 结构门禁通过；复用同源码五项动态基线 |
 | F1 统一联合单步转移 | 已完成 | `JointActionTransition` 统一卡牌/选择/药水/EndTurn；`COOP-JOINT-REPLAY` 通过 |
-| F2 Actor 状态/Fork/快照/续用 | 未开始 | - |
+| F2 Actor 状态/Fork/快照/续用 | 已完成 | 2/4 Actor 远端字段扰动与 Fork 隔离通过；修复多人敌人格挡缩放 mirror |
 | F3 完整卡牌与目标 | 未开始 | - |
 | F4 完整药水 | 未开始 | - |
 | F5 Power/遗物/球/宠物/角色资源 | 未开始 | - |

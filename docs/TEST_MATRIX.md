@@ -1,5 +1,12 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F2（2026-09-29）
+
+- 首个差异：`COOP-MULTI-ACTOR-ROOT` 在 Actor1 格挡扰动命中 multiplayer scaling mirror 的单人拒绝，`runId=e62462a1435d4bbbbe0c48965528985b`，状态 Failed，实例已删除。
+- 修复：精确镜像原版 multiplayer block scaling；玩家目标/非 powered 格挡不缩放，主/次敌人 powered 格挡按 2 人系数 2、3/4 人按人数乘 Act/Boss 系数。
+- 最终证据：`runId=34221092e12f40f5addc9fb89219ff94`，`COOP-MULTI-ACTOR-ROOT` Passed；完成 `RemoteActorStateKey`、`ForkIsolation`、2/4 Actor 倍率、候选、快照、远端回放和 BFS/DFS，实例已删除。
+- Release 构建使用显式游戏/RitsuLib 路径且关闭自动复制，0 警告/0 错误。未运行跨回合 strict diff、Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F1（2026-09-29）
 
 - 统一 transition：`JointActionTransition` 执行卡牌、动作内选择、药水和 EndTurn；BFS、DFS 与回放随节点 Fork 已处理敌人死亡集合，并共用死亡 Power/稳定边界收尾。
