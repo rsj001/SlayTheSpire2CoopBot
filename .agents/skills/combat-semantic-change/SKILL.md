@@ -99,6 +99,7 @@ writeLive 和 writePredicted，复用 store 的 Fork context。状态描述按�
 - 不在 worker 推进真实动作队列、牌堆、Power、Creature 或 run RNG。
 - 不新增宽泛 catch、静默默认值或“跳过该候选”。未支持行为让搜索明确失败或形成已定义边界。
 - gameplay mod subscriber 必须在根阶段识别所有权；未知来源显式拒绝，不做通用浅拷贝。
+- 多 Actor 根中的药水槽、可再生药水遗物、战后回血和奖励替换展望都按 Actor 捕获；旧根级单人字段只能映射 `LocalActorId`。联合 Smart 成本按实际用药 Actor 读取这些元数据，不能套用本地玩家值。
 - 根可达卡牌的第三方 OnPlay Harmony 补丁由 `PredictionModPatchAudit` 检查；跨根读取当前补丁表，避免缓存已卸载或后来安装的补丁。新增适配时明确其来源与语义，不能用未知来源放行代替适配；此入口不代表所有第三方方法已覆盖。
 - 已适配 OnPlay 必须登记完整组合，由根冻结唯一标准 registry 镜像；命中后直接返回，不能再运行 vanilla/spec。配置变更只在主线程 live stamp 检查，worker 消费根标记；适配状态机另有 MoveNext 补丁、Inner 补丁及未审计新类型明确失败。条件支持通过标准 descriptor 加组合签名描述，不增加无条件原版覆盖。见 `docs/third-party-onplay-patches.md`。
 

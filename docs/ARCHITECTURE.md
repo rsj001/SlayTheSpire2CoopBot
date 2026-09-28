@@ -275,7 +275,7 @@ F4c1 的 `JointPotionSearchPolicy` 以 Actor、槽位和药水 ID 作为指令�
 
 离线模型按根 Actor 固定顺序保存身份，Actor 数量可为 1 至 4；Actor 身份进入计划、屏障、续用文本和联合状态指纹。`JointActionTransition` 是 BFS、DFS oracle 与严格回放共享的单步权威执行入口，负责已选卡牌、动作内选择、药水与 EndTurn，并把已处理敌人死亡集合随节点 Fork；候选枚举和跨回合生命周期不属于该类型。`JointOfflineSearch` 的 BFS 只负责完整状态键去重，DFS oracle 保持不去重，二者不复制动作结算。原版没有战斗内独立主动遗物提交入口，`PlanRelicEffect` 仍是卡牌/药水等动作触发后的路线注释，不新增伪造的 Relic action。当前生产 `CombatBeamSolver` 仍由 `EnsureSinglePlayerRoot` 保持 ActorCount=1，捕获多人根时稳定拒绝，不把联合类型偷偷降级成本地 Actor。总战损比较目前是跨角色 HP 价值尚未统一时的临时 workaround；由于不同角色 HP 的可比价值可能不同，该缺口只在联合目标研究记录中保留，不作为本阶段语义修复。
 
-F5a 将原先只有根级本地玩家视图的可搜索药水、Throwing Axe 可用性、Petrified Toad 可再生药水语义和战后遗物回血同时捕获到每个 `CombatActorRoot`。生产单人字段和调用链不变，并要求与 `LocalActorId` 对应 Actor 的新字段逐值相等；联合药水成本必须按动作 Actor 读取，不能用本地玩家遗物替代队友所有权。
+F5a 将原先只有根级本地玩家视图的可搜索药水、Throwing Axe 可用性、Petrified Toad 可再生药水语义和战后遗物回血同时捕获到每个 `CombatActorRoot`；F4c2d 进一步迁入药水奖励展望。生产单人字段和调用链不变，并要求与 `LocalActorId` 对应 Actor 的新字段逐值相等；联合药水成本与奖励替换额度必须按动作 Actor 读取，不能用本地玩家遗物或奖励预测替代队友所有权。
 
 策略重构回归语料由 `tools/StrategyCorpus` 编排：玩家包使用 Testing 的严格 `combat_start` 无头恢复，仓库生成场景使用 `OfflineSearchHarness`。Search 在请求完成后提供只读质量和根戳记证据；Testing Writer 与离线宿主把它们写入独立证据文件，不参与候选裁决。原始玩家包与完整输出只留在 `.local`。对照器先核对根、政策和固定预算，再比较完整动作、续用、结果及非时序工作量；时间、分配和 GC 单列观察。
 

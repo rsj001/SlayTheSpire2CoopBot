@@ -67,6 +67,9 @@ internal static class PotionUsePolicy
     public static int AmbergrisRequiredHpSaved(int maximumHp)
         => (int)Math.Ceiling(maximumHp * AmbergrisMinimumHpSavedFraction);
 
+    public static bool IsAmbergris(string? potionId)
+        => string.Equals(potionId, "AMBERGRIS", StringComparison.Ordinal);
+
     public static int EffectiveStrategicHpCost(
         int strategicHpCost,
         int ambergrisCount,

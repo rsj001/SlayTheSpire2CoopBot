@@ -43,6 +43,7 @@ internal sealed partial class UnattendedTestRunner
                 || root.HasRenewablePotionShapedRock != root.Actors[0].HasRenewablePotionShapedRock
                 || root.HasUnusedCardReplayAllocator != root.Actors[0].HasUnusedCardReplayAllocator
                 || root.PostCombatRelicHeal != root.Actors[0].PostCombatRelicHeal
+                || root.PotionRewardOutlook != root.Actors[0].PotionRewardOutlook
                 || !root.Actors[1].SearchablePotions.Any(potion => potion.PotionId == "GAMBLERS_BREW"))
             {
                 throw new InvalidOperationException(
@@ -318,11 +319,13 @@ internal sealed partial class UnattendedTestRunner
                     || !smartPolicy.IsSmartCandidateEligible(
                         smartBaseline,
                         qualifyingSmart,
-                        root.Actors)
+                        root.Actors,
+                        root.BossHpRelief)
                     || smartPolicy.IsSmartCandidateEligible(
                         smartBaseline,
                         rejectedSmart,
-                        root.Actors))
+                        root.Actors,
+                        root.BossHpRelief))
                 {
                     throw new InvalidOperationException(
                         "联合 Smart 药水没有按同根无药基线和单人 HP 阈值裁决。");

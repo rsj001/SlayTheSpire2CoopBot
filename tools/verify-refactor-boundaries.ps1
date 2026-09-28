@@ -2305,8 +2305,10 @@ foreach ($text in @(
     'IReadOnlyList<SearchablePotionSlotSnapshot> SearchablePotions,',
     'bool HasUnusedCardReplayAllocator,',
     'bool HasRenewablePotionShapedRock,',
-    'PostCombatRelicHealProfile PostCombatRelicHeal)',
-    'CapturePostCombatRelicHeal(player.Relics)'
+    'PostCombatRelicHealProfile PostCombatRelicHeal,',
+    'PotionRewardOutlook PotionRewardOutlook)',
+    'CapturePostCombatRelicHeal(player.Relics)',
+    'PotionRewardOutlook.Capture(player, state, player.Relics)'
 )) {
     if (-not (Select-String -LiteralPath (Join-Path $repositoryRoot 'src/Runtime/CombatRootSnapshot.cs') `
             -SimpleMatch $text -Quiet)) {

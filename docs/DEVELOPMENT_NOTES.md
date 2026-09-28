@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F4c2d（2026-09-29）
+
+药水奖励展望从仅有根级本地玩家视图迁入每个 `CombatActorRoot`，Smart 候选按实际用药 Actor 各自应用一次奖励替换额度；旧 `CombatRootSnapshot.PotionRewardOutlook` 直接映射本地 Actor，保持单人兼容。Ambergris 额外阈值按所属 Actor 最大生命计算，Boss relief 继续使用冻结战斗根政策。基础联合根与 Smart 回归 `runId=195ebba7e6de4801a5363e30bcc4a78e` Passed，实例已删除；三个专门数值分支仍待独立证据。
+
 ## 离线四 Actor 完整迁移 F4c2c（2026-09-29）
 
 Smart 候选不再把所有可选用药数混成一次搜索，而是从“基线实际用药数 + 1”到可搜索槽位上限逐层要求精确总药量；每层公平分配当前剩余状态预算，分别做阈值判定，再由 F8 终局政策在合格层间选优。这样高药量路线不会因 HP 更低但门槛更高而遮蔽少药合格路线。Beam/BFWS 回归 `runId=345dfe4be93c4a71828230133a695f81` Passed，实例已删除。奖励替换额度、Ambergris 和 Boss HP relief 尚未迁移。

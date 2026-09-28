@@ -404,7 +404,11 @@ internal static partial class JointOfflineSearch
             }
             remaining -= candidate.ExpandedStates;
             candidateExpanded += candidate.ExpandedStates;
-            if (!policy.IsSmartCandidateEligible(baseline, candidate, root.Actors))
+            if (!policy.IsSmartCandidateEligible(
+                    baseline,
+                    candidate,
+                    root.Actors,
+                    root.BossHpRelief))
                 continue;
             int comparison = JointObjectiveScore.Compare(candidate.Score, selected.Score);
             if (comparison > 0

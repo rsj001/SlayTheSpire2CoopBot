@@ -109,7 +109,7 @@ internal sealed class PotionStrategySnapshot
             strategicCost += strategicCosts != null
                 ? strategicCosts.Get(directive.PotionId, renewablePotionShapedRock)
                 : PotionUsePolicy.StrategicHpCost(directive.PotionId, renewablePotionShapedRock);
-            if (string.Equals(directive.PotionId, "AMBERGRIS", StringComparison.Ordinal))
+            if (PotionUsePolicy.IsAmbergris(directive.PotionId))
                 ambergrisCount++;
         }
         return new ForcedPotionUseEvaluation(

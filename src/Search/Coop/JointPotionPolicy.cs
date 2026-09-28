@@ -110,7 +110,8 @@ internal sealed class JointPotionSearchPolicy
     internal bool IsSmartCandidateEligible(
         JointOfflineSearchResult baseline,
         JointOfflineSearchResult candidate,
-        IReadOnlyList<CombatActorRoot> actors)
+        IReadOnlyList<CombatActorRoot> actors,
+        BossHpRelief bossHpRelief)
     {
         PlanAction[] optionalUses = candidate.Actions
             .Where(action => action.Kind == PlanActionKind.UsePotion
@@ -123,16 +124,54 @@ internal sealed class JointPotionSearchPolicy
             .ToArray();
         if (optionalUses.Length == 0)
             return true;
-        int strategicCost = optionalUses.Sum(action => PotionUsePolicy.StrategicHpCost(
-            action.PotionId!,
-            actors[action.Actor.Index].HasRenewablePotionShapedRock));
         bool baselineWon = baseline.Score.Outcome == CombatTerminalOutcome.Victory;
         bool candidateWon = candidate.Score.Outcome == CombatTerminalOutcome.Victory;
-        return candidateWon && !baselineWon
-            || PotionUsePolicy.HpSaved(
-                    baseline.Score.TotalHpLost,
-                    candidate.Score.TotalHpLost)
-                >= PotionUsePolicy.SmartRequiredHpSaved(strategicCost);
+        if (candidateWon && !baselineWon)
+            return true;
+        int strategicCost = 0;
+        int ambergrisCount = 0;
+        foreach (IGrouping<CombatActorId, PlanAction> group in optionalUses.GroupBy(
+                     static action => action.Actor))
+        {
+            CombatActorRoot actor = actors[group.Key.Index];
+            PlanAction[] actorUses = group.ToArray();
+            int actorCost = actorUses.Sum(action => PotionUsePolicy.StrategicHpCost(
+                action.PotionId!,
+                actor.HasRenewablePotionShapedRock));
+            actorCost = PotionUsePolicy.ApplyReplacementCredit(
+                actorCost,
+                actorUses.Length,
+                actor.PotionRewardOutlook.ReplacementHpCredit);
+            int actorAmbergris = actorUses.Count(action =>
+                PotionUsePolicy.IsAmbergris(action.PotionId));
+            strategicCost = checked(strategicCost + PotionUsePolicy.EffectiveStrategicHpCost(
+                actorCost,
+                actorAmbergris,
+                actor.InitialMaxHp));
+            ambergrisCount += actorAmbergris;
+            if (actorAmbergris > 0)
+            {
+                int actorHpSaved = Math.Max(
+                    0,
+                    candidate.Snapshot.Actors[group.Key.Index].Hp
+                        - baseline.Snapshot.Actors[group.Key.Index].Hp);
+                if (actorHpSaved < PotionUsePolicy.EffectiveStrategicHpCost(
+                        actorCost,
+                        actorAmbergris,
+                        actor.InitialMaxHp))
+                {
+                    return false;
+                }
+            }
+        }
+        int hpSaved = PotionUsePolicy.HpSaved(
+            baseline.Score.TotalHpLost,
+            candidate.Score.TotalHpLost);
+        return ambergrisCount > 0
+            ? hpSaved >= strategicCost
+            : hpSaved >= PotionUsePolicy.SmartRequiredHpSaved(
+                strategicCost,
+                bossHpRelief);
     }
 
     internal void Validate(int actorCount)

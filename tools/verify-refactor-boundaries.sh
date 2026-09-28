@@ -1801,8 +1801,10 @@ for token in \
     'IReadOnlyList<SearchablePotionSlotSnapshot> SearchablePotions,' \
     'bool HasUnusedCardReplayAllocator,' \
     'bool HasRenewablePotionShapedRock,' \
-    'PostCombatRelicHealProfile PostCombatRelicHeal)' \
-    'CapturePostCombatRelicHeal(player.Relics)'; do
+    'PostCombatRelicHealProfile PostCombatRelicHeal,' \
+    'PotionRewardOutlook PotionRewardOutlook)' \
+    'CapturePostCombatRelicHeal(player.Relics)' \
+    'PotionRewardOutlook.Capture(player, state, player.Relics)'; do
     require_fixed "$combat_root" "$token" 'combat Actor root missing F5a relic ownership:'
 done
 

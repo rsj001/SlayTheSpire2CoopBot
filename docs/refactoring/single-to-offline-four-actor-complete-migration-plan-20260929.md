@@ -204,7 +204,7 @@
 
 - F4a（已完成）：`JointActionExpander` 按 Actor 模拟槽位枚举可搜索药水和目标；需要选择的药水先由权威 transition 执行生成阶段，再把主选择写入 `PlanAction.Choice`，后续选择才进入 nested 链。`COOP-MULTI-ACTOR-ROOT` 运行 `cf7241344aa044cbbe3bbdff233257fb` 通过 2/4 Actor 独立 Block Potion/Gambler's Brew 候选、选择 owner 与 BFS/DFS 对照。
 - F4b（已完成）：四种生成牌药水和 Ashwater、Droplet of Precognition、Gambler's Brew、Liquid Memories、Touch of Insanity 九类主选择均由 Actor1 严格回放；Entropic Brew 生成改变联合状态键和续用戳。`COOP-MULTI-ACTOR-ROOT` 运行 `35794e9d204e4a11b8b54607dbeca5d7` 通过。
-- F4c（进行中）：F4c1 已完成 Actor+槽位指令、Disabled/Force、最少/最多用药数及单人战略成本复用。F4c2a 已建立 Force/Smart 分离的无药基线政策和基础 HP 阈值合同，`runId=12601915c77d43888b98927f30a5d817` Passed；F4c2b 的 Beam/BFWS 共享状态预算、无收益拒绝及按精确总用药数分层已通过，最终 `runId=345dfe4be93c4a71828230133a695f81` Passed。奖励替换额度、Ambergris 与 Boss HP relief 仍待迁移。
+- F4c（进行中）：F4c1 已完成 Actor+槽位指令、Disabled/Force、最少/最多用药数及单人战略成本复用。F4c2a 已建立 Force/Smart 分离的无药基线政策和基础 HP 阈值合同，`runId=12601915c77d43888b98927f30a5d817` Passed；F4c2b 的 Beam/BFWS 共享状态预算、无收益拒绝及按精确总用药数分层已通过，最终 `runId=345dfe4be93c4a71828230133a695f81` Passed。F4c2d 已把奖励展望迁入每个 `CombatActorRoot`，旧根字段保持本地兼容，`runId=195ebba7e6de4801a5363e30bcc4a78e` Passed；奖励抵扣、Ambergris 与 Boss relief 专门分支仍待动态证据。
 - F4d（已完成）：Actor0 的药水动作作为第二轮固定前缀，经 F7 生命周期推进后仍保持 Actor/槽位身份、单次消耗、联合目标计数和完整状态键；BFS/DFS oracle 一致，`runId=6e70211973b3400fb77bea4b41fbd6fb` Passed。
 
 ### F5：Power、遗物、球、宠物和角色专属资源

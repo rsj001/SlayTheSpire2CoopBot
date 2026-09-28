@@ -37,7 +37,8 @@ internal sealed record CombatActorRoot(
     IReadOnlyList<SearchablePotionSlotSnapshot> SearchablePotions,
     bool HasUnusedCardReplayAllocator,
     bool HasRenewablePotionShapedRock,
-    PostCombatRelicHealProfile PostCombatRelicHeal);
+    PostCombatRelicHealProfile PostCombatRelicHeal,
+    PotionRewardOutlook PotionRewardOutlook);
 
 internal readonly record struct CombatActorId(int Index)
 {
@@ -196,7 +197,7 @@ internal sealed class CombatRootSnapshot
             ?? throw new InvalidOperationException("找不到本地玩家。");
         PlayerCombatState playerState = player.PlayerCombatState
             ?? throw new InvalidOperationException("玩家没有战斗状态。");
-        CombatActorRoot[] actors = CaptureActors(state);
+        CombatActorRoot[] actors = CaptureActors(state, predictPotionReward);
         int localActorIndex = Array.FindIndex(
             actors,
             actor => ReferenceEquals(actor.PlayerIdentity, player));
@@ -204,6 +205,7 @@ internal sealed class CombatRootSnapshot
         {
             throw new InvalidOperationException("本地玩家不在战斗 Actor 根目录中。");
         }
+        PotionRewardOutlook potionRewardOutlook = actors[localActorIndex].PotionRewardOutlook;
         AbstractModel[] liveCombatHookListeners = state.IterateHookListeners().ToArray();
         if (liveCombatHookListeners.Any(PredictionModModelSupport.IsBaseLibCardModifier))
         {
@@ -230,9 +232,6 @@ internal sealed class CombatRootSnapshot
             .Any(relic => !relic.IsMelted);
         PostCombatRelicHealProfile postCombatRelicHeal = CapturePostCombatRelicHeal(
             simulatedCombat.RelicsOf(player));
-        PotionRewardOutlook potionRewardOutlook = predictPotionReward
-            ? PotionRewardOutlook.Capture(player, state, simulatedCombat.RelicsOf(player))
-            : PotionRewardOutlook.None;
         SearchablePotionSlotSnapshot[] searchablePotions = player.PotionSlots
             .Select((potion, slot) => (Potion: potion, Slot: slot))
             .Where(item => item.Potion != null && PotionOnUseSupport.CanSearch(item.Potion))
@@ -335,7 +334,7 @@ internal sealed class CombatRootSnapshot
             potionRewardOutlook);
     }
 
-    private static CombatActorRoot[] CaptureActors(CombatState state)
+    private static CombatActorRoot[] CaptureActors(CombatState state, bool predictPotionReward)
     {
         CombatActorRoot[] actors = new CombatActorRoot[state.Players.Count];
         for (int index = 0; index < state.Players.Count; index++)
@@ -379,7 +378,10 @@ internal sealed class CombatRootSnapshot
                 Array.AsReadOnly(searchablePotions),
                 hasUnusedCardReplayAllocator,
                 hasRenewablePotionShapedRock,
-                CapturePostCombatRelicHeal(player.Relics));
+                CapturePostCombatRelicHeal(player.Relics),
+                predictPotionReward
+                    ? PotionRewardOutlook.Capture(player, state, player.Relics)
+                    : PotionRewardOutlook.None);
         }
         return actors;
     }

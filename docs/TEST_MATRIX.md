@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F4c2d：逐 Actor 奖励元数据（2026-09-29）
+
+- `CombatActorRoot` 逐 Actor 捕获药水奖励展望；旧根级字段与 LocalActor 逐值相同，远端用药成本不再读取本地替换额度。
+- Smart 成本实现按动作 Actor 分组应用一次替换额度，Ambergris 使用所属 Actor 最大生命，Boss relief 来自冻结根。
+- 基础联合根/Smart 回归 `runId=195ebba7e6de4801a5363e30bcc4a78e` Passed，实例已删除；替换额度、Ambergris、Boss relief 专门数值分支、Linux 及可见 Steam 未覆盖。
+
 ## 离线四 Actor 完整迁移 F4c2c：Smart 药量分层（2026-09-29）
 
 - Smart 候选按精确总用药数逐层搜索，每层只获得剩余状态预算的公平份额；合格层再按联合终局政策选优。
