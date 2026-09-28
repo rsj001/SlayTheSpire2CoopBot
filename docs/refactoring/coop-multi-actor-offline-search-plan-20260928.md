@@ -1,6 +1,6 @@
 # Co-op Bot 离线多 Actor 联合搜索开发计划
 
-> 状态：分阶段实施中（P0-P2 已完成）  
+> 状态：分阶段实施中（P0-P3 已完成）  
 > 日期：2026-09-28  
 > 目标：把 CombatSolver 的战斗根与搜索节点推广为 Actor 数量可变的离线模型，同时保持单人模式等价。  
 > 当前边界：本计划不启用生产多人模式，不控制其他客户端，不发送网络动作，不启动可见 Steam，不提升版本、不发包或上传创意工坊。
@@ -10,7 +10,8 @@
 - P0：静态盘点完成，确认模拟器已按 `Player` 保存多玩家分支状态，单人假设集中于根快照、搜索和计划层。
 - P1：已实现根内 `CombatActorId`、不可变 `CombatActorRoot` 列表和 `LocalActorId`；现有单人代理字段、搜索入口和部署边界未改变。显式游戏/RitsuLib 路径 Release 构建 0/0，根捕获无人检查通过。
 - P2：已实现多人 `ContinuationStamp` 的 Actor 目录，live/predicted 均覆盖阶段、五个牌堆、HP/格挡/资源、奥斯提、球、药水、回合历史、状态遗物和跨回合遗物状态；单人 stamp 保持逐字不变。Release 构建、Windows 结构门禁和 `COOP-P2-SINGLE-ROOT` 根捕获无人检查通过，实例已清理。
-- 后续：进入 P3 Actor-aware `PlanAction` 与选择模型。
+- P3：`PlanAction` 与 `PlanCardChoice` 已带 `CombatActorId`，旧单人构造默认 `Actor0`；`JointPlan` 在联合计划边界校验 Actor 范围及选择归属。Release 构建、Windows 结构门禁和 `COOP-ACTOR-PLAN-CONTRACT` 通过，实例已清理。
+- 后续：进入 P4 Actor-aware 回合状态与全员结束回合屏障。
 
 [返回重构路线与核验](README.md) · [返回文档导航](../README.md)
 

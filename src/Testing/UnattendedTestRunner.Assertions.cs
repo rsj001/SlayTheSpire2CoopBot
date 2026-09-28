@@ -18,6 +18,12 @@ internal sealed partial class UnattendedTestRunner
         public async Task RunBeforeExecutionAsync(ScenarioContext scenario)
         {
             UnattendedTestRequest request = runner._request;
+            if (request.ScenarioId == "COOP-ACTOR-PLAN-CONTRACT")
+            {
+                runner.SetStage("coop_actor_plan_contract");
+                AssertCoopActorPlanContract();
+                runner._completedChecks.Add("CoopActorPlan:SingleDefault:ActorOne:OutOfRange:ChoiceOwner");
+            }
             if (request.ScenarioId == "MEMORY-DISPLAY-CONTRACT")
             {
                 runner.SetStage("memory_display_contract");

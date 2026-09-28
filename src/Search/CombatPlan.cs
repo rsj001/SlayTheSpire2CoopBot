@@ -113,7 +113,17 @@ internal sealed record PlanCardChoice(
     IReadOnlyList<PlanCardToken> Cards,
     string SourceId = "",
     string ContextId = "",
-    PlanChoiceTiming Timing = PlanChoiceTiming.Action);
+    PlanChoiceTiming Timing = PlanChoiceTiming.Action,
+    CombatActorId Actor = default)
+{
+    internal void ValidateActor(int actorCount)
+    {
+        if (actorCount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(actorCount), actorCount, "Actor 数量必须为正数。");
+        if ((uint)Actor.Index >= (uint)actorCount)
+            throw new InvalidOperationException($"选牌 Actor {Actor} 不在 ActorCount={actorCount} 范围内。");
+    }
+}
 
 internal sealed record PredictionGap(
     string SourceId,
@@ -151,10 +161,25 @@ internal sealed record PlanAction(
     int CardStateOccurrence = 0,
     bool EndsPlayerTurn = false,
     int CardUpgradeLevel = 0,
-    string CardEnchantmentId = "")
+    string CardEnchantmentId = "",
+    CombatActorId Actor = default)
 {
     public bool IsExecutable => Kind is PlanActionKind.PlayCard or PlanActionKind.UsePotion;
     public string ActionTitle => Kind == PlanActionKind.UsePotion ? PotionTitle : CardTitle;
+
+    internal void ValidateActor(int actorCount)
+    {
+        if (actorCount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(actorCount), actorCount, "Actor 数量必须为正数。");
+        if ((uint)Actor.Index >= (uint)actorCount)
+            throw new InvalidOperationException($"动作 Actor {Actor} 不在 ActorCount={actorCount} 范围内。");
+        if (Choice is { } choice)
+            choice.ValidateActor(actorCount);
+        foreach (PlanCardChoice nested in NestedChoices ?? [])
+            nested.ValidateActor(actorCount);
+        foreach (PlanCardChoice turnStart in TurnStartChoices ?? [])
+            turnStart.ValidateActor(actorCount);
+    }
 
     public IReadOnlyList<PlanCardChoice> GetActionChoicesInExecutionOrder()
     {
