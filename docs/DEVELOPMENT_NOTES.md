@@ -6,6 +6,8 @@
 
 追加 Beam 边界：同预算重复运行逐项一致，预取消立即生效；四 Actor 一层 Beam 与 DFS oracle 相同。预算 1 首次在进入新层时清空了未展开 frontier，导致无路线可评分，`runId=d61d81fe8dc040b8a8adb9ae1e37f7d5` Failed；现在保留这些节点作为明确的未完成结果，并精确报告 `StateBudget`，最终 `runId=7b524dd3b0a44b7aa90c40496f8184ef` Passed，实例已删除。固定并行 lane、异常排空、Pareto/多样性和 BFWS 仍待完成。
 
+F9b 新增联合保留政策：最佳总路线之外，按末动作 Actor、用药/不用药及团队资源非支配前沿保留代表，再用稳定总序填满 Beam；没有引入 Actor 动作交换。合成合同在宽度 4 下同时保住最佳、远端 Actor、药水和成长交换路线，`COOP-JOINT-OBJECTIVE` 的 `runId=2aeaebfe461444ce9deb69fffc2e5a62` Passed，实例已删除。固定并行 lane 与 BFWS 仍待完成。
+
 ## 离线四 Actor 完整迁移 F8（2026-09-29）
 
 联合终局比较器补齐明确的终局边界和团队政策：胜利优先，未完成路线优于已失败路线；死亡 Actor 数先于总战损，之后依次比较逐 Actor 战损、药水战略成本、保命资源、药水次数、成长、长期资源、偷窃回收、回合和动作，最后仍由稳定联合动作序决胜。实现仅位于 `Search/Coop`，单人 `FinalPlanOrdering` 未改。`COOP-JOINT-OBJECTIVE` 的 `runId=0661a8fe6b954efe947351377d65f4ae` Passed，实例已删除，Release 构建 0/0。总战损仍是不同角色 HP 价值模型完成前的 workaround。

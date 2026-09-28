@@ -6,6 +6,7 @@
 - 2 Actor 小根使用足以覆盖完整层的 Beam，与独立 DFS oracle 的最优分数、动作序和状态键逐项相同。
 - `COOP-MULTI-ACTOR-ROOT`：`runId=2ba973750d1a4b41998970ba7058a880`，Passed，实例已删除；Release 构建 0 警告/0 错误。Pareto/多样性、药水配额、并行 lane、4 Actor Beam 和 BFWS 未覆盖。
 - 后续边界组：同预算重复运行逐项一致，预算 1 精确返回 `StateBudget`，预取消生效，四 Actor 一层 Beam 与 DFS oracle 一致。首次预算 1 在新层入口丢弃 frontier，`runId=d61d81fe8dc040b8a8adb9ae1e37f7d5` Failed；修复后 `runId=7b524dd3b0a44b7aa90c40496f8184ef` Passed，实例已删除。
+- F9b 保路合同：固定宽度同时保留最佳总路线、另一个 Actor 的最佳路线、用药路线和以成长交换战损的非支配路线；`COOP-JOINT-OBJECTIVE` 的 `runId=2aeaebfe461444ce9deb69fffc2e5a62` Passed，实例已删除。
 
 ## 离线四 Actor 完整迁移 F8：联合终局政策（2026-09-29）
 

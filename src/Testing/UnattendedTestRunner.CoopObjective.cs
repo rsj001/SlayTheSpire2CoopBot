@@ -20,6 +20,24 @@ internal sealed partial class UnattendedTestRunner
         RequireBetter(baseline, Score(stolen: 1), "偷窃回收");
         RequireBetter(baseline, Score(turns: 2), "回合数");
         RequireBetter(baseline, Score(actions: 1), "动作数");
+        JointBeamRetentionCandidate<string>[] retentionCandidates =
+        [
+            new("best", baseline, [new(PlanActionKind.EndTurn, 1, Actor: new CombatActorId(0))]),
+            new("actor1", Score(total: 1), [new(PlanActionKind.EndTurn, 1, Actor: new CombatActorId(1))]),
+            new("potion", Score(total: 2, potionUses: 1),
+                [new(PlanActionKind.UsePotion, 1, PotionSlot: 0, PotionId: "BLOCK_POTION", Actor: new CombatActorId(0))]),
+            new("growth", Score(total: 3, growth: 2),
+                [new(PlanActionKind.EndTurn, 1, Actor: new CombatActorId(0))]),
+        ];
+        IReadOnlyList<JointBeamRetentionCandidate<string>> retained =
+            JointBeamRetentionPolicy.Select(retentionCandidates, width: 4);
+        HashSet<string> values = retained
+            .Select(static candidate => candidate.Value)
+            .ToHashSet(StringComparer.Ordinal);
+        if (values.Count != 4 || !values.SetEquals(["best", "actor1", "potion", "growth"]))
+        {
+            throw new InvalidOperationException("联合 Beam 未保留 Actor、药水或 Pareto 多样性通道。");
+        }
 
         static JointObjectiveScore Score(
             CombatTerminalOutcome? outcome = null,

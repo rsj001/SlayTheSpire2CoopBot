@@ -160,11 +160,13 @@ internal static class JointOfflineSearch
                     next.Add((childNode, childSnapshot, score));
                 }
             }
-            frontier = next
-                .OrderByDescending(static item => item.Score, JointObjectiveScoreComparer.Instance)
-                .ThenBy(static item => item.Node.Actions, JointActionSequenceComparer.Instance)
-                .Take(beamWidth)
-                .Select(static item => item.Node)
+            frontier = JointBeamRetentionPolicy.Select(
+                    next.Select(static item => new JointBeamRetentionCandidate<Node>(
+                        item.Node,
+                        item.Score,
+                        item.Node.Actions)).ToArray(),
+                    beamWidth)
+                .Select(static candidate => candidate.Value)
                 .ToList();
         }
         if (best is null)

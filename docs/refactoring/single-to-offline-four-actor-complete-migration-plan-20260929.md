@@ -19,7 +19,7 @@
 | F6 选择与嵌套 continuation | 进行中 | F6a frame、F6c 多 Actor 原序队列、F6d 前缀相对同名实例回放已通过；F7d1 已提供回合开始挂起边界，F6b 尚需恢复接线 |
 | F7 联合回合与敌方生命周期 | 进行中 | F7a 玩家侧屏障、F7b 死亡资格、F7c1 纯攻击敌方侧与 F7d1 无选择下一轮已通过；复活/逃跑/额外回合、特殊后效及回合选择待补 |
 | F8 联合终局目标 | 已完成 | 终局边界、存活、战损向量、药水/保命资源、成长、偷窃、回合、动作及稳定动作序通过；单人排序未改 |
-| F9 联合 Beam/BFWS | 进行中 | F9a Beam/转置完成；F9c 串行确定性/预算/预取消、F9d 四 Actor 一层 oracle 已通过；保路/Pareto/并行/BFWS 待补 |
+| F9 联合 Beam/BFWS | 进行中 | F9a Beam/转置、F9b Actor/药水/Pareto 保路完成；F9c 串行边界、F9d 四 Actor 一层 oracle 已通过；并行/BFWS 待补 |
 | F10 strict replay 与差分 | 未开始 | - |
 | F11 性能与确定性 | 未开始 | - |
 | F12 最终门禁 | 未开始 | - |
@@ -347,7 +347,7 @@
 执行拆分：
 
 - F9a（已完成）：新增逐层确定性 `SolveBeam`，所有 Actor 共享状态预算与转置集合，终局即时排空；未命中终局而耗尽预算时返回明确的未完成评分和 `StateBudget` 停止原因。2 Actor 小根使用覆盖完整层宽的 Beam，与独立 DFS oracle 的分数、动作序及状态键一致，`runId=2ba973750d1a4b41998970ba7058a880` Passed。
-- F9b（待完成）：Beam 必保候选、Pareto、多样性和药水配额。
+- F9b（已完成）：`JointBeamRetentionPolicy` 先保留最佳总路线，再按末动作 Actor、用药/不用药通道与死亡/战损/药水成本/保命/成长/长期资源/偷窃的非支配前沿保留代表，最后按稳定总序填宽；不交换 Actor 动作。独立合成合同同时要求四类代表，`COOP-JOINT-OBJECTIVE` 的 `runId=2aeaebfe461444ce9deb69fffc2e5a62` Passed。
 - F9c（进行中）：同预算重复 Beam 的分数/动作/状态键/展开数一致，预取消抛 `OperationCanceledException`；状态预算为 1 时曾因新层入口丢弃 frontier 而失败，`runId=d61d81fe8dc040b8a8adb9ae1e37f7d5`，修复为保留未展开节点并返回 `StateBudget` 后通过。固定 worker lane、异常排空与快照所有权仍待补。
 - F9d（进行中）：四 Actor 一层 Beam 与 DFS oracle 的分数、动作序和状态键一致；上述 F9c/d 合并证据 `runId=7b524dd3b0a44b7aa90c40496f8184ef` Passed。更深四 Actor 可证明分解与 BFWS 成员待补。
 
