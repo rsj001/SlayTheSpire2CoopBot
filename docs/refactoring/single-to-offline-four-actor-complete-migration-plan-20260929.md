@@ -15,7 +15,7 @@
 | F2 Actor 状态/Fork/快照/续用 | 已完成 | 2/4 Actor 远端字段扰动与 Fork 隔离通过；修复多人敌人格挡缩放 mirror |
 | F3 完整卡牌与目标 | 进行中 | F3a/F3b 已接入目标/实例身份、基础及动态嵌套选择；F3c 已接入同回合 fixed-prefix 请求并通过 BFS/DFS；opening/cycle/cross-turn 仍待完成 |
 | F4 完整药水 | 进行中 | F4a/F4b 已完成 2/4 Actor 独立槽位/目标、九类手动选择与 Entropic Brew 生成；Smart/强制/药量/战略成本等政策待完成 |
-| F5 Power/遗物/球/宠物/角色资源 | 进行中 | F5a 根元数据、F5b Power/全队效果/Hook、F5c 远端遗物触发/消耗及 F5d 三类角色资源已通过；Silent/宠物真实所有权/第三方边界待补 |
+| F5 Power/遗物/球/宠物/角色资源 | 进行中 | F5a-F5d 已完成根元数据、Power/全队/Hook、遗物触发/消耗、五角色资源及真实召唤所有权；仅 F5e 第三方边界待补 |
 | F6 选择与嵌套 continuation | 未开始 | - |
 | F7 联合回合与敌方生命周期 | 未开始 | - |
 | F8 联合终局目标 | 未开始 | - |
@@ -232,7 +232,7 @@
 - F5a（已完成）：`CombatActorRoot` 捕获逐 Actor 可搜索药水、Throwing Axe 可用性、Petrified Toad 可再生药水语义和战后遗物回血；旧根级单人字段保持并与本地 Actor 逐值一致。Actor1 独有 Petrified Toad 的 `COOP-MULTI-ACTOR-ROOT` 运行 `f6a9adae0f5b4dc49e472f21747659af` 通过。
 - F5b（已完成）：通用 StrengthPower 已通过跨 Actor applier、远端 target、叠加/移除、Fork 隔离和状态键/续用戳；新增 One For All 精确镜像，由 Actor1 对四名 Actor 应用同额 Power 并保留 applier，`COOP-MULTI-ACTOR-ROOT` 运行 `69805442a5ae4e6599e0e84de008d8f2` Passed。Shuriken 的 AfterCardPlayed 时序代表由 F5c 同场动作链覆盖。
 - F5c（已完成）：Actor1 连续三次攻击经权威联合 transition 触发自己的 Shuriken，计数、Strength 归属、状态键/续用戳与父 Fork 隔离通过，运行 `e0a5cdea18764e00ae656242cf1cfc46` Passed；Actor0/Actor1 各持同型 Throwing Axe 后，Actor1 出牌只消耗自己的实例，队友实例与父 Fork 保持未使用，运行 `31ea273edf31473a939b7075faceddbe` Passed。
-- F5d（进行中）：混合 Ironclad/Defect/Regent/Necrobinder 根及 Orb/Stars/Osty 隔离已通过；Silent 专属机制与宠物真实多人所有权仍待补。
+- F5d（已完成）：混合 Ironclad/Defect/Regent/Necrobinder 根及 Orb/Stars/Osty 隔离已通过；独立 Ironclad/Silent/Necrobinder roster 中，Actor1 Blade Dance 生成的 Shiv 只进入自身手牌，Actor2 Afterlife 实际召唤的 Osty 只属于自身，`COOP-MULTI-ACTOR-ROOT` 运行 `e1f94caff84845e281c716f46d1e6499` Passed。
 - F5e（待完成）：第三方登记点和未知 subscriber 拒绝边界。
 
 ### F6：完整选择系统和嵌套 continuation

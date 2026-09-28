@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F5d 动作级所有权（2026-09-29）
+
+混合角色 fixture 现支持显式 roster，并增加两条真实动作路径：远端 Silent 打出 Blade Dance 后，Shiv 仅进入其自身手牌；远端 Necrobinder 打出 Afterlife 后，存活 Osty 只由该 Player 查询得到。`COOP-MULTI-ACTOR-ROOT` 的 `runId=e1f94caff84845e281c716f46d1e6499` Passed，实例已删除，Release 构建 0/0。F5d 标记完成。
+
 ## 离线四 Actor 完整迁移 F5c 遗物消耗（2026-09-29）
 
 为一次性遗物状态增加只读预测查询，并建立两名 Actor 各持同型 Throwing Axe 的联合动作夹具。Actor1 出牌后只消耗其自己的实例；Actor0 同型遗物及父 Fork 中两份实例均保持未使用。`COOP-MULTI-ACTOR-ROOT` 的 `runId=31ea273edf31473a939b7075faceddbe` Passed，实例已删除，Release 构建 0/0。结合前一 Shuriken 动作链，F5c 标记完成。

@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F5d：Silent 与宠物所有权（2026-09-29）
+
+- 独立 roster 为 Ironclad、Silent、Necrobinder。Actor1 实际打出 Blade Dance 后，生成的 Shiv 只存在于 Actor1 手牌；Actor0/2 均无 Shiv。
+- 从同根独立回放 Actor2 的 Afterlife，Osty 存活且只能通过 Actor2 查询；Actor0/1 均无 Osty，证明实际卡牌召唤路径保留多人所有权。
+- `COOP-MULTI-ACTOR-ROOT`：`runId=e1f94caff84845e281c716f46d1e6499`，Passed，实例已删除；Release 构建 0 警告/0 错误。未运行 Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F5c：遗物消耗与共享边界（2026-09-29）
 
 - Actor0/Actor1 分别持有独立 Throwing Axe；Actor1 经联合 transition 出牌后，只有 Actor1 的 `UsedThisCombat` 变为 true，Actor0 同型实例和父 Fork 两份实例都保持 false。

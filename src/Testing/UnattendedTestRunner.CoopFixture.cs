@@ -28,6 +28,7 @@ internal sealed partial class UnattendedTestRunner
         AssertRemoteActorRelicTrigger(source);
         AssertRemoteActorTeamPower(source);
         AssertRemoteActorRelicConsumption(source);
+        AssertCharacterOwnedGeneratedState(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -184,6 +185,59 @@ internal sealed partial class UnattendedTestRunner
                     return bfs;
                 }
             }
+        }
+    }
+
+    private static void AssertCharacterOwnedGeneratedState(CombatState source)
+    {
+        CharacterModel[] roster =
+        [
+            ModelDb.Character<Ironclad>(),
+            ModelDb.Character<Silent>(),
+            ModelDb.Character<Necrobinder>(),
+        ];
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            roster.Length,
+            includeCharacterMechanismFixture: true,
+            characterRoster: roster);
+        JointTurnState turns = JointTurnState.Start(roster.Length, root.StartTurnNumber);
+
+        CombatPredictionSimulator silentProbe = root.ForkSimulator();
+        PlanAction bladeDance = JointActionExpander.Expand(silentProbe, turns)
+            .Select(static candidate => candidate.Action)
+            .Single(static action => action.Actor.Index == 1
+                && action.Kind == PlanActionKind.PlayCard
+                && action.CardId == "BLADE_DANCE");
+        JointReplayResult shivs = JointPlanReplayer.Replay(
+            root,
+            new JointPlan(roster.Length, [bladeDance]));
+        for (int index = 0; index < roster.Length; index++)
+        {
+            int count = shivs.Snapshot.Simulator.State
+                .GetPlayerCombatState(shivs.Snapshot.Simulator.State.Players[index])
+                .Hand.Cards.Count(card => card.Preview is Shiv);
+            if ((index == 1 && count == 0) || (index != 1 && count != 0))
+                throw new InvalidOperationException("远端 Silent 生成的 Shiv 污染了其他 Actor 手牌。");
+        }
+
+        CombatPredictionSimulator necroProbe = root.ForkSimulator();
+        PlanAction afterlife = JointActionExpander.Expand(necroProbe, turns)
+            .Select(static candidate => candidate.Action)
+            .Single(static action => action.Actor.Index == 2
+                && action.Kind == PlanActionKind.PlayCard
+                && action.CardId == "AFTERLIFE");
+        JointReplayResult summoned = JointPlanReplayer.Replay(
+            root,
+            new JointPlan(roster.Length, [afterlife]));
+        SimulatedCombatState combat =
+            (SimulatedCombatState)summoned.Snapshot.Simulator.State.CombatState;
+        if (combat.GetOsty(summoned.Snapshot.Simulator.State.Players[2]) is not { } osty
+            || summoned.Snapshot.Simulator.State.GetCreature(osty).IsDead
+            || combat.GetOsty(summoned.Snapshot.Simulator.State.Players[0]) != null
+            || combat.GetOsty(summoned.Snapshot.Simulator.State.Players[1]) != null)
+        {
+            throw new InvalidOperationException("远端 Necrobinder 的实际召唤没有保持 Osty 所有权。");
         }
     }
 
@@ -561,10 +615,14 @@ internal sealed partial class UnattendedTestRunner
         PotionModel? remotePotion = null,
         bool includeRemoteRelicTriggerFixture = false,
         bool includeRemoteTeamPowerFixture = false,
-        bool includeRelicConsumptionFixture = false)
+        bool includeRelicConsumptionFixture = false,
+        bool includeCharacterMechanismFixture = false,
+        IReadOnlyList<CharacterModel>? characterRoster = null)
     {
         if (actorCount is < 1 or > 4)
             throw new ArgumentOutOfRangeException(nameof(actorCount));
+        if (characterRoster != null && characterRoster.Count != actorCount)
+            throw new ArgumentException("显式角色 roster 数量必须与 Actor 数一致。", nameof(characterRoster));
         Player liveLocal = source.Players.First(player => player.NetId
             == (MegaCrit.Sts2.Core.Context.LocalContext.GetMe(source)?.NetId
                 ?? throw new InvalidOperationException("当前测试战斗没有本地玩家。")));
@@ -575,7 +633,7 @@ internal sealed partial class UnattendedTestRunner
             ulong netId = index == 0 ? liveLocal.NetId : checked(liveLocal.NetId + (ulong)index);
             while (!netIds.Add(netId))
                 netId++;
-            CharacterModel character = index switch
+            CharacterModel character = characterRoster?[index] ?? index switch
             {
                 0 => ModelDb.Character<Ironclad>(),
                 1 => ModelDb.Character<Defect>(),
@@ -633,6 +691,10 @@ internal sealed partial class UnattendedTestRunner
             }
             if (includeRelicConsumptionFixture)
                 player.AddRelicInternal(ModelDb.Relic<ThrowingAxe>().ToMutable(), silent: true);
+            if (includeCharacterMechanismFixture && index == 1)
+                combat.Hand.AddInternal(state.CreateCard(ModelDb.Card<BladeDance>(), player), silent: true);
+            if (includeCharacterMechanismFixture && index == 2)
+                combat.Hand.AddInternal(state.CreateCard(ModelDb.Card<Afterlife>(), player), silent: true);
         }
 
         MonsterModel sourceMonster = source.Enemies.FirstOrDefault()?.Monster
