@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F4a（2026-09-29）
+
+- 候选：按 Actor 模拟槽位、可用性和 `TargetType` 枚举药水；主选择与 nested 选择通过显式 placement 分离，探针从父状态 Fork。
+- `COOP-MULTI-ACTOR-ROOT`：2/4 Actor 独立 Block Potion/Gambler's Brew 候选、Actor1 主选择 owner、含药水空间 BFS/DFS 对照通过；`runId=cf7241344aa044cbbe3bbdff233257fb`，Passed，实例已删除。
+- Release 构建 0 警告/0 错误。未覆盖其余手动药水代表集、生成/复制/替换、Smart/Force/战略成本、跨回合、Linux 或可见 Steam。
+
 ## 离线四 Actor 完整迁移 F3c（2026-09-29）
 
 - 请求合同：`JointOfflineSearchRequest` 携带 Actor-aware 固定前缀、动作上限和状态上限；BFS/DFS 均经权威 transition 回放前缀，跨回合在 F7 前显式拒绝。

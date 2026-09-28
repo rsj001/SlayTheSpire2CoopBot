@@ -34,6 +34,12 @@ Armaments + Strike 的 `COOP-JOINT-REPLAY` 通过 choice candidate、实例定�
 
 `COOP-MULTI-ACTOR-ROOT` 在 Actor1 出牌前缀后验证 BFS/DFS 的最优值和完整动作序一致，且结果首动作保持该前缀；`runId=5f14e64a366e4ad286cc03099b4bc8c4`，Passed，实例已删除。Release 构建 0/0。opening/cycle/cross-turn 与单人候选序哨兵仍未完成，F3 保持进行中。
 
+## 离线四 Actor 完整迁移 F4a（2026-09-29）
+
+联合候选现在按每个 Actor 的模拟药水槽枚举可搜索实例与原版目标，槽位、药水 ID、目标和 Actor 一起进入动作。药水选择边界新增明确 placement：药水自身的主选择写入 `PlanAction.Choice`，完成过程产生的后续选择才追加到 nested 链；生成牌药水可在 `Prepare` 产生选项后再构建主选择。探针状态被丢弃，不会把已消费槽位提交给搜索。
+
+增强后的 `COOP-MULTI-ACTOR-ROOT` 为 Actor0 注入 Block Potion、其他 Actor 注入 Gambler's Brew，2/4 Actor 均取得独立药水候选，Actor1 主选择 owner 正确，含药水动作空间的 BFS/DFS 仍一致；`runId=cf7241344aa044cbbe3bbdff233257fb`，Passed，实例已删除。Release 构建 0/0。生成/复制/替换代表集、九类手动选择、Smart/Force/战略成本和跨回合 continuation 尚未完成，F4 保持进行中。
+
 ## 下一版本（开发中，2026-09-28）
 
 后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。

@@ -2265,6 +2265,26 @@ foreach ($text in @(
         $violations.Add("Joint fixed-prefix search missing F3c boundary: $text")
     }
 }
+foreach ($text in @(
+    'combat.GetPotionAtSlot(player, slot)',
+    'combat.IsPotionAvailable(player, slot)',
+    'PotionOnUseSupport.CanSearch(potion)',
+    'ResolvePotionTargets(simulator, potion, player)',
+    'JointPendingChoicePlacement.Primary when item.Candidate.Action.Choice == null'
+)) {
+    if (-not (Select-String -LiteralPath $jointExpanderPath -SimpleMatch $text -Quiet)) {
+        $violations.Add("Joint potion expansion missing F4a boundary: $text")
+    }
+}
+foreach ($text in @(
+    'internal enum JointPendingChoicePlacement',
+    'PotionChoiceSupport.RequiresChoice(potion) && action.Choice == null',
+    'JointPendingChoicePlacement.Primary'
+)) {
+    if (-not (Select-String -LiteralPath $jointTransitionPath -SimpleMatch $text -Quiet)) {
+        $violations.Add("Joint potion transition missing F4a choice boundary: $text")
+    }
+}
 
 if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Error $_ }

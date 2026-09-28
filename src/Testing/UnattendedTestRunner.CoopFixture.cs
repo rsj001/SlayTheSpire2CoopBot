@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Monsters;
+using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Models.Singleton;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -35,8 +36,24 @@ internal sealed partial class UnattendedTestRunner
                 if (!candidates.Any(candidate => candidate.Action.Actor == actor
                         && candidate.Action.Kind == PlanActionKind.EndTurn)
                     || !candidates.Any(candidate => candidate.Action.Actor == actor
-                        && candidate.Action.Kind == PlanActionKind.PlayCard))
-                    throw new InvalidOperationException($"离线联合根缺少 {actor} 的出牌或结束候选。");
+                        && candidate.Action.Kind == PlanActionKind.PlayCard)
+                    || !candidates.Any(candidate => candidate.Action.Actor == actor
+                        && candidate.Action.Kind == PlanActionKind.UsePotion))
+                    throw new InvalidOperationException($"离线联合根缺少 {actor} 的出牌、药水或结束候选。");
+            }
+            PlanAction actorZeroPotion = candidates.First(candidate =>
+                candidate.Action.Actor.Index == 0
+                && candidate.Action.Kind == PlanActionKind.UsePotion).Action;
+            if (actorZeroPotion.PotionId != "BLOCK_POTION" || actorZeroPotion.Choice != null)
+                throw new InvalidOperationException("Actor0 的无选择药水候选身份错误。");
+            PlanAction actorOnePotion = candidates.First(candidate =>
+                candidate.Action.Actor.Index == 1
+                && candidate.Action.Kind == PlanActionKind.UsePotion).Action;
+            if (actorOnePotion.PotionId != "GAMBLERS_BREW"
+                || actorOnePotion.Choice == null
+                || actorOnePotion.Choice.Actor.Index != 1)
+            {
+                throw new InvalidOperationException("Actor1 的药水主选择没有保持槽位和 owner 身份。");
             }
 
             JointCombatSnapshot before = JointCombatSnapshot.Capture(root, simulator, turns);
@@ -200,8 +217,9 @@ internal sealed partial class UnattendedTestRunner
             multiplayerScalingModel: run.MultiplayerScalingModel);
         foreach (Player player in players)
             state.AddPlayer(player);
-        foreach (Player player in players)
+        for (int index = 0; index < players.Length; index++)
         {
+            Player player = players[index];
             player.ResetCombatState();
             player.PopulateCombatState(run.Rng.Shuffle, state);
             PlayerCombatState combat = player.PlayerCombatState
@@ -211,6 +229,13 @@ internal sealed partial class UnattendedTestRunner
             combat.Hand.AddInternal(card, silent: true);
             combat.Energy = player.MaxEnergy;
             combat.Phase = PlayerTurnPhase.Play;
+            PotionModel potion = PredictionUtils.CreatePotion(
+                index == 0
+                    ? CanonicalModels.Potion<BlockPotion>()
+                    : CanonicalModels.Potion<GamblersBrew>(),
+                player);
+            if (!player.AddPotionInternal(potion, 0, silent: true).success)
+                throw new InvalidOperationException($"无法为离线 Actor{index} 注入药水。");
         }
 
         MonsterModel sourceMonster = source.Enemies.FirstOrDefault()?.Monster

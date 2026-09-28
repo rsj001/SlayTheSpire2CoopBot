@@ -9,12 +9,20 @@ namespace CombatSolver;
 internal sealed class JointPendingActionChoiceException(
     CombatActorId actor,
     string sourceId,
-    CardChoiceSpec spec) : InvalidOperationException(
+    CardChoiceSpec spec,
+    JointPendingChoicePlacement placement = JointPendingChoicePlacement.Nested) : InvalidOperationException(
         $"联合动作等待选择：Actor {actor} source={sourceId} effect={spec.Effect}。")
 {
     internal CombatActorId Actor { get; } = actor;
     internal string SourceId { get; } = sourceId;
     internal CardChoiceSpec Spec { get; } = spec;
+    internal JointPendingChoicePlacement Placement { get; } = placement;
+}
+
+internal enum JointPendingChoicePlacement
+{
+    Primary,
+    Nested,
 }
 
 /// <summary>
@@ -164,8 +172,22 @@ internal static class JointActionTransition
         try
         {
             if (!PotionExecutionSupport.Prepare(
-                    simulator, combat, potion, action.PotionSlot, target)
-                || !PotionExecutionSupport.Complete(
+                    simulator, combat, potion, action.PotionSlot, target))
+            {
+                if (combat.PendingTurnStartChoice != null)
+                    throw PendingChoice(simulator, combat, player, action);
+                throw new InvalidOperationException(
+                    $"联合药水动作准备未完成：Actor {action.Actor} potion={action.PotionId}。" );
+            }
+            if (PotionChoiceSupport.RequiresChoice(potion) && action.Choice == null)
+            {
+                throw new JointPendingActionChoiceException(
+                    action.Actor,
+                    potion.Id.Entry,
+                    PotionChoiceSupport.GetSpec(simulator, potion),
+                    JointPendingChoicePlacement.Primary);
+            }
+            if (!PotionExecutionSupport.Complete(
                     simulator, combat, potion, target, action.Choice,
                     historyStart, processedEnemyDeaths)
                 || !CombatBeamSolver.SettleReplayActionBoundary(simulator, combat)

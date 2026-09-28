@@ -1769,6 +1769,20 @@ for token in \
     '等待 F7 联合回合生命周期'; do
     require_fixed "$joint_offline_search" "$token" 'joint fixed-prefix search missing F3c boundary:'
 done
+for token in \
+    'combat.GetPotionAtSlot(player, slot)' \
+    'combat.IsPotionAvailable(player, slot)' \
+    'PotionOnUseSupport.CanSearch(potion)' \
+    'ResolvePotionTargets(simulator, potion, player)' \
+    'JointPendingChoicePlacement.Primary when item.Candidate.Action.Choice == null'; do
+    require_fixed "$joint_expander" "$token" 'joint potion expansion missing F4a boundary:'
+done
+for token in \
+    'internal enum JointPendingChoicePlacement' \
+    'PotionChoiceSupport.RequiresChoice(potion) && action.Choice == null' \
+    'JointPendingChoicePlacement.Primary'; do
+    require_fixed "$joint_transition" "$token" 'joint potion transition missing F4a choice boundary:'
+done
 
 if ((${#violations[@]} > 0)); then
     printf '%s\n' "${violations[@]}" >&2

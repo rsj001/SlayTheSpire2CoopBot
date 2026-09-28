@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Models;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
 
@@ -97,6 +98,35 @@ internal static class JointActionExpander
                 }
             }
 
+            SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+            for (int slot = 0; slot < player.PotionSlots.Count; slot++)
+            {
+                PotionModel? potion = combat.GetPotionAtSlot(player, slot);
+                if (potion == null
+                    || !combat.IsPotionAvailable(player, slot)
+                    || !PotionOnUseSupport.CanSearch(potion))
+                {
+                    continue;
+                }
+                foreach (Creature? target in ResolvePotionTargets(simulator, potion, player))
+                {
+                    AddResolvedCandidates(
+                        candidates,
+                        simulator,
+                        turnState,
+                        new JointActionCandidate(
+                            new PlanAction(
+                                PlanActionKind.UsePotion,
+                                turnState.Turn,
+                                TargetCombatId: target?.CombatId,
+                                PotionSlot: slot,
+                                PotionId: potion.Id.Entry,
+                                Actor: actor),
+                            Card: null,
+                            Target: target));
+                }
+            }
+
             candidates.Add(new JointActionCandidate(
                 new PlanAction(PlanActionKind.EndTurn, turnState.Turn, Actor: actor),
                 Card: null,
@@ -147,7 +177,18 @@ internal static class JointActionExpander
                         Actor = pending.Actor,
                         SourceId = pending.SourceId,
                     };
-                    PlanAction expanded = AppendNestedChoice(item.Candidate.Action, owned);
+                    PlanAction expanded = pending.Placement switch
+                    {
+                        JointPendingChoicePlacement.Primary when item.Candidate.Action.Choice == null
+                            => item.Candidate.Action with { Choice = owned },
+                        JointPendingChoicePlacement.Primary
+                            => throw new InvalidOperationException(
+                                $"联合动作重复请求主选择：Actor {pending.Actor} source={pending.SourceId}。",
+                                pending),
+                        JointPendingChoicePlacement.Nested
+                            => AppendNestedChoice(item.Candidate.Action, owned),
+                        _ => throw new ArgumentOutOfRangeException(nameof(pending.Placement)),
+                    };
                     open.Enqueue((item.Candidate with { Action = expanded }, item.Depth + 1));
                 }
             }
@@ -199,6 +240,33 @@ internal static class JointActionExpander
         }
         throw new NotSupportedException(
             $"联合卡牌目标类型未登记：Actor={owner.NetId} card={card.Preview.Id.Entry} target={type}。");
+    }
+
+    private static IEnumerable<Creature?> ResolvePotionTargets(
+        CombatPredictionSimulator simulator,
+        PotionModel potion,
+        Player owner)
+    {
+        IEnumerable<Creature?> candidates = potion.TargetType switch
+        {
+            TargetType.AnyEnemy => simulator.State.HittableEnemies.Cast<Creature?>(),
+            TargetType.AnyPlayer => simulator.State.PlayerCreatures
+                .Where(simulator.State.IsHittable).Cast<Creature?>(),
+            TargetType.AnyAlly => simulator.State.GetTeammatesOf(owner.Creature)
+                .Where(simulator.State.IsHittable).Cast<Creature?>(),
+            TargetType.Self => new Creature?[] { null },
+            TargetType.None or TargetType.AllEnemies or TargetType.AllAllies
+                or TargetType.RandomEnemy or TargetType.TargetedNoCreature or TargetType.Osty
+                => new Creature?[] { null },
+            _ => throw new NotSupportedException(
+                $"联合药水目标类型未登记：Actor={owner.NetId} potion={potion.Id.Entry} " +
+                $"target={potion.TargetType}。"),
+        };
+        foreach (Creature? target in candidates)
+        {
+            if (target == null || potion.IsValidTarget(target))
+                yield return target;
+        }
     }
 
     private static int CountStateOccurrence(
