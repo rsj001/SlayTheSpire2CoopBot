@@ -255,6 +255,8 @@ RitsuLib 0.6.0 自身拥有 BaseLib 目标类型的外部登记查询、按程�
 
 ### 3.1 离线多 Actor 联合模型（Co-op Bot 第一阶段）
 
+F0 起的完整单人功能迁移范围由[离线四 Actor 单人功能迁移库存](refactoring/offline-four-actor-feature-inventory-20260929.md)统一维护。库存把根/状态、候选/选择、结算机制、回合/终局和搜索政策映射到权威源码与最低动态证据；后续阶段只能在该库存中关闭缺口，不能凭编译将待迁移功能记为已覆盖。
+
 `src/Search/Coop/` 是离线联合模型的独立职责边界：`JointTurnState` 拥有 Actor 可行动／结束／死亡屏障，`JointPlan` 拥有带 Actor 身份的计划合同，`JointActionExpander`、`JointCombatSnapshot`、`JointPlanReplayer` 和 `JointObjective` 分别拥有候选展开、完整联合快照、严格回放和终局比较；`JointExhaustiveOracle` 只服务有限 toy fixture 的穷举证据。它们只消费冻结的 `CombatRootSnapshot` 和 Fork 后的 `CombatPredictionSimulator`，不读取 Runtime、UI、全局设置、网络或真实客户端，也不部署联合计划。
 
 离线模型按根 Actor 固定顺序保存身份，Actor 数量可为 1 至 4；Actor 身份进入计划、屏障、续用文本和联合状态指纹。`JointActionTransition` 是 BFS、DFS oracle 与严格回放共享的单步权威执行入口；`JointOfflineSearch` 的 BFS 只负责完整状态键去重，DFS oracle 保持不去重，二者不复制卡牌结算。当前生产 `CombatBeamSolver` 仍由 `EnsureSinglePlayerRoot` 保持 ActorCount=1，捕获多人根时稳定拒绝，不把联合类型偷偷降级成本地 Actor。总战损比较目前是跨角色 HP 价值尚未统一时的临时 workaround；由于不同角色 HP 的可比价值可能不同，该缺口只在联合目标研究记录中保留，不作为本阶段语义修复。

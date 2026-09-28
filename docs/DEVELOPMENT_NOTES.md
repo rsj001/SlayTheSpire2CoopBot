@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F0（2026-09-29）
+
+建立单人功能迁移权威库存，按根/状态、候选/选择、结算机制、回合/终局和搜索政策映射单人源码入口、联合入口、当前状态与最低关闭证据。Windows/Linux 结构门禁现检查库存的必备分类和四种状态词，后续 F 阶段只能在同一库存关闭缺口。F0 不改行为源码；动态基线复用同源码已通过的 `COOP-P2-SINGLE-ROOT`、`COOP-ACTOR-PLAN-CONTRACT`、`COOP-ACTOR-CANDIDATES`、`COOP-JOINT-REPLAY` 和 `COOP-PRODUCTION-SINGLE-BOUNDARY`，未重复启动游戏。Windows 结构门禁通过；本机 WSL 服务不可用，Linux 等价门禁未执行。
+
 ## 下一版本（开发中，2026-09-28）
 
 后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。

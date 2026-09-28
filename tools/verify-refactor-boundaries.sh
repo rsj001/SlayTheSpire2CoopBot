@@ -1702,6 +1702,22 @@ for file in CombatBeamSolver.FinalPlanOrdering.cs CombatBeamSolver.Transposition
     done
 done
 
+# F0 keeps the offline four-Actor migration scope in one reviewable inventory.
+offline_actor_inventory="$repository_root/docs/refactoring/offline-four-actor-feature-inventory-20260929.md"
+for token in \
+    '## 根、身份和状态所有权' \
+    '## 候选、动作和选择' \
+    '## 结算机制' \
+    '## 回合、终局和搜索政策' \
+    '## F0 冻结基线' \
+    '## 已知迁移问题' \
+    '`已迁移`' \
+    '`待迁移`' \
+    '`明确不支持`' \
+    '`需要真实原版证据`'; do
+    require_fixed "$offline_actor_inventory" "$token" 'offline four-Actor inventory missing required contract:'
+done
+
 if ((${#violations[@]} > 0)); then
     printf '%s\n' "${violations[@]}" >&2
     printf 'Refactor boundary verification failed with %d violation(s).\n' "${#violations[@]}" >&2

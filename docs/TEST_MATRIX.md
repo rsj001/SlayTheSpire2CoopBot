@@ -1,5 +1,12 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F0（2026-09-29）
+
+- 新增[单人功能迁移库存](refactoring/offline-four-actor-feature-inventory-20260929.md)，覆盖根与状态、候选与选择、结算机制、回合与终局、搜索政策，并为每项固定单人入口、联合入口、迁移状态和最低关闭证据。
+- Windows `verify-refactor-boundaries.ps1` 通过，输出 `REFACTOR_BOUNDARIES_OK search_files=247`；门禁同时验证库存的必备分类及 `已迁移`、`待迁移`、`明确不支持`、`需要真实原版证据` 四种状态。
+- F0 只修改文档和结构门禁，行为源码与测试输入未变；按单阶段一次直接证据规则，复用下文同源码已通过的 `COOP-P2-SINGLE-ROOT`、`COOP-ACTOR-PLAN-CONTRACT`、`COOP-ACTOR-CANDIDATES`、`COOP-JOINT-REPLAY`、`COOP-PRODUCTION-SINGLE-BOUNDARY`，不重复运行相同 headless 请求。
+- Linux 等价门禁已同步源码，但本机 WSL 返回 `HCS_E_SERVICE_NOT_AVAILABLE`，因此未执行；未启动可见 Steam、未提升版本、未发包。
+
 ## Co-op Bot 离线多 Actor 联合搜索：P0-P11（2026-09-29）
 
 计划入口：[Co-op Bot 离线多 Actor 联合搜索开发计划](refactoring/coop-multi-actor-offline-search-plan-20260928.md)。
