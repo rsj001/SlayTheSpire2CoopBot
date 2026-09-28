@@ -2,6 +2,8 @@
 
 ## 下一版本（开发中，2026-09-28）
 
+后续完整迁移路线已单独整理为 [从单人到离线四 Actor 完整迁移计划](refactoring/single-to-offline-four-actor-complete-migration-plan-20260929.md)，以 F0-F12 管理单人机制覆盖、联合搜索和严格回放；前置 P0-P12 只作为已完成的联合模型基线。
+
 开始执行 [Co-op Bot 离线多 Actor 联合搜索开发计划](refactoring/coop-multi-actor-offline-search-plan-20260928.md)。P0 静态盘点确认 `CombatPredictionState` 已按 `Player` 保存并 Fork 多名玩家；当前单人假设主要集中在根快照、搜索快照/状态键和计划动作。P1 新增不可变 `CombatActorRoot` 目录与根内 `CombatActorId`；P2 将续用合同扩展为按 Actor 顺序的严格目录且保持单人 stamp 逐字不变；P3 为 `PlanAction` 与 `PlanCardChoice` 增加 Actor 身份并由 `JointPlan` 校验归属；P4 新增可行动、已结束、死亡和全员结束屏障。P5-P6 新增确定性 Actor-aware 候选展开与联合快照/状态指纹，`COOP-ACTOR-CANDIDATES`、`COOP-JOINT-SNAPSHOT-KEY` 通过。P7 新增联合目标比较器，`COOP-JOINT-OBJECTIVE` 通过；其中“总战损”仅是跨角色 HP 价值未统一前的 workaround，因角色 HP 的可比价值不同而记录为后续研究问题。P8 新增严格同回合联合计划回放，`COOP-JOINT-REPLAY` 通过；它尚未覆盖完整敌方回合或网络部署。P9/P10 以有限 toy fixture 穷举验证 2/4 Actor 的全局最优和确定性动作序，`COOP-JOINT-ORACLE` 与 `COOP-JOINT-FOUR-ACTOR` 通过；这不是生产规模全局最优证明。P11 为生产 `CombatBeamSolver` 保持 ActorCount=1 硬边界，`COOP-PRODUCTION-SINGLE-BOUNDARY` 通过。该批仍不代表多人 Runtime、多人部署或网络控制已实现。此前验证使用已确认的 `D:\SteamLibrary\steamapps\common\Slay the Spire 2` 与 `mods\RitsuLib` 路径，所有实例已清理；P12 收尾将补齐架构/测试记录、最终构建、门禁、提交和同源码本地部署。
 真实 2 Actor 根第一次捕获发现 `MadScienceGrowth.CaptureRemainingCapacity` 对玩家集合使用 `Single()`；现改为逐 Actor 计算并求和，单人结果不变。修复后 `COOP-MULTI-ACTOR-ROOT` 在真实 2/4 Actor 离线根上通过了根目录、候选、联合快照和非本地 Actor 回放。该首个差异已进入迁移记录，后续继续按“发现即记录、只修当前边界”的方式推进。
 联合离线搜索现在提供 BFS（完整状态键去重）和独立 DFS oracle；在真实 2 Actor 固定根上两者的最优值、动作序与终局状态键一致。4 Actor 当前证明范围仍是根/候选/回放和有限 toy oracle，不外推正常规模全局最优。
