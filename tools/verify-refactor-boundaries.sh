@@ -1766,7 +1766,10 @@ for token in \
     'Node seed = ReplayFixedPrefix(root, request);' \
     'private static Node ReplayFixedPrefix(' \
     'JointActionTransition.Apply(simulator, turns, action, deaths)' \
-    '等待 F7 联合回合生命周期'; do
+    'action.Turn != turns.Turn + 1 || !turns.IsBarrierReached' \
+    'JointRoundTransition.CompletePlayerSide(simulator, turns, deaths)' \
+    'JointRoundTransition.CompleteBasicEnemySide(simulator, deaths)' \
+    'JointRoundTransition.StartBasicPlayerSide('; do
     require_fixed "$joint_offline_search" "$token" 'joint fixed-prefix search missing F3c boundary:'
 done
 for token in \

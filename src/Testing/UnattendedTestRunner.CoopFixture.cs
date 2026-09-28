@@ -207,6 +207,54 @@ internal sealed partial class UnattendedTestRunner
                         "联合固定前缀没有由 BFS/DFS 从同一严格状态继续搜索。");
                 }
 
+                PlanAction endActor0 = candidates.Single(candidate =>
+                    candidate.Action.Actor == new CombatActorId(0)
+                    && candidate.Action.Kind == PlanActionKind.EndTurn).Action;
+                PlanAction endActor1 = candidates.Single(candidate =>
+                    candidate.Action.Actor == new CombatActorId(1)
+                    && candidate.Action.Kind == PlanActionKind.EndTurn).Action;
+                PlanAction nextTurnEndActor0 = endActor0 with { Turn = endActor0.Turn + 1 };
+                JointOfflineSearchRequest crossTurnRequest = new(
+                    [endActor0, endActor1, nextTurnEndActor0],
+                    MaximumActions: 3,
+                    MaximumStates: 2_000);
+                JointOfflineSearchResult crossTurnBfs =
+                    JointOfflineSearch.SolveBreadthFirst(root, crossTurnRequest);
+                JointOfflineSearchResult crossTurnOracle =
+                    JointOfflineSearch.SolveDepthFirstOracle(root, crossTurnRequest);
+                if (crossTurnBfs.Snapshot.Turn != root.StartTurnNumber + 1
+                    || crossTurnBfs.Actions.Count != 3
+                    || crossTurnBfs.Actions[2] != nextTurnEndActor0
+                    || JointObjectiveScore.Compare(crossTurnBfs.Score, crossTurnOracle.Score) != 0
+                    || crossTurnBfs.Snapshot.StateKey != crossTurnOracle.Snapshot.StateKey)
+                {
+                    throw new InvalidOperationException(
+                        "联合跨回合固定前缀没有按 F7 生命周期由 BFS/DFS 严格继续。");
+                }
+                PlanAction actor0Potion = candidates.First(candidate =>
+                    candidate.Action.Actor == new CombatActorId(0)
+                    && candidate.Action.Kind == PlanActionKind.UsePotion).Action;
+                PlanAction nextTurnPotion = actor0Potion with { Turn = actor0Potion.Turn + 1 };
+                JointOfflineSearchRequest crossTurnPotionRequest = new(
+                    [endActor0, endActor1, nextTurnPotion],
+                    MaximumActions: 3,
+                    MaximumStates: 2_000);
+                JointOfflineSearchResult crossTurnPotionBfs =
+                    JointOfflineSearch.SolveBreadthFirst(root, crossTurnPotionRequest);
+                JointOfflineSearchResult crossTurnPotionOracle =
+                    JointOfflineSearch.SolveDepthFirstOracle(root, crossTurnPotionRequest);
+                if (crossTurnPotionBfs.Actions[2] != nextTurnPotion
+                    || crossTurnPotionBfs.Score.PotionUses != 1
+                    || JointObjectiveScore.Compare(
+                        crossTurnPotionBfs.Score,
+                        crossTurnPotionOracle.Score) != 0
+                    || crossTurnPotionBfs.Snapshot.StateKey
+                        != crossTurnPotionOracle.Snapshot.StateKey)
+                {
+                    throw new InvalidOperationException(
+                        "联合跨回合药水前缀没有保持 Actor 槽位、消耗和严格状态。");
+                }
+
                 JointOfflineSearchRequest disabledRequest = new(
                     [],
                     MaximumActions: 2,

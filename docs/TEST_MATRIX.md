@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor 完整迁移 F3d/F4d：跨回合前缀（2026-09-29）
+
+- 两 Actor 依次 EndTurn 到达屏障后，固定前缀经玩家尾、基础敌方侧和下一玩家侧推进，再执行第二轮 Actor0 EndTurn；BFS/DFS 的动作、分数和完整状态键一致，`runId=b85791b45b59410c9d3b1c8242a45ff4` Passed。
+- 同一路径把第三项替换为 Actor0 第二轮药水动作，验证 Actor/槽位身份、一次用药计数和状态键一致；`runId=6e70211973b3400fb77bea4b41fbd6fb` Passed，实例已删除。
+- 跳轮与未到屏障跨轮仍 fail-fast。F3d 的 opening/cycle 与单人候选序、F4c2 Smart、特殊敌方后效、Linux 及可见 Steam 未覆盖。
+
 ## 离线四 Actor 完整迁移 F6b/F7d2：回合开始选择前缀（2026-09-29）
 
 - Actor1 持有必备工具 Power；两名 Actor 完成玩家屏障和基础敌方侧后，下一玩家轮先产生绑定 Actor1 与上一轮 EndTurn 的 `TurnStart` frame，再从稳定父状态携带一项选择前缀重放。

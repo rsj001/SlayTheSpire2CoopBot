@@ -295,9 +295,24 @@ internal static partial class JointOfflineSearch
         {
             if (action.Turn != turns.Turn)
             {
-                throw new NotSupportedException(
-                    $"F3 固定前缀不能跨回合：current={turns.Turn} action={action.Turn}；" +
-                    "等待 F7 联合回合生命周期。");
+                if (action.Turn != turns.Turn + 1 || !turns.IsBarrierReached)
+                {
+                    throw new InvalidOperationException(
+                        $"联合固定前缀不能从 turn={turns.Turn} 推进到 actionTurn={action.Turn}：" +
+                        $"barrier={turns.IsBarrierReached}。");
+                }
+                IReadOnlyList<PlanCardChoice> turnStartChoices = applied
+                    .LastOrDefault(prior => prior.Turn == turns.Turn
+                        && prior.Kind == PlanActionKind.EndTurn
+                        && prior.TurnStartChoices is { Count: > 0 })
+                    ?.TurnStartChoices ?? [];
+                JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+                JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+                turns = JointRoundTransition.StartBasicPlayerSide(
+                    simulator,
+                    turns,
+                    deaths,
+                    turnStartChoices);
             }
             if (!request.EffectivePotionPolicy.Allows(action, applied))
                 throw new InvalidOperationException($"联合固定前缀违反药水政策：{action}。");

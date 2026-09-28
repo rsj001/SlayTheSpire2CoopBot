@@ -265,9 +265,9 @@ F3a 的 `JointActionExpander` 为卡牌动作保存与生产回放相同的 `Cho
 
 F3b 对出牌后才出现的动作内选择使用确定性探测：从同一父模拟器 Fork 并调用权威 `JointActionTransition`；transition 以类型化 `JointPendingActionChoiceException` 交还 Actor、source 和精确 `CardChoiceSpec`，expander 复用 `CardChoiceSupport.BuildChoices` 追加分支并从父状态重放，直到动作稳定或达到 16 层明确上限。探针从不作为候选状态提交，兄弟选择不共享可变事务；该机制覆盖自动/重复子出牌产生的嵌套选择，但不替代 F6 的跨回合选择 continuation。
 
-F3c 的 `JointOfflineSearchRequest` 显式携带固定前缀、动作上限和状态上限；联合 BFS 与不去重 DFS oracle 都先通过 `JointActionTransition` 从冻结根回放同一前缀，再从所得严格状态继续展开。当前合同只接受同一玩家回合内的前缀；跨回合前缀在 F7 联合敌我生命周期完成前显式拒绝，opening/cycle 成员和单人候选序仍属于 F3 后续工作。
+F3c 的 `JointOfflineSearchRequest` 显式携带固定前缀、动作上限和状态上限；联合 BFS 与不去重 DFS oracle 都先通过 `JointActionTransition` 从冻结根回放同一前缀，再从所得严格状态继续展开。F3d 允许前缀在全员屏障处连续推进一轮：依次复用 F7 的玩家尾、基础敌方侧和下一玩家侧，并消费上一轮 EndTurn 保存的回合开始选择；跳轮或未到屏障跨轮显式拒绝。opening/cycle 成员和单人候选序仍属于 F3 后续工作。
 
-F4a 的联合药水候选按 Actor 的模拟槽位读取实例与可用性，复用 `PotionOnUseSupport.CanSearch`，并按原版 `TargetType` 枚举目标。权威 transition 在 `Prepare` 已产生随机生成选项后抛出带 placement 的 pending-choice 边界：药水自身所需选择写入 `PlanAction.Choice`，动作完成时出现的后续选择写入 `NestedChoices`；候选探针仍从父状态 Fork，绝不提交已消费药水的探针状态。Smart/Force、战略成本和跨回合药水 continuation 不属于 F4a。
+F4a 的联合药水候选按 Actor 的模拟槽位读取实例与可用性，复用 `PotionOnUseSupport.CanSearch`，并按原版 `TargetType` 枚举目标。权威 transition 在 `Prepare` 已产生随机生成选项后抛出带 placement 的 pending-choice 边界：药水自身所需选择写入 `PlanAction.Choice`，动作完成时出现的后续选择写入 `NestedChoices`；候选探针仍从父状态 Fork，绝不提交已消费药水的探针状态。F4d 已由同一固定前缀生命周期支持第二轮药水的 Actor/槽位身份和消耗；Smart 反事实仍属于 F4c2。
 
 F4c1 的 `JointPotionSearchPolicy` 以 Actor、槽位和药水 ID 作为指令身份；请求开始前验证 Actor/槽位，候选准入执行 Disabled 和最大用量，边界准入执行 Force 与用量上下界。战略成本直接调用 `PotionUsePolicy.StrategicHpCost`，不维护联合估值副本。Smart 必须与同根无药基线比较，留到 F4c2/F8；根级 `HasRenewablePotionShapedRock` 的多 Actor 归属留到 F5，当前不得据此声称逐 Actor 遗物成本已完成。
 

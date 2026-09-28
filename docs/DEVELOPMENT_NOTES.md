@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 完整迁移 F3d/F4d（2026-09-29）
+
+联合固定前缀现在可在全员屏障处严格推进玩家尾、基础敌方侧和下一玩家侧，并继续消费下一轮动作；只接受连续一轮且屏障已满足，跳轮和提前跨轮仍明确失败。普通 EndTurn 跨轮的 BFS/DFS 对照 `runId=b85791b45b59410c9d3b1c8242a45ff4` Passed；Actor0 第二轮药水动作继续保持槽位、消耗、目标计数和状态键，最终 `runId=6e70211973b3400fb77bea4b41fbd6fb` Passed，实例均已删除。F4d 关闭；F3d 尚余 opening/cycle 与单人候选序。
+
 ## 离线四 Actor 完整迁移 F6b/F7d2（2026-09-29）
 
 联合下一玩家轮现在能把逐 Actor 回合开始选择提升为带 owner、EndTurn 来源动作、source/context/timing 和 spec 的稳定帧，并从敌方回合结束后的同一父状态按选择前缀恢复。Actor1 的必备工具 Power 首次因帧遗漏 `ContextId/Timing` 而留下未消费计划选择，`runId=0a2554c9ae244ae7b0217ab67e7856c4` Failed；补齐身份后 `COOP-MULTI-ACTOR-ROOT` 的 `runId=2cf1ac4368ab4ad58ac2c056708b6842` Passed，实例已删除。F6b 仍需 EndTurn、自动/重复出牌和遗物选择代表。
