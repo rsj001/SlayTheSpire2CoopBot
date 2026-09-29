@@ -62,7 +62,8 @@ internal sealed class CoopBotRuntime
         _hostRecorder = new HostCombatRecorder(
             combat,
             combatIdentity,
-            () => _localAgent?.BlocksRootCapture == true);
+            () => _localAgent?.BlocksRootCapture == true
+                || _hostDeployment?.BlocksRootCapture == true);
         _hostSearch = new HostSearchCoordinator(_hostRecorder);
         _hostSearch.PlanPublished += OnPlanPublished;
         _hostDeployment = new HostDeploymentCoordinator(
@@ -111,6 +112,21 @@ internal sealed class CoopBotRuntime
     internal void CancelSearch()
         => _hostSearch?.Cancel("ui_cancel");
 
+    internal void Replan()
+        => _hostSearch?.RestartCurrent();
+
+    internal void PauseAutomation()
+    {
+        _hostDeployment?.SetMode(CoopAutomationMode.ConfirmEach);
+        RefreshUi();
+    }
+
+    internal void SetAutomationMode(CoopAutomationMode mode)
+    {
+        _hostDeployment?.SetMode(mode);
+        RefreshUi();
+    }
+
     internal void RefreshUi()
     {
         if (_lastPlan is not null)
@@ -149,7 +165,7 @@ internal sealed class CoopBotRuntime
             result.Published,
             CoopUiRole.Host,
             result.RecordedRoot.Root.LocalActorId.Index,
-            CoopAutomationMode.Suggest,
+            _hostDeployment?.Mode ?? CoopAutomationMode.ConfirmEach,
             "计划就绪",
             currentActionIndex: -1,
             LocManager.Instance.Language));
@@ -170,6 +186,8 @@ internal partial class CoopBotRuntimeNode : Node
         _runtime.UiCleared += _overlay.HideOverlay;
         _overlay.ExecuteNextRequested += _runtime.ExecuteNext;
         _overlay.CancelSearchRequested += _runtime.CancelSearch;
+        _overlay.ReplanRequested += _runtime.Replan;
+        _overlay.PauseRequested += _runtime.PauseAutomation;
         LocManager.Instance.SubscribeToLocaleChange(OnLocaleChanged);
     }
 
@@ -185,6 +203,8 @@ internal partial class CoopBotRuntimeNode : Node
             _runtime.UiCleared -= _overlay.HideOverlay;
             _overlay.ExecuteNextRequested -= _runtime.ExecuteNext;
             _overlay.CancelSearchRequested -= _runtime.CancelSearch;
+            _overlay.ReplanRequested -= _runtime.Replan;
+            _overlay.PauseRequested -= _runtime.PauseAutomation;
         }
         _runtime.StopCombat("runtime_exit");
     }

@@ -180,4 +180,21 @@ Check(unknownObserverRejected, "unknown choice observer rejected");
 observerBarrier.Clear("choice-action");
 Check(observerBarrier.ActionId is null && observerBarrier.Pending.Count == 0, "choice observer barrier clears");
 
+var planLease = new HostPlanLease();
+planLease.Publish("plan-manual", 10);
+HostRootChange manual = planLease.ObserveRoot(11);
+Check(manual.Kind == HostRootChangeKind.ManualInsertion
+    && manual.PlanId == "plan-manual"
+    && manual.ActionId is null, "uncommanded new root is a manual insertion");
+planLease.Publish("plan-commanded", 11);
+planLease.BeginAction("plan-commanded", "action-0");
+Check(planLease.ObserveRoot(11).Kind == HostRootChangeKind.Ignored, "same root does not consume action lease");
+HostRootChange expectedRoot = planLease.ObserveRoot(12);
+Check(expectedRoot.Kind == HostRootChangeKind.ExpectedActionResult
+    && expectedRoot.ActionId == "action-0", "commanded new root is an expected action result");
+planLease.Publish("plan-cancel", 12);
+planLease.BeginAction("plan-cancel", "action-cancel");
+planLease.Cancel("action-cancel");
+Check(planLease.PlanId is null && planLease.ActionId is null, "cancel clears plan lease");
+
 Console.WriteLine($"Passed {checks} CoopBot protocol and session contracts.");

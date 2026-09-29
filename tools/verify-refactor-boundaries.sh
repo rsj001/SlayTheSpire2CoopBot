@@ -1955,6 +1955,8 @@ coop_native_transport="$repository_root/coopbot/Protocol/NativeCoopTransport.cs"
 coop_peer_controller="$repository_root/coopbot/Runtime/CoopPeerController.cs"
 coop_planned_choice="$repository_root/coopbot/NativeAdapter/PlannedChoiceDriver.cs"
 coop_observer_barrier="$repository_root/coopbot/Session/HostObserverBarrier.cs"
+coop_plan_lease="$repository_root/coopbot/Session/HostPlanLease.cs"
+coop_runtime="$repository_root/coopbot/Runtime/CoopBotRuntime.cs"
 require_fixed "$repository_root/CombatSolver.csproj" '<InternalsVisibleTo Include="CoopBot" />' \
     'CombatSolver missing narrow CoopBot internal bridge:'
 require_fixed "$coopbot_project" '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' \
@@ -1983,6 +1985,11 @@ require_fixed "$coop_peer_controller" 'CoopMessageKind.ActionObserveCommit' 'Coo
 require_fixed "$coop_peer_controller" 'CoopMessageKind.ActionObservePrepared' 'CoopBot observer-ready ACK missing:'
 require_fixed "$coop_host_deployment" 'BeginObserverBarrier(' 'CoopBot Host observer-ready barrier missing:'
 require_fixed "$coop_observer_barrier" 'public bool Acknowledge(string actionId, ulong observer)' 'CoopBot observer-ready state contract missing:'
+require_fixed "$coop_plan_lease" 'HostRootChangeKind.ManualInsertion' 'CoopBot manual insertion root classification missing:'
+require_fixed "$coop_host_deployment" '"manual_insertion"' 'CoopBot manual insertion cancellation event missing:'
+require_fixed "$coop_host_deployment" 'Mode == CoopAutomationMode.Auto' 'CoopBot Auto player-side scheduling missing:'
+require_fixed "$coop_runtime" '_hostDeployment?.BlocksRootCapture == true' 'CoopBot recorder does not include remote deployment activity:'
+require_fixed "$coop_probe" 'AuditCompletePlayerSide(CombatState combat)' 'CoopBot C8 player-side probe missing:'
 require_fixed "$coop_probe" 'ExecuteChoicesAndPotionsAsync(' 'CoopBot C7 headless choice/potion probe missing:'
 require_fixed "$coop_host_deployment" 'awaiting.Expected.Continuation.DescribeFirstDifference(actual.Root.ContinuationStamp)' 'CoopBot actual/sim verification missing:'
 require_fixed "$coop_native_transport" '_service.RegisterMessageHandler<CoopBotEnvelopeMessage>(OnMessage)' 'CoopBot native message registration missing:'

@@ -2485,6 +2485,8 @@ $coopNativeTransportPath = Join-Path $repositoryRoot 'coopbot/Protocol/NativeCoo
 $coopPeerControllerPath = Join-Path $repositoryRoot 'coopbot/Runtime/CoopPeerController.cs'
 $coopPlannedChoicePath = Join-Path $repositoryRoot 'coopbot/NativeAdapter/PlannedChoiceDriver.cs'
 $coopObserverBarrierPath = Join-Path $repositoryRoot 'coopbot/Session/HostObserverBarrier.cs'
+$coopPlanLeasePath = Join-Path $repositoryRoot 'coopbot/Session/HostPlanLease.cs'
+$coopRuntimePath = Join-Path $repositoryRoot 'coopbot/Runtime/CoopBotRuntime.cs'
 foreach ($check in @(
     @{ Path = $combatSolverProjectPath; Text = '<InternalsVisibleTo Include="CoopBot" />' },
     @{ Path = $coopBotProjectPath; Text = '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' },
@@ -2509,6 +2511,11 @@ foreach ($check in @(
     @{ Path = $coopPeerControllerPath; Text = 'CoopMessageKind.ActionObservePrepared' },
     @{ Path = $coopHostDeploymentPath; Text = 'BeginObserverBarrier(' },
     @{ Path = $coopObserverBarrierPath; Text = 'public bool Acknowledge(string actionId, ulong observer)' },
+    @{ Path = $coopPlanLeasePath; Text = 'HostRootChangeKind.ManualInsertion' },
+    @{ Path = $coopHostDeploymentPath; Text = '"manual_insertion"' },
+    @{ Path = $coopHostDeploymentPath; Text = 'Mode == CoopAutomationMode.Auto' },
+    @{ Path = $coopRuntimePath; Text = '_hostDeployment?.BlocksRootCapture == true' },
+    @{ Path = $coopProbePath; Text = 'AuditCompletePlayerSide(CombatState combat)' },
     @{ Path = $coopProbePath; Text = 'ExecuteChoicesAndPotionsAsync(' },
     @{ Path = $coopHostDeploymentPath; Text = 'awaiting.Expected.Continuation.DescribeFirstDifference(actual.Root.ContinuationStamp)' },
     @{ Path = $coopNativeTransportPath; Text = '_service.RegisterMessageHandler<CoopBotEnvelopeMessage>(OnMessage)' },

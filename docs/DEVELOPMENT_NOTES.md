@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## Co-op Bot C8 完整玩家侧协调（开发中，2026-09-29）
+
+新增 HostPlanLease，把广播计划固定到 RootRevision，并区分“授权动作产生的新根”和“没有 ActionId 的人工插入”。人工插入会使旧计划失效、向各 Client 广播 PlanCancelled，并由 Recorder 已发布的新根自动重搜；授权动作仍必须进入逐动作 predicted/actual continuation 校验。Recorder 的在途条件现包含远端 Prepare/Commit 和 observer-ready 屏障，不再只看 Host 本地 Agent。Host 默认为 ConfirmEach；Auto 仅在新稳定根完成搜索和严格回放、发布新计划后再调度下一 Actor，避免直接连发前缀。UI 的重新搜索、执行下一步和暂停已接到 Runtime。
+
+`COOP-BOT-PLAYER-SIDE` / `c1bb062ff57c4ed2b2d9402a7979081e` Passed：四 Actor 按 2→0→3→1 的非固定顺序通过完整 readiness 屏障；无命令的新 revision 分类为取消并重规划，带 ActionId 的 revision 分类为待严格验证。纯协议/会话合同累计 66 项，CombatSolver 与 CoopBot Release 构建通过，实例已删除。真实四客户端任意原序 EndTurn、人工插入和 Auto 连续调度仍保留为 C8 实机门禁。
+
 ## Co-op Bot C7 选择与药水（开发中，2026-09-29）
 
 LocalActorAgent 现支持按槽位/ID/目标校验药水并调用原版 `EnqueueManualUse`。选择动作不模拟 UI 点击：Host 在 owner Prepared 后先向其余 peer 发布只读 `ActionObserveCommit`，各端以原版生产 `CardSelectCmd.UseSelector` 装载同一主选择、嵌套选择和跨回合选择序列；选择器按卡牌 ID、升级、状态键和 occurrence 精确匹配，并用 ActorAssignment 校验 DecisionActor 对应的网络 owner。各 observer 回送 `ActionObservePrepared`，Host 收齐屏障后才 Commit owner，避免远端原版动作先于慢 Client 的 selector；同序重发会重发缓存 ACK，重复 observer ACK 幂等，未知 observer 稳定拒绝。取消、拒绝、失败和超时广播 PlanCancelled 并解除尚未消费的选择 scope。纯协议/会话合同累计 62 项，新增两 observer 屏障、重复 ACK 幂等、未知 observer 拒绝和清理。

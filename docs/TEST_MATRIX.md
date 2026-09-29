@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## Co-op Bot C8 完整玩家侧（2026-09-29）
+
+- `COOP-BOT-PLAYER-SIDE` / `c1bb062ff57c4ed2b2d9402a7979081e`：Passed；四 Actor 按 2→0→3→1 的任意原序到达完整 readiness 屏障，动作顺序保持；无授权新根触发人工插入取消/重规划，带 ActionId 的新根进入严格验证。1 CPU / 1536 MiB，实例已删除。
+- `CoopBot.ContractChecks`：Passed，累计 66 项；新增 plan lease 的人工插入、同根忽略、授权结果和取消清理合同。
+- CombatSolver 与 CoopBot Release 串行构建 0 warning / 0 error。未运行真实四 Client 的整侧 EndTurn、人工插入或 Auto 连续调度，因此实机 C8 门禁仍待完成。
+
 ## Co-op Bot C7 选择与药水（2026-09-29）
 
 - `COOP-BOT-CHOICE-POTION` / `342e3340a01d459b81a81819db815bfa`：Passed；四 Actor `Tutor`/“指导”由 Actor3 从自己的抽牌堆选择，ActorAssignment 错误 owner 哨兵拒绝；Actor0→Actor3 `BLOCK_POTION` 原版动作与离线预测严格一致；单人 live 根上的 LocalActorAgent 经原版队列使用同药水并收到 `Finished` ACK，回到 Idle。1 CPU / 1536 MiB，实例已删除。

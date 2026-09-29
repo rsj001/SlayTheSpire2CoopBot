@@ -87,6 +87,13 @@ internal sealed partial class UnattendedTestRunner
                 runner._completedChecks.Add(
                     "CoopBotChoicePotion:TutorDecisionActor:CrossPlayerPotion:LocalNativeAgent:" + evidence);
             }
+            if (request.ScenarioId == "COOP-BOT-PLAYER-SIDE")
+            {
+                runner.SetStage("coop_bot_player_side");
+                string evidence = AssertCoopBotPlayerSide(scenario.CombatState);
+                runner._completedChecks.Add(
+                    "CoopBotPlayerSide:FourActors:ArbitraryOrder:ReadinessBarrier:ManualInsertion:" + evidence);
+            }
             if (request.ScenarioId == "COOP-MULTIPLAYER-NATIVE-DIFF")
             {
                 runner.SetStage("coop_multiplayer_native_diff");

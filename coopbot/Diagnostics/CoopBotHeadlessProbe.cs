@@ -1,5 +1,6 @@
 using CoopBot.Capture;
 using CoopBot.Protocol;
+using CoopBot.Session;
 using CoopBot.UI;
 using CoopBot.NativeAdapter;
 using CombatSolver;
@@ -268,6 +269,43 @@ public static class CoopBotHeadlessProbe
         await AssertCrossPlayerPotionAsync(potionCombat);
         string localPotion = await ExecuteLocalPotionAgentAsync(liveCombat);
         return "tutor=decision_actor_strict;cross_player_potion=strict;" + localPotion;
+    }
+
+    public static string AuditCompletePlayerSide(CombatState combat)
+    {
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(combat);
+        if (root.Actors.Count != 4)
+            throw new InvalidOperationException($"C8 player-side probe expected four actors, got {root.Actors.Count}.");
+        int[] actorOrder = [2, 0, 3, 1];
+        PlanAction[] actions = actorOrder.Select(actor => new PlanAction(
+            PlanActionKind.EndTurn,
+            root.StartTurnNumber,
+            Actor: new CombatActorId(actor))).ToArray();
+        JointPlan plan = new(4, actions);
+        plan.ValidateComplete();
+        JointReplayResult replay = JointPlanReplayer.Replay(root, plan);
+        if (!replay.Snapshot.TurnState.IsBarrierReached
+            || replay.Snapshot.TurnState.Phases.Any(phase => phase != JointActorTurnPhase.Ended)
+            || !replay.AppliedActions.Select(action => action.Actor.Index).SequenceEqual(actorOrder))
+        {
+            throw new InvalidOperationException("C8 arbitrary Actor order did not reach the complete player-side barrier.");
+        }
+
+        HostPlanLease lease = new();
+        lease.Publish("C8-MANUAL", 20);
+        HostRootChange manual = lease.ObserveRoot(21);
+        if (manual.Kind != HostRootChangeKind.ManualInsertion)
+            throw new InvalidOperationException("C8 uncommanded root was not classified as a manual insertion.");
+        lease.Publish("C8-COMMANDED", 21);
+        lease.BeginAction("C8-COMMANDED", "C8-ACTION");
+        HostRootChange expected = lease.ObserveRoot(22);
+        if (expected.Kind != HostRootChangeKind.ExpectedActionResult
+            || expected.ActionId != "C8-ACTION")
+        {
+            throw new InvalidOperationException("C8 commanded root was not retained for strict verification.");
+        }
+        return $"actors=4;order={string.Join(',', actorOrder)};barrier=complete;" +
+               "manual=cancel_replan;commanded=verify";
     }
 
     private static async Task AssertTutorChoiceAsync(CombatState combat)

@@ -84,6 +84,13 @@ internal sealed class HostSearchCoordinator : IDisposable
         }
     }
 
+    internal void RestartCurrent()
+    {
+        RecordedCombatRoot recorded = Recorder.Current
+            ?? throw new InvalidOperationException("Cannot replan before a stable Host root exists.");
+        OnRootRecorded(recorded);
+    }
+
     public void Dispose()
     {
         if (_disposed) return;

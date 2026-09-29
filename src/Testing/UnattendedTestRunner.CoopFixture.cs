@@ -736,6 +736,30 @@ internal sealed partial class UnattendedTestRunner
         }
     }
 
+    private static string AssertCoopBotPlayerSide(CombatState source)
+    {
+        CombatState synthetic = CreateOfflineJointCombat(source, actorCount: 4).State;
+        Assembly coopBot = AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault(assembly =>
+                string.Equals(assembly.GetName().Name, "CoopBot", StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("COOP-BOT-PLAYER-SIDE requires the CoopBot assembly.");
+        Type probe = coopBot.GetType("CoopBot.Diagnostics.CoopBotHeadlessProbe", throwOnError: true)
+            ?? throw new InvalidOperationException("CoopBot headless probe type is missing.");
+        MethodInfo method = probe.GetMethod(
+                "AuditCompletePlayerSide",
+                BindingFlags.Public | BindingFlags.Static,
+                [typeof(CombatState)])
+            ?? throw new MissingMethodException(probe.FullName, "AuditCompletePlayerSide");
+        try
+        {
+            return method.Invoke(null, [synthetic]) as string
+                ?? throw new InvalidOperationException("CoopBot C8 probe returned no evidence.");
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            throw new InvalidOperationException("CoopBot C8 player-side probe failed.", exception.InnerException);
+        }
+    }
+
     private static void AssertAllActorsDeadTerminal(CombatState source)
     {
         OfflineJointCombat offline = CreateOfflineJointCombat(

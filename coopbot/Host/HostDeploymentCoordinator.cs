@@ -30,9 +30,11 @@ internal sealed class HostDeploymentCoordinator : IDisposable
     private readonly CoopPeerController _peer;
     private readonly HostRemoteActionTracker _remote = new();
     private readonly HostObserverBarrier _observers = new();
+    private readonly HostPlanLease _planLease = new();
     private readonly PlannedChoiceDriver _choiceDriver;
     private TaskCompletionSource? _observerCompletion;
     private long _remoteDeadlineMilliseconds;
+    private HostSearchResult? _availablePlan;
     private HostSearchResult? _remotePlan;
     private AwaitingVerification? _awaiting;
     private bool _starting;
@@ -53,10 +55,24 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         _peer = peer;
         _choiceDriver = choiceDriver;
         _recorder.RootRecorded += OnRootRecorded;
+        _search.PlanPublished += OnPlanPublished;
         _peer.HostResponseReceived += OnHostResponseReceived;
     }
 
     internal event Action<HostDeploymentEvent>? EventPublished;
+    internal CoopAutomationMode Mode { get; private set; } = CoopAutomationMode.ConfirmEach;
+    internal bool BlocksRootCapture
+        => _starting
+            || _remote.Current is { State: RemoteActionState.Preparing or RemoteActionState.Prepared
+                or RemoteActionState.Committed }
+            || _observers.ActionId is not null && !_observers.IsReady;
+
+    internal void SetMode(CoopAutomationMode mode)
+    {
+        Mode = mode;
+        if (mode == CoopAutomationMode.Auto)
+            ExecuteNext();
+    }
 
     internal void Poll()
     {
@@ -69,7 +85,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
             or RemoteActionState.Rejected or RemoteActionState.Failed or RemoteActionState.TimedOut)
             return;
         _remote.Timeout(current.ActionId, "remote response timeout");
-        CancelChoiceFlow(current.ActionId, _remotePlan, "remote response timeout");
+        CancelPlan(current.ActionId, _remotePlan, "remote response timeout");
         _remotePlan = null;
         EventPublished?.Invoke(new HostDeploymentEvent(
             "timeout", "-", current.ActionId, "remote response timeout"));
@@ -87,19 +103,22 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         if (_disposed) return;
         _disposed = true;
         _recorder.RootRecorded -= OnRootRecorded;
+        _search.PlanPublished -= OnPlanPublished;
         _peer.HostResponseReceived -= OnHostResponseReceived;
         _remoteDeadlineMilliseconds = 0;
         if (_agent.State is LocalActorAgentState.Idle or LocalActorAgentState.Prepared or LocalActorAgentState.Reporting)
             _agent.Cancel();
         if (_observers.ActionId is string observerActionId)
             CancelChoiceFlow(observerActionId, _remotePlan, "coordinator disposed");
+        _planLease.Cancel();
+        _availablePlan = null;
         _awaiting = null;
     }
 
     private async Task ExecuteNextAsync()
     {
         _starting = true;
-        HostSearchResult? result = _search.Current;
+        HostSearchResult? result = _availablePlan;
         string planId = result?.Published.PlanId ?? "-";
         string actionId = "-";
         try
@@ -109,6 +128,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
             PlanAction action = result.Search.Actions[0];
             actionId = $"{planId}:0";
             ActionPreparePayload command = HostActionCommandFactory.Create(result, actionIndex: 0);
+            _planLease.BeginAction(planId, actionId);
             if (action.Actor != result.RecordedRoot.Root.LocalActorId)
             {
                 ActorBinding owner = _peer.Session.Actors.Single(binding =>
@@ -161,7 +181,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         catch (Exception exception)
         {
             if (actionId != "-")
-                CancelChoiceFlow(actionId, result, exception.Message);
+                CancelPlan(actionId, result, exception.Message);
             if (_agent.State is LocalActorAgentState.Prepared or LocalActorAgentState.Reporting)
                 _agent.Cancel();
             EventPublished?.Invoke(new HostDeploymentEvent(
@@ -175,9 +195,32 @@ internal sealed class HostDeploymentCoordinator : IDisposable
 
     private void OnRootRecorded(RecordedCombatRoot actual)
     {
-        AwaitingVerification? awaiting = _awaiting;
-        if (awaiting is null || actual.RootRevision <= awaiting.SourceRootRevision)
+        HostRootChange rootChange = _planLease.ObserveRoot(actual.RootRevision);
+        if (rootChange.Kind == HostRootChangeKind.ManualInsertion)
+        {
+            HostSearchResult? stale = _availablePlan;
+            _availablePlan = null;
+            if (stale is not null)
+            {
+                _peer.PublishPlanCancelled(
+                    stale.RecordedRoot.RootRevision,
+                    stale.Published.PlanId,
+                    $"{stale.Published.PlanId}:manual",
+                    "manual action changed the live root");
+                EventPublished?.Invoke(new HostDeploymentEvent(
+                    "manual_insertion",
+                    stale.Published.PlanId,
+                    "-",
+                    $"root={rootChange.SourceRootRevision}->{rootChange.ActualRootRevision}"));
+            }
             return;
+        }
+        AwaitingVerification? awaiting = _awaiting;
+        if (rootChange.Kind != HostRootChangeKind.ExpectedActionResult
+            || awaiting is null
+            || !string.Equals(rootChange.ActionId, awaiting.ActionId, StringComparison.Ordinal))
+            return;
+        _availablePlan = null;
         string? difference = string.Equals(
             awaiting.Expected.Continuation.StateText,
             actual.Root.ContinuationStamp.StateText,
@@ -249,7 +292,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
                     break;
                 case CoopMessageKind.ActionRejected:
                     CancelRemoteTimeout();
-                    CancelChoiceFlow(current.ActionId, _remotePlan, "owner rejected action");
+                    CancelPlan(current.ActionId, _remotePlan, "owner rejected action");
                     ActionRejectedPayload rejected = envelope.ReadPayload<ActionRejectedPayload>();
                     _remote.Reject(current.ActionId, senderNetworkPlayerId, rejected.Detail);
                     _remotePlan = null;
@@ -259,7 +302,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
                     break;
                 case CoopMessageKind.ActionFailed:
                     CancelRemoteTimeout();
-                    CancelChoiceFlow(current.ActionId, _remotePlan, "owner failed action");
+                    CancelPlan(current.ActionId, _remotePlan, "owner failed action");
                     ActionFailedPayload failed = envelope.ReadPayload<ActionFailedPayload>();
                     _remote.Fail(current.ActionId, senderNetworkPlayerId, failed.Detail);
                     _remotePlan = null;
@@ -272,7 +315,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         catch (Exception exception)
         {
             CancelRemoteTimeout();
-            CancelChoiceFlow(current.ActionId, _remotePlan, exception.Message);
+            CancelPlan(current.ActionId, _remotePlan, exception.Message);
             _remotePlan = null;
             EventPublished?.Invoke(new HostDeploymentEvent(
                 "failed", envelope.Header.PlanId ?? "-", current.ActionId, exception.Message));
@@ -363,7 +406,14 @@ internal sealed class HostDeploymentCoordinator : IDisposable
             _observers.Clear(actionId);
             _observerCompletion = null;
         }
-        if (plan is not null && (hadBarrier || HasChoices(HostActionCommandFactory.Create(plan, 0).Action)))
+    }
+
+    private void CancelPlan(string actionId, HostSearchResult? plan, string reason)
+    {
+        CancelChoiceFlow(actionId, plan, reason);
+        _planLease.Cancel(actionId);
+        _availablePlan = null;
+        if (plan is not null)
         {
             _peer.PublishPlanCancelled(
                 plan.RecordedRoot.RootRevision,
@@ -371,6 +421,14 @@ internal sealed class HostDeploymentCoordinator : IDisposable
                 actionId,
                 reason);
         }
+    }
+
+    private void OnPlanPublished(HostSearchResult result)
+    {
+        _availablePlan = result;
+        _planLease.Publish(result.Published.PlanId, result.RecordedRoot.RootRevision);
+        if (Mode == CoopAutomationMode.Auto)
+            ExecuteNext();
     }
 
     private static bool HasChoices(CoopPlanActionSnapshot action)
