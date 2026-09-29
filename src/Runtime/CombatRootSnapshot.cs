@@ -32,6 +32,7 @@ internal sealed record CombatActorRoot(
     int InitialMaxHp,
     int StartTurnNumber,
     PlayerTurnPhase Phase,
+    bool IsReadyToEndTurn,
     IReadOnlySet<string> CardIds,
     IReadOnlyList<string> PotionIds,
     IReadOnlyList<SearchablePotionSlotSnapshot> SearchablePotions,
@@ -223,7 +224,8 @@ internal sealed class CombatRootSnapshot
             simulator,
             playerState.TurnNumber,
             forecast,
-            playerState.TurnNumber);
+            playerState.TurnNumber,
+            JointTurnState.FromRootActors(actors, playerState.TurnNumber));
         bool hasUnusedCardReplayAllocator = simulatedCombat.RelicsOf(player)
             .OfType<ThrowingAxe>()
             .Any(relic => !relic.IsMelted && !relic._usedThisCombat);
@@ -373,6 +375,7 @@ internal sealed class CombatRootSnapshot
                 player.Creature.MaxHp,
                 playerState.TurnNumber,
                 playerState.Phase,
+                CombatManager.Instance.IsPlayerReadyToEndTurn(player),
                 cardIds,
                 Array.AsReadOnly(potionIds),
                 Array.AsReadOnly(searchablePotions),

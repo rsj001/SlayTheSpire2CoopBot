@@ -26,7 +26,7 @@ internal static class JointPlanReplayer
         CombatPredictionSimulator simulator = root.ForkSimulator();
         ForkableSet<uint> processedEnemyDeaths =
             JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
-        JointTurnState turnState = JointTurnState.Start(root.Actors.Count, root.StartTurnNumber);
+        JointTurnState turnState = JointTurnState.FromRoot(root);
         List<PlanAction> applied = [];
         List<JointActionExpectation> expectations = [];
         List<JointCombatSnapshot> actionSnapshots = [];

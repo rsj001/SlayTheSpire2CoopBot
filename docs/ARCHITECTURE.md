@@ -307,6 +307,8 @@ F5a 将原先只有根级本地玩家视图的可搜索药水、Throwing Axe 可
 
 `HostPlanLease` 把每个发布计划绑定到唯一 RootRevision，并在动作授权时记录 ActionId。Recorder 发布更高 revision 时，没有授权动作的变化分类为人工插入，Host 先广播 PlanCancelled，再让已经由 Recorder 触发的新根搜索接替；有授权动作的变化只交给 predicted checkpoint 严格差分。Recorder 的在途门禁同时包含本地 Agent、远端 Prepare/Commit 与 observer-ready 屏障，不能在半同步状态捕获根。`HostDeploymentCoordinator` 的 ConfirmEach 是首场默认模式；Auto 只在新稳定根完成搜索并发布新计划后继续下一动作，因此每个 Actor 动作之间仍保留 ACK、稳定根和 actual/sim 屏障。四名 Actor 的 EndTurn 次序不固定，联合 readiness 仍由 `JointTurnState` 的全员屏障决定。
 
+多人根为每个 CombatActorRoot 捕获原版 `IsPlayerReadyToEndTurn`，多人 continuation 追加逐 Actor `ready`；单人 continuation 文本保持不变。`JointTurnState.FromRoot` 以 HP/ready 恢复 Dead/Ended/Playing，逐动作重搜不会重新激活已经 EndTurn 或死亡的 Actor。最后一个存活 Actor 的 EndTurn 若到达全员屏障，Host 不拿动作瞬间快照对账，而从 strict replay 选择同 AppliedActionCount 的 `barrier` checkpoint，等待原版敌方侧、死亡结算和下一玩家侧稳定后再比较；非屏障动作仍比较本动作 checkpoint。
+
 策略重构回归语料由 `tools/StrategyCorpus` 编排：玩家包使用 Testing 的严格 `combat_start` 无头恢复，仓库生成场景使用 `OfflineSearchHarness`。Search 在请求完成后提供只读质量和根戳记证据；Testing Writer 与离线宿主把它们写入独立证据文件，不参与候选裁决。原始玩家包与完整输出只留在 `.local`。对照器先核对根、政策和固定预算，再比较完整动作、续用、结果及非时序工作量；时间、分配和 GC 单列观察。
 
 本地策略迭代通过 `tools/CheckpointTool/StrategySessionRunner.cs` 持有 `start/run/status/stop` 会话和脚本单独编译。所有策略会话使用一个固定私有游戏副本；`start` 提交不建战斗的 `SessionStart` 就绪请求，`run` 直接复用其进程，`stop` 只结束进程和监控。Windows 启动器缓存稳定游戏文件的哈希，仅重算 Mod；停机后按差异替换私有副本。`run-unattended-test.ps1/.sh` 的复用入口跳过快照扫描，仍核对 PID、出生时间与可执行文件。`UnattendedTestRunner.ProtocolHost` 在每次请求开始加载冻结的脚本程序集和参数，`DevelopmentStrategyLoader` 持有可卸载加载上下文，在请求收尾释放。Search 只接收 `SearchPolicySnapshot.DevelopmentStrategy` 中的不可变策略引用和只读分支特征，不读取脚本文件或 live 设置。无脚本时保留既有候选顺序、Beam 评分和组合列表。脚本只接管中途优先级、评分、一个有界保路代表和既有组合成员编排；最终路线质量、预算、状态等价与战斗结算仍属原所有者。

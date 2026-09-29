@@ -34,6 +34,24 @@ internal sealed record JointTurnState
         return new JointTurnState(turn, Enumerable.Repeat(JointActorTurnPhase.Playing, actorCount).ToArray());
     }
 
+    internal static JointTurnState FromRoot(CombatRootSnapshot root)
+        => FromRootActors(root.Actors, root.StartTurnNumber);
+
+    internal static JointTurnState FromRootActors(
+        IReadOnlyList<CombatActorRoot> actors,
+        int turn)
+    {
+        if (actors.Count == 0)
+            throw new ArgumentException("联合根必须至少包含一个 Actor。", nameof(actors));
+        JointActorTurnPhase[] phases = actors.Select(actor =>
+            actor.InitialHp <= 0
+                ? JointActorTurnPhase.Dead
+                : actor.IsReadyToEndTurn
+                    ? JointActorTurnPhase.Ended
+                    : JointActorTurnPhase.Playing).ToArray();
+        return new JointTurnState(turn, phases);
+    }
+
     public bool IsActionable(CombatActorId actor)
         => TryGetPhase(actor) == JointActorTurnPhase.Playing;
 

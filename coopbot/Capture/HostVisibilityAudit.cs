@@ -70,7 +70,9 @@ internal static class HostVisibilityAudit
 
         bool turns = root.CurrentSide == live.CurrentSide
             && root.Actors.Select(actor => actor.Phase)
-                .SequenceEqual(live.Players.Select(player => player.PlayerCombatState!.Phase));
+                .SequenceEqual(live.Players.Select(player => player.PlayerCombatState!.Phase))
+            && root.Actors.Select(actor => actor.IsReadyToEndTurn)
+                .SequenceEqual(live.Players.Select(CombatManager.Instance.IsPlayerReadyToEndTurn));
         if (!turns) failures.Add("turn_phase_or_terminal");
 
         return new HostVisibilityAuditResult(

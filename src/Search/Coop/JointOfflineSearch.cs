@@ -347,7 +347,7 @@ internal static partial class JointOfflineSearch
     {
         CombatPredictionSimulator simulator = root.ForkSimulator();
         ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
-        JointTurnState turns = JointTurnState.Start(root.Actors.Count, root.StartTurnNumber);
+        JointTurnState turns = JointTurnState.FromRoot(root);
         List<PlanAction> applied = [];
         List<JointStrictCheckpoint> checkpoints = [];
         foreach (PlanAction action in request.FixedPrefix)

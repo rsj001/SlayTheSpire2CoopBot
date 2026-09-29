@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## Co-op Bot C9 跨敌方侧（2026-09-29）
+
+- `COOP-BOT-CROSS-ROUND` / `07868b5599614431b5f1877af27d01b7`：Passed；四 Actor 原版与预测经过完整敌方侧和下一玩家侧，含敌方 AOE/Weak、AI 换招；单员死亡后下一轮仅存活 Actor 可行动。根恢复哨兵为 Ended/Dead/Playing/Playing，最后 EndTurn 对齐 turn 2 barrier checkpoint。1 CPU / 1536 MiB，实例已删除。
+- `COOP-PRODUCTION-SINGLE-BOUNDARY` / `2bbeaa025a7c4669a9fd7022dc91a5d4`：Passed；生产搜索仍接受 ActorCount=1、拒绝 ActorCount=2，单人边界未被多人 readiness 扩展。实例已删除。
+- CombatSolver 与 CoopBot Release 串行构建 0 warning / 0 error。真实四 Client 的原版 readiness 可见性、跨敌方侧网络同步和死亡后的 owner 子集仍待实机 C9 验证。
+
 ## Co-op Bot C8 完整玩家侧（2026-09-29）
 
 - `COOP-BOT-PLAYER-SIDE` / `c1bb062ff57c4ed2b2d9402a7979081e`：Passed；四 Actor 按 2→0→3→1 的任意原序到达完整 readiness 屏障，动作顺序保持；无授权新根触发人工插入取消/重规划，带 ActionId 的新根进入严格验证。1 CPU / 1536 MiB，实例已删除。

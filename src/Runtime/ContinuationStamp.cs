@@ -130,6 +130,21 @@ internal sealed record ContinuationStamp(string StateText)
         int turn,
         IntentForecast forecast,
         int startTurnNumber)
+        => CapturePredicted(
+            player,
+            simulator,
+            turn,
+            forecast,
+            startTurnNumber,
+            jointTurnState: null);
+
+    internal static ContinuationStamp CapturePredicted(
+        Player player,
+        CombatPredictionSimulator simulator,
+        int turn,
+        IntentForecast forecast,
+        int startTurnNumber,
+        JointTurnState? jointTurnState)
     {
         SimPlayerCombatState pcs = simulator.State.GetPlayerCombatState(player);
         SimCreatureState simulatedPlayer = simulator.State.GetCreature(player.Creature);
@@ -169,7 +184,7 @@ internal sealed record ContinuationStamp(string StateText)
             text,
             simulator,
             combat.RelicsOf(player));
-        AppendAdditionalActorContinuations(text, combat, simulator);
+        AppendAdditionalActorContinuations(text, combat, simulator, jointTurnState);
         StateFingerprintBuilder adapterFingerprint = new();
         ModelPredictionStateMirrors.AppendPredicted(ref adapterFingerprint, text, simulator, combat);
         if (combat.AdaptedOnPlay is { } adaptedOnPlay)
@@ -211,7 +226,8 @@ internal sealed record ContinuationStamp(string StateText)
     private static void AppendAdditionalActorContinuations(
         StringBuilder text,
         SimulatedCombatState combat,
-        CombatPredictionSimulator simulator)
+        CombatPredictionSimulator simulator,
+        JointTurnState? jointTurnState)
     {
         if (combat.Players.Count <= 1)
             return;
@@ -220,7 +236,11 @@ internal sealed record ContinuationStamp(string StateText)
         for (int index = 0; index < combat.Players.Count; index++)
         {
             Player player = combat.Players[index];
-            AppendActorContinuation(text, index, CapturePredictedActorContinuation(combat, simulator, player));
+            bool ready = jointTurnState?.Phases[index] is JointActorTurnPhase.Ended or JointActorTurnPhase.Dead;
+            AppendActorContinuation(
+                text,
+                index,
+                CapturePredictedActorContinuation(combat, simulator, player, ready));
         }
         AppendMultiplayerPowerIdentities(text, combat.EffectivePowers(), simulator);
     }
@@ -288,6 +308,7 @@ internal sealed record ContinuationStamp(string StateText)
             combatState.Stars,
             player.Gold);
         actor.Append(";phase=").Append(combatState.Phase);
+        actor.Append(";ready=").Append(CombatManager.Instance.IsPlayerReadyToEndTurn(player));
         AppendOsty(actor, player.Osty, player.Osty?.CurrentHp ?? 0, player.Osty?.MaxHp ?? 0);
         AppendLivePile(actor, combatState.Hand, 'H');
         AppendLivePile(actor, combatState.DrawPile, 'D');
@@ -305,7 +326,8 @@ internal sealed record ContinuationStamp(string StateText)
     private static string CapturePredictedActorContinuation(
         SimulatedCombatState combat,
         CombatPredictionSimulator simulator,
-        Player player)
+        Player player,
+        bool ready)
     {
         SimPlayerCombatState combatState = simulator.State.GetPlayerCombatState(player);
         SimCreatureState creature = simulator.State.GetCreature(player.Creature);
@@ -318,6 +340,7 @@ internal sealed record ContinuationStamp(string StateText)
             combatState.Stars,
             combat.GetPlayerGold(player));
         actor.Append(";phase=").Append(combatState.Phase);
+        actor.Append(";ready=").Append(ready);
         Creature? osty = combat.GetOsty(player);
         AppendOsty(
             actor,

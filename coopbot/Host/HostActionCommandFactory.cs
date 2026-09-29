@@ -20,4 +20,29 @@ internal static class HostActionCommandFactory
             expectation.StarCost,
             IsIrreversible: true);
     }
+
+    internal static ContinuationStamp ExpectedStableContinuation(
+        HostSearchResult result,
+        int actionIndex)
+        => ExpectedStableContinuation(result.Replay, actionIndex);
+
+    internal static ContinuationStamp ExpectedStableContinuation(
+        JointReplayResult replay,
+        int actionIndex)
+    {
+        JointCombatSnapshot action = replay.ActionSnapshots[actionIndex];
+        if (!action.TurnState.IsBarrierReached)
+            return action.Continuation;
+        int appliedActionCount = actionIndex + 1;
+        JointStrictCheckpoint[] barriers = replay.Checkpoints
+            .Where(checkpoint => checkpoint.Stage == "barrier"
+                && checkpoint.AppliedActionCount == appliedActionCount)
+            .ToArray();
+        if (barriers.Length != 1)
+        {
+            throw new InvalidOperationException(
+                $"Action {actionIndex} reaches the readiness barrier but has {barriers.Length} stable checkpoints.");
+        }
+        return barriers[0].Continuation;
+    }
 }

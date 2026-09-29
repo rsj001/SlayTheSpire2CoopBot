@@ -94,6 +94,17 @@ internal sealed partial class UnattendedTestRunner
                 runner._completedChecks.Add(
                     "CoopBotPlayerSide:FourActors:ArbitraryOrder:ReadinessBarrier:ManualInsertion:" + evidence);
             }
+            if (request.ScenarioId == "COOP-BOT-CROSS-ROUND")
+            {
+                runner.SetStage("coop_bot_cross_round_native");
+                await runner.AssertMultiplayerNativeRoundDifferentialAsync(scenario.CombatState, actorCount: 4);
+                await runner.AssertMultiplayerNativeRoundDeathDifferentialAsync(
+                    scenario.CombatState,
+                    allPlayersDie: false);
+                string evidence = AssertCoopBotCrossRound(scenario.CombatState);
+                runner._completedChecks.Add(
+                    "CoopBotCrossRound:EnemySide:NextPlayerRoot:SingleDeathSubset:StableBarrier:" + evidence);
+            }
             if (request.ScenarioId == "COOP-MULTIPLAYER-NATIVE-DIFF")
             {
                 runner.SetStage("coop_multiplayer_native_diff");

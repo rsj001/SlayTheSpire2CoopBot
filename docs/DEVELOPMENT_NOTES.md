@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## Co-op Bot C9 敌方侧、死亡与下一轮根（开发中，2026-09-29）
+
+修复逐动作重搜仍把全部 Actor 初始化为 Playing 的单人遗留：CombatActorRoot 现捕获原版 readiness，多人 continuation 记录每名 Actor 的 `ready`，`JointTurnState.FromRoot` 从 HP/readiness 恢复 Dead/Ended/Playing 子集；单人 continuation 格式不变。Host 执行最后一个 EndTurn 时，预期 actual 不再是动作瞬间的全员 Ended 状态，而是 strict replay 中同动作计数的下一玩家侧 barrier checkpoint，因此 Recorder 可以跳过敌方侧，只在原版死亡/AI/下一轮开始全部稳定后对账。
+
+`COOP-BOT-CROSS-ROUND` / `07868b5599614431b5f1877af27d01b7` Passed：四 Actor 原版/预测完整经过玩家尾、敌方 AOE/Weak、敌方尾、AI 换招和下一玩家侧；一名 Actor 死亡后只保留存活可行动子集；根阶段哨兵得到 Ended/Dead/Playing/Playing，最后 EndTurn 选择 turn 2 barrier continuation。`COOP-PRODUCTION-SINGLE-BOUNDARY` / `2bbeaa025a7c4669a9fd7022dc91a5d4` Passed，实例均删除。真实四客户端跨敌方侧和死亡 roster 行为仍是 C9 实机门禁。
+
 ## Co-op Bot C8 完整玩家侧协调（开发中，2026-09-29）
 
 新增 HostPlanLease，把广播计划固定到 RootRevision，并区分“授权动作产生的新根”和“没有 ActionId 的人工插入”。人工插入会使旧计划失效、向各 Client 广播 PlanCancelled，并由 Recorder 已发布的新根自动重搜；授权动作仍必须进入逐动作 predicted/actual continuation 校验。Recorder 的在途条件现包含远端 Prepare/Commit 和 observer-ready 屏障，不再只看 Host 本地 Agent。Host 默认为 ConfirmEach；Auto 仅在新稳定根完成搜索和严格回放、发布新计划后再调度下一 Actor，避免直接连发前缀。UI 的重新搜索、执行下一步和暂停已接到 Runtime。

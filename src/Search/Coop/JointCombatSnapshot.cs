@@ -74,7 +74,8 @@ internal sealed record JointCombatSnapshot(
             simulator,
             turnState.Turn,
             root.Forecast,
-            root.StartTurnNumber);
+            root.StartTurnNumber,
+            turnState);
         StateFingerprintBuilder key = new();
         key.Add(turnState.Turn);
         key.Add(turnState.ActorCount);

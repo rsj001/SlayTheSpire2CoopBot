@@ -1,4 +1,5 @@
 using CoopBot.Capture;
+using CoopBot.Host;
 using CoopBot.Protocol;
 using CoopBot.Session;
 using CoopBot.UI;
@@ -306,6 +307,48 @@ public static class CoopBotHeadlessProbe
         }
         return $"actors=4;order={string.Join(',', actorOrder)};barrier=complete;" +
                "manual=cancel_replan;commanded=verify";
+    }
+
+    public static string AuditCrossRoundPolicy(CombatState combat)
+    {
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(combat);
+        if (root.Actors.Count != 4)
+            throw new InvalidOperationException($"C9 cross-round probe expected four actors, got {root.Actors.Count}.");
+        CombatActorRoot[] partialActors = root.Actors.Select(actor => actor with
+        {
+            InitialHp = actor.Id.Index == 1 ? 0 : actor.InitialHp,
+            IsReadyToEndTurn = actor.Id.Index is 0 or 1,
+        }).ToArray();
+        JointTurnState partial = JointTurnState.FromRootActors(partialActors, root.StartTurnNumber);
+        JointActorTurnPhase[] expectedPhases =
+        [JointActorTurnPhase.Ended, JointActorTurnPhase.Dead, JointActorTurnPhase.Playing, JointActorTurnPhase.Playing];
+        if (!partial.Phases.SequenceEqual(expectedPhases)
+            || partial.IsActionable(new CombatActorId(0))
+            || partial.IsActionable(new CombatActorId(1))
+            || !partial.IsActionable(new CombatActorId(2)))
+        {
+            throw new InvalidOperationException("C9 root readiness/death did not initialize the actionable Actor subset.");
+        }
+
+        PlanAction[] route =
+        [
+            new(PlanActionKind.EndTurn, root.StartTurnNumber, Actor: new CombatActorId(2)),
+            new(PlanActionKind.EndTurn, root.StartTurnNumber, Actor: new CombatActorId(0)),
+            new(PlanActionKind.EndTurn, root.StartTurnNumber, Actor: new CombatActorId(3)),
+            new(PlanActionKind.EndTurn, root.StartTurnNumber, Actor: new CombatActorId(1)),
+            new(PlanActionKind.EndTurn, root.StartTurnNumber + 1, Actor: new CombatActorId(0)),
+        ];
+        JointReplayResult replay = JointPlanReplayer.Replay(root, new JointPlan(4, route));
+        ContinuationStamp stable = HostActionCommandFactory.ExpectedStableContinuation(replay, actionIndex: 3);
+        JointStrictCheckpoint barrier = replay.Checkpoints.Single(checkpoint =>
+            checkpoint.Stage == "barrier" && checkpoint.AppliedActionCount == 4);
+        if (!string.Equals(stable.StateText, barrier.Continuation.StateText, StringComparison.Ordinal)
+            || barrier.Turn != root.StartTurnNumber + 1)
+        {
+            throw new InvalidOperationException("C9 final EndTurn did not select the next-player-side stable checkpoint.");
+        }
+        return "readiness=ended,dead,playing,playing;last_end_turn=next_round_barrier;" +
+               $"next_turn={barrier.Turn}";
     }
 
     private static async Task AssertTutorChoiceAsync(CombatState combat)

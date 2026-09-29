@@ -20,7 +20,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         string PlanId,
         string ActionId,
         long SourceRootRevision,
-        JointCombatSnapshot Expected,
+        ContinuationStamp Expected,
         bool LocalAgentOwnsReport);
 
     private readonly CombatState _combat;
@@ -173,7 +173,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
                 planId,
                 actionId,
                 result.RecordedRoot.RootRevision,
-                result.Replay.ActionSnapshots[0],
+                HostActionCommandFactory.ExpectedStableContinuation(result, actionIndex: 0),
                 LocalAgentOwnsReport: true);
             EventPublished?.Invoke(new HostDeploymentEvent(
                 "ack", planId, actionId, $"{ack.NativeActionType}:{ack.CompletionState}"));
@@ -222,11 +222,11 @@ internal sealed class HostDeploymentCoordinator : IDisposable
             return;
         _availablePlan = null;
         string? difference = string.Equals(
-            awaiting.Expected.Continuation.StateText,
+            awaiting.Expected.StateText,
             actual.Root.ContinuationStamp.StateText,
             StringComparison.Ordinal)
                 ? null
-                : awaiting.Expected.Continuation.DescribeFirstDifference(actual.Root.ContinuationStamp);
+                : awaiting.Expected.DescribeFirstDifference(actual.Root.ContinuationStamp);
         _awaiting = null;
         if (difference is null)
         {
@@ -283,7 +283,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
                         plan.Published.PlanId,
                         current.ActionId,
                         plan.RecordedRoot.RootRevision,
-                        plan.Replay.ActionSnapshots[0],
+                        HostActionCommandFactory.ExpectedStableContinuation(plan, actionIndex: 0),
                         LocalAgentOwnsReport: false);
                     _remotePlan = null;
                     EventPublished?.Invoke(new HostDeploymentEvent(
