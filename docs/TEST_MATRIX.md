@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 联合敌方 owner-only Hatch RNG（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：两 Actor Tough Egg 根强制 Hatch，Niche RNG 计数只增加 1，怪物存活且当前 HP 等于新的最大 HP；`runId=e65b79f63f514e7195d4a046157e8d4f`，Passed，实例已删除。
+- 该证据验证一次性 RNG 不按 Actor 倍增；其余特殊行动完整分类、Linux 和可见 Steam 未覆盖。
+
 ## 联合远端 Actor 额外回合（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：Actor1 持有一层 Ambergris，当前全员屏障完成后只返回 Actor1 额外回合子集；敌方侧被跳过，Actor0 保持 Ended/TurnNumber 不变，Actor1 恢复 Playing/TurnNumber `+1`，共享 RoundNumber 不变且 Ambergris 归零；`runId=544bf8bc1d4248ff952622314b289b94`，Passed，实例已删除。

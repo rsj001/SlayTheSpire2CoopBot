@@ -2268,6 +2268,7 @@ foreach ($text in @(
     '("FuzzyWurmCrawler", "INHALE")',
     '("Parafright", "REVIVE_MOVE")',
     '("FatGremlin", "FLEE_MOVE")',
+    '("ToughEgg", "HATCH_MOVE")',
     'IsJointTargetOnlyMove(',
     '("SludgeSpinner", "OIL_SPRAY_MOVE")',
     'IsJointPostAttackMixedMove(',

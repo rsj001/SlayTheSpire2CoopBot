@@ -40,6 +40,7 @@ internal sealed partial class UnattendedTestRunner
         AssertEnemyRevive(source);
         AssertEnemyEscape(source);
         AssertRemoteActorExtraTurn(source);
+        AssertOwnerOnlyEnemyRng(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -819,6 +820,33 @@ internal sealed partial class UnattendedTestRunner
                 $"turns={string.Join(',', turnsBefore)}->{combat.GetPlayerTurnNumber(simulator.State.Players[0])}," +
                 $"{combat.GetPlayerTurnNumber(remote)} phases={string.Join(',', next.Phases)} " +
                 $"ambergris={combat.GetAmount<AmbergrisPower>(remote.Creature)}。");
+        }
+    }
+
+    private static void AssertOwnerOnlyEnemyRng(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            2,
+            enemyModel: ModelDb.Monster<ToughEgg>());
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Creature enemy = combat.Enemies.Single();
+        combat.ForceMonsterMove(enemy, "HATCH_MOVE");
+        int rngBefore = simulator.Rng.Niche.Counter();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+        int rngAfter = simulator.Rng.Niche.Counter();
+        SimCreatureState state = simulator.State.GetCreature(enemy);
+        if (rngAfter - rngBefore != 1 || !state.IsAlive || state.CurrentHp != state.MaxHp)
+        {
+            throw new InvalidOperationException(
+                $"联合 owner-only Hatch RNG 或生命结算错误：" +
+                $"niche={rngBefore}->{rngAfter} hp={state.CurrentHp}/{state.MaxHp}。");
         }
     }
 

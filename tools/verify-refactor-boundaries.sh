@@ -1774,6 +1774,8 @@ require_fixed "$monster_move_semantics" '("Parafright", "REVIVE_MOVE")' \
     'joint revive monster move boundary missing:'
 require_fixed "$monster_move_semantics" '("FatGremlin", "FLEE_MOVE")' \
     'joint escape monster move boundary missing:'
+require_fixed "$monster_move_semantics" '("ToughEgg", "HATCH_MOVE")' \
+    'joint owner-only RNG monster move boundary missing:'
 require_fixed "$monster_move_semantics" 'IsJointTargetOnlyMove(' \
     'joint target-only monster move boundary missing:'
 require_fixed "$monster_move_semantics" '("SludgeSpinner", "OIL_SPRAY_MOVE")' \

@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线联合敌方 owner-only RNG（2026-09-29）
+
+Tough Egg 的 Hatch 登记为 owner-only 联合行动，完整既有单人后效只执行一次。两 Actor 夹具验证 Niche RNG 计数精确增加 1，怪物保持存活并恢复到新的最大生命；`COOP-MULTI-ACTOR-ROOT` 的 `runId=e65b79f63f514e7195d4a046157e8d4f` Passed，实例已删除。该代表关闭 RNG 按 Actor 倍增风险，但其余已支持特殊行动仍需完成分类清单。
+
 ## 离线联合远端 Actor 额外回合（2026-09-29）
 
 联合玩家屏障新增原版多人额外回合子集语义：按 Actor owner 检测并消费来源，子集存在时跳过敌方侧，只为子集增加 TurnNumber、恢复行动并执行额外回合玩家开始生命周期；其他存活 Actor 保持 Ended，共享 RoundNumber 不变。Actor1 Ambergris 夹具验证 Actor0 不行动、敌方不造成伤害且来源归零；`COOP-MULTI-ACTOR-ROOT` 的 `runId=544bf8bc1d4248ff952622314b289b94` Passed，实例已删除。F7b 至此关闭。

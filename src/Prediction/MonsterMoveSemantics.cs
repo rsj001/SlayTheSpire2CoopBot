@@ -114,7 +114,8 @@ internal static class MonsterMoveSemantics
         => (monster.GetType().Name, moveId) is
             ("FuzzyWurmCrawler", "INHALE") or
             ("Parafright", "REVIVE_MOVE") or
-            ("FatGremlin", "FLEE_MOVE");
+            ("FatGremlin", "FLEE_MOVE") or
+            ("ToughEgg", "HATCH_MOVE");
 
     private static bool IsJointTargetOnlyMove(MonsterModel monster, string moveId)
         => (monster.GetType().Name, moveId) is ("SludgeSpinner", "OIL_SPRAY_MOVE");
