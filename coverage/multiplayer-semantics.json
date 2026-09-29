@@ -5,7 +5,7 @@
   "cards": [
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.BeaconOfHope",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -21,11 +21,11 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.BladeSymphony",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Blaze",
@@ -37,7 +37,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Cacophony",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -45,7 +45,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Concoct",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -61,7 +61,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Coordinate",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -85,7 +85,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Fade",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -93,7 +93,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Flanking",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -109,15 +109,15 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.GlimpseBeyond",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.HammerTime",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -149,15 +149,15 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.ImitationLearning",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Intercept",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -165,7 +165,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Knockdown",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -197,7 +197,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Midnight",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -222,18 +222,18 @@
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Outrage",
       "status": "UnderTest",
-      "onPlaySupport": "Partial",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Plot",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Rally",
@@ -245,7 +245,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Sneaky",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -253,7 +253,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Soulbound",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -261,7 +261,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.TagTeam",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -269,7 +269,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Tank",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
@@ -278,22 +278,22 @@
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.TheBall",
       "status": "UnderTest",
-      "onPlaySupport": "Partial",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Tutor",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Underworld",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,

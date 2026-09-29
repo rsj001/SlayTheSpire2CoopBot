@@ -1,10 +1,10 @@
 # CombatSolver 测试清单
 
-## 原版多人语义 M6 直接入口（进行中，2026-09-29）
+## 原版多人语义 M6 选择、转移与复制（已完成，2026-09-29）
 
 - `COOP-MULTIPLAYER-NATIVE-DIFF`：HuddleUp、TheBall、Outrage、BladeSymphony、Largesse、Plot、GlimpseBeyond、ImitationLearning 普通/升级版分别在两 Actor 原生根执行，与预测逐 Actor 做完整快照差分，覆盖卡牌 Owner/牌堆、随机移交、生成 RNG、动态伤害和 PlayerTarget。最终 `runId=eaf4c2c85834405997b1b07a4e69e2fe` Passed，目标差分段 22278ms，实例已删除。
 - `COOP-MULTIPLAYER-IDENTITY`：Tutor 由 Actor0 出牌、Actor1 决策；无选择时产生带 SourceActor=0/DecisionActor=1 的稳定挂起帧，候选来自 Actor1 抽牌堆；带计划选择重放后牌进入 Actor1 手牌而非 Actor0。`runId=ec8b1d83ac2c414f8bdb4162b3536aab` Passed，目标阶段349ms，实例已删除。
-- ImitationLearning 后续原生合成双动作尚未通过：复制 Power 自动出牌进入原版 `CardPileCmd.AddDuringManualCardPlay` 时，合成生成牌缺少网络/牌堆登记并空引用；这是测试底座边界，不作为预测通过或失败证据。
+- ImitationLearning 后续生命周期改用原版公开 `CardCmd.AutoPlay`，只跳过合成非本地玩家缺失的牌堆视觉和 Power 飞行动画；Before/AfterCardPlayed、Power 消费、复制与自动打出仍完整执行。差分先发现预测 Power 数量未同步，修复后 `runId=2d8abe21720a4bbd92ab24b16996a14b` Passed，实例已删除。
 
 ## 原版多人语义 M5 Power 生命周期（2026-09-29）
 

@@ -113,6 +113,42 @@ internal sealed partial class UnattendedTestRunner
 
         await AssertMultiplayerDirectCardsAsync(source);
         await AssertMultiplayerPowerLifecycleNativeDifferentialAsync(source);
+        await AssertImitationLearningNativeLifecycleAsync(source);
+    }
+
+    private async Task AssertImitationLearningNativeLifecycleAsync(CombatState source)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(source, actorCount: 2);
+        Player learner = native.Players[0];
+        Player teacher = native.Players[1];
+        learner.PlayerCombatState!.Energy = 99;
+        CardModel imitation = native.State.CreateCard(ModelDb.Card<ImitationLearning>(), learner);
+        CardModel powerCard = native.State.CreateCard(ModelDb.Card<Inflame>(), teacher);
+        learner.PlayerCombatState.Hand.AddInternal(imitation, silent: true);
+        teacher.PlayerCombatState!.Hand.AddInternal(powerCard, silent: true);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator predicted = root.ForkSimulator();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber);
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, predicted);
+
+        await ExecuteSyntheticNativeCardAsync(imitation, teacher.Creature);
+        await ExecuteSyntheticNativeAutoPlayAsync(powerCard);
+        _ = JointActionTransition.Apply(
+            predicted,
+            turns,
+            new PlanAction(
+                PlanActionKind.PlayCard,
+                root.StartTurnNumber,
+                CardId: imitation.Id.Entry,
+                TargetCombatId: teacher.Creature.CombatId,
+                Actor: new CombatActorId(0)),
+            deaths);
+        PredictedCard predictedPower = predicted.State.FindCard(powerCard)
+            ?? throw new InvalidOperationException("Imitation lifecycle could not find teacher Power.");
+        predicted.AutoPlay(predictedPower, nestedChoiceSourceId: nameof(ImitationLearningPower));
+        if (predicted.HasPendingChoice)
+            throw new InvalidOperationException("Imitation lifecycle unexpectedly suspended.");
+        AssertMultiplayerLifecycleSnapshots(native, root, predicted, "ImitationLearningAutoPlay");
     }
 
     private async Task AssertMultiplayerPowerLifecycleNativeDifferentialAsync(CombatState source)
@@ -450,6 +486,33 @@ internal sealed partial class UnattendedTestRunner
             vfxIsolation.Unpatch(powerVfx, powerVfxPrefix);
         }
 
+    }
+
+    private async Task ExecuteSyntheticNativeAutoPlayAsync(CardModel nativeCard)
+    {
+        NetCombatCardDb.Instance.IdCardForTesting(nativeCard);
+        MethodInfo powerVfx = typeof(CardModel).GetMethod(
+            "PlayPowerCardFlyVfx",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(typeof(CardModel).FullName, "PlayPowerCardFlyVfx");
+        MethodInfo powerVfxPrefix = typeof(UnattendedTestRunner).GetMethod(
+            nameof(SkipSyntheticPowerCardVfx),
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(nameof(SkipSyntheticPowerCardVfx));
+        Harmony vfxIsolation = new("CombatSolver.Testing.MultiplayerNativeAutoPlayPowerVfx." + _request.RunId);
+        vfxIsolation.Patch(powerVfx, prefix: new HarmonyMethod(powerVfxPrefix));
+        try
+        {
+            await CardCmd.AutoPlay(
+                new ThrowingPlayerChoiceContext(),
+                nativeCard,
+                target: null,
+                skipCardPileVisuals: true);
+        }
+        finally
+        {
+            vfxIsolation.Unpatch(powerVfx, powerVfxPrefix);
+        }
     }
 
     private async Task AssertTheBallExpectedGapAsync(CombatState source)

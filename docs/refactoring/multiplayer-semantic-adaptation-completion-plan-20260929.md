@@ -351,7 +351,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M6：跨玩家选牌、转移、复制和自动出牌
 
-> 进度：进行中。九张牌均已有精确 OnPlay：HuddleUp/Largesse 复用既有入口；TheBall 补齐伤害成长并由结果位置 mirror 完成随机队友移交；Outrage、BladeSymphony、Plot、GlimpseBeyond 补齐逐队友生成/Power；ImitationLearning 建立按目标玩家区分的 Power；Tutor 通过动作选择 cursor 从目标玩家抽牌堆取候选。八张非选择牌普通/升级版两 Actor 原生/预测全状态差分 `eaf4c2c85834405997b1b07a4e69e2fe` Passed；Tutor 的 SourceActor/DecisionActor、挂起和选择后目标手牌结算由 `ec8b1d83ac2c414f8bdb4162b3536aab` 通过。目录维持 UnderTest；ImitationLearning 后续自动出牌的原生合成测试因生成复制牌缺少网络/牌堆登记而在原版 `AddDuringManualCardPlay` 空引用，尚未把该宿主失败当作语义证据。
+> 进度：已完成。九张牌均已晋升 Verified：HuddleUp/Largesse 复用既有入口；TheBall 补齐伤害成长并由结果位置 mirror 完成随机队友移交；Outrage、BladeSymphony、Plot、GlimpseBeyond 补齐逐队友生成/Power；ImitationLearning 建立按目标玩家区分的 Power，并在消费时同步预测 Power 数量后自动打出复制牌；Tutor 通过动作选择 cursor 从目标玩家抽牌堆取候选。八张非选择牌普通/升级版两 Actor 原生/预测全状态差分 `eaf4c2c85834405997b1b07a4e69e2fe` Passed；Tutor 的 SourceActor/DecisionActor、挂起和选择后目标手牌结算由 `ec8b1d83ac2c414f8bdb4162b3536aab` 通过；ImitationLearning 原生公开 AutoPlay 与预测 Before/AfterCardPlayed 生命周期最终由 `2d8abe21720a4bbd92ab24b16996a14b` 通过。
 
 目标：处理 SourceActor 与 DecisionActor/CardOwner 不同的复杂动作。
 
@@ -545,7 +545,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 | M3 玩家人数缩放/生成 | M1-M2 | 已完成 | `COOP-MULTIPLAYER-SCALING` / `ecb0a35c1357491fb57b252a4f856cae` |
 | M4 直接结算牌 | M2-M3 | 已完成 | `COOP-MULTIPLAYER-NATIVE-DIFF` / `79c9fbed9f974699aa5f82cedafdb24c` |
 | M5 Power/Hook 牌 | M2-M4 | 已完成 | 初始原生差分 `920231b15d1447d09379fed727dbf115`；预测生命周期 `dfc42d469b7e4682bcb3c2a8a33750ae`；原生生命周期代表 `5d9c977d6bc349be97a28f734a4ab050` |
-| M6 选择/转移/复制牌 | M2、M4-M5 | 进行中 | 八张直接入口原生差分 `eaf4c2c85834405997b1b07a4e69e2fe`；Tutor 身份/结算 `ec8b1d83ac2c414f8bdb4162b3536aab`；尚缺 ImitationLearning 后续原生生命周期 |
+| M6 选择/转移/复制牌 | M2、M4-M5 | 已完成 | 八张直接入口原生差分 `eaf4c2c85834405997b1b07a4e69e2fe`；Tutor 身份/结算 `ec8b1d83ac2c414f8bdb4162b3536aab`；ImitationLearning AutoPlay 生命周期 `2d8abe21720a4bbd92ab24b16996a14b` |
 | M7 球/宠物/角色资源 | M2、M4-M6 | 未开始 | — |
 | M8 药水/遗物/反广播/第三方 | M2-M7 | 未开始 | — |
 | M9 回合/敌人/死亡/并发选择 | M3-M8 | 未开始 | — |
@@ -579,7 +579,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 | MP-ISSUE-012 | 有界 Beam/BFWS 不保证全局最优 | 仅有限 oracle 称最优；正常结果称 best-found | M11 |
 | MP-ISSUE-013 | 生产 Runtime/UI/部署仍为单人，无客户端控制协议 | 保持边界；未来独立 Co-op Bot 层实现 | M12 |
 | MP-ISSUE-014 | 游戏仍在更新，wiki 与反编译版本可能漂移 | 所有证据绑定程序集版本，升级后重生成目录 | M0/M10 |
-| MP-ISSUE-015 | ImitationLearning 的合成原生双动作在复制 Power 自动出牌时缺少测试网络/牌堆登记，原版 `AddDuringManualCardPlay` 空引用 | 修正原生测试底座后再做 actual/simulated，不吞异常、不以预测自测替代 | M6 |
+| MP-ISSUE-015 | ImitationLearning 的合成原生双动作曾在复制 Power 自动出牌时缺少测试网络/牌堆登记 | 已关闭：改走原版公开 AutoPlay、隔离纯 VFX，并据 actual/simulated 差分修复预测 Power 数量未同步 | M6 |
 
 ## 11. 最终交付物
 

@@ -1,10 +1,10 @@
 {
   "MULTIPLAYER-SEMANTIC-M6-DIRECT-ENTRIES-20260929": {
-    "status": "PassedWithImitationLifecyclePending",
+    "status": "Passed",
     "level": "HeadlessNativeMultiplayerCardDifferential",
-    "procedure": "COOP-MULTIPLAYER-NATIVE-DIFF；M6 八张非Tutor牌普通/升级；两 Actor 原版/预测全状态",
+    "procedure": "COOP-MULTIPLAYER-NATIVE-DIFF；M6 八张非Tutor牌普通/升级；Tutor选择身份；ImitationLearning后续AutoPlay；两 Actor 原版/预测全状态",
     "expected": "全队抽牌/生成/Power、TheBall移交成长、Largesse目标池和ImitationLearning目标身份与原版一致",
-    "observed": "直接入口 runId=eaf4c2c85834405997b1b07a4e69e2fe Passed；Tutor Source/Decision/目标牌堆 runId=ec8b1d83ac2c414f8bdb4162b3536aab Passed；实例已删除。ImitationLearning后续原生合成动作仍受测试生成牌登记边界阻塞。",
+    "observed": "直接入口 runId=eaf4c2c85834405997b1b07a4e69e2fe Passed；Tutor Source/Decision/目标牌堆 runId=ec8b1d83ac2c414f8bdb4162b3536aab Passed；ImitationLearning AutoPlay生命周期 runId=2d8abe21720a4bbd92ab24b16996a14b Passed；实例均已删除，九张目录晋升Verified。",
     "evidence": "src/Engine/InCombat/Mirrors/Cards/OnPlay/BespokeCardMirrors.cs; src/Testing/UnattendedTestRunner.MultiplayerNativeDifferential.cs; docs/TEST_MATRIX.md"
   },
   "MULTIPLAYER-SEMANTIC-M5-PREDICTED-LIFECYCLE-20260929": {

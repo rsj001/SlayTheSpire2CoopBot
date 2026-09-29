@@ -657,6 +657,9 @@ internal static class AfterCardPlayedMirrors
         state.CardAndClones.RemoveAt(index);
 
         state.Amount--;
+        if (context.CombatState is not ICombatPredictionEffectSink effects)
+            throw new InvalidOperationException("模仿学习缺少可写的预测 Power 状态。");
+        effects.SetPowerAmount(power, state.Amount);
         context.Simulator.AutoPlay(
             clone,
             nestedChoiceSourceId: power.Id.Entry);
