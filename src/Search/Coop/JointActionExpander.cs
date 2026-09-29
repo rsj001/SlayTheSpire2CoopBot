@@ -137,10 +137,10 @@ internal static class JointActionExpander
                 JointPendingChoiceFrame frame = pending.Frame;
                 if (frame.SourceAction != item.Candidate.Action
                     || frame.Placement != JointPendingChoicePlacement.TurnStart
-                        && frame.OwnerActor != item.Candidate.Action.Actor)
+                        && frame.SourceActor != item.Candidate.Action.Actor)
                 {
                     throw new InvalidOperationException(
-                        "联合选择帧的 owner 或 SourceAction 与探测动作不一致。",
+                        "联合选择帧的 SourceActor 或 SourceAction 与探测动作不一致。",
                         pending);
                 }
                 if (item.Depth >= MaximumNestedChoiceDepth)

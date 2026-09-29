@@ -52,6 +52,7 @@ internal sealed partial class UnattendedTestRunner
         AssertAllActorsDeadTerminal(source);
         AssertCompleteStrictReplay(source, 2);
         AssertCompleteStrictReplay(source, 4);
+        AssertMultiplayerSemanticSearchOracles(source);
         AssertFourActorBoundedWorkload(source);
         AssertJointSearchLifetime(source);
 
