@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 多人完整轮次原生差分（2026-09-29）
+
+新增仅供 unattended 使用的合成原版多人回合驱动器，直接复用原版 Hook、牌堆命令、怪物 `TakeTurn`、AI 换招和玩家 setup；生产 Runtime 不接入。2/4 Actor 均从同一冻结根经历玩家尾、Sludge Spinner Oil Spray 对全员攻击/Weak、敌方尾和下一玩家开始，再按每名 Actor 的 HP/格挡/资源/牌堆/Power、敌人状态、Round/TurnNumber 与 continuation 严格对账，`COOP-MULTIPLAYER-NATIVE-DIFF` / `58578b4335464a2d96fc1df476659676` Passed，实例已删除。首次 `a7f0e651d6094e269b2f7f63546da28e` 因 fixture 未执行原版 side-switch 导致怪物仍标记为本轮召唤而跳过行动；第二次 `1de8e4c469424a0996f910a1d7c509e0` 因四人根的 Necrobinder 起始遗物尝试向 live CombatManager 注册合成宠物而失败。最终 fixture 显式执行 side-switch 并移除无关起始遗物，隔离目标回合语义。
+
 ## 多人敌方行动作用域机器目录（2026-09-29）
 
 多人语义目录新增当前游戏版本的怪物行动枚举：从每个原版怪物的真实 `MoveStateMachine` 发现行动，只收录求解器已经支持的特殊行动，并由联合敌方语义返回 `OwnerOnly`、`TargetOnly`、`PostAttackMixed` 或 `PreAttackMixed`。当前共 174 项，`--verify-multiplayer-semantics` 通过且没有未知作用域。该结果证明作用域登记完整，不替代 M9 尚待完成的原版多人回合命令链与 2/4 Actor 跨侧 actual/simulated 差分。

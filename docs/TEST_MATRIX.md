@@ -3,6 +3,7 @@
 ## 多人语义补全 M9（进行中，2026-09-29）
 
 - `CoverageCatalog --verify-multiplayer-semantics`：通过；发现 37 张多人牌、13 类多人缩放 Power、51 个跨玩家目标药水及 174 个求解器已支持的特殊敌方行动，所有行动均具有明确多人作用域，卡牌/Power/作用域未知项为 0。本项是目录门禁，不宣称原版多人完整回合差分已经通过。
+- `COOP-MULTIPLAYER-NATIVE-DIFF` / `58578b4335464a2d96fc1df476659676`：Passed；2/4 Actor 从同一根完成玩家尾、Oil Spray 全员攻击/Weak、敌方尾、AI 换招及下一玩家开始，逐 Actor 完整状态、敌人状态、Round/TurnNumber 与 continuation 一致，实例已删除。失败基线 `a7f0e651d6094e269b2f7f63546da28e` 缺少原版 side-switch，怪物按 SpawnedThisTurn 跳过；`1de8e4c469424a0996f910a1d7c509e0` 被四人根无关的 Necrobinder 起始遗物宠物注册阻断，最终 fixture 移除无关遗物后通过。
 
 ## 原版多人语义 M8 外围机制（已完成，2026-09-29）
 

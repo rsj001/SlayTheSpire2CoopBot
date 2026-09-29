@@ -428,7 +428,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 目标：从单动作正确推广到完整玩家侧、敌方侧和下一玩家侧。
 
-> 进度：进行中。机器目录现从当前游戏程序集枚举所有怪物 `MoveState`，并对求解器已支持的 174 个特殊行动逐项记录多人作用域；`--verify-multiplayer-semantics` 已证明目录不存在未分类作用域。原版多人 EndTurn/Ready 双屏障、完整 actual/simulated 跨敌方侧以及死亡中断矩阵仍待本阶段后续验证，因此尚不关闭 M9。
+> 进度：进行中。机器目录现从当前游戏程序集枚举所有怪物 `MoveState`，并对求解器已支持的 174 个特殊行动逐项记录多人作用域；`--verify-multiplayer-semantics` 已证明目录不存在未分类作用域。新增合成原版多人回合驱动器，以 2/4 Actor 的 Oil Spray 从同一根严格对账玩家尾、敌方开始/行动/结束、AI 换招、下一玩家开始及完整 Actor 状态，`runId=58578b4335464a2d96fc1df476659676` Passed。原版多人 EndTurn/Ready 双屏障的可撤销/挂起顺序及死亡中断矩阵仍待本阶段后续验证，因此尚不关闭 M9。
 
 工作：
 
@@ -554,7 +554,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 | M6 选择/转移/复制牌 | M2、M4-M5 | 已完成 | 八张直接入口原生差分 `eaf4c2c85834405997b1b07a4e69e2fe`；Tutor 身份/结算 `ec8b1d83ac2c414f8bdb4162b3536aab`；ImitationLearning AutoPlay 生命周期 `2d8abe21720a4bbd92ab24b16996a14b` |
 | M7 球/宠物/角色资源 | M2、M4-M6 | 已完成 | 两 Actor 入口 `69d21e089dd2494bad39fe7c07585655`；四 Actor 混合资源与 Hibernate 生命周期 `94100373a0f04ddebd6465b1971fe156` |
 | M8 药水/遗物/反广播/第三方 | M2-M7 | 已完成 | BlockPotion 2/4 Actor `e750f21354d94bd6866a4fa8df1fb20f`；取消、远端 Shuriken、自用牌 `78a22003c4284ccbb635bb451cee62d8`；九类选择药水与第三方拒绝由 COOP 根门禁覆盖 |
-| M9 回合/敌人/死亡/并发选择 | M3-M8 | 进行中 | 174 个已支持特殊敌方行动作用域目录通过；原生命令链与完整跨侧差分待补 |
+| M9 回合/敌人/死亡/并发选择 | M3-M8 | 进行中 | 174 个作用域目录；2/4 Actor 完整跨侧 actual/simulated `58578b4335464a2d96fc1df476659676`；屏障顺序/死亡矩阵待补 |
 | M10 完整内容门禁 | M3-M9 | 未开始 | — |
 | M11 联合搜索质量 | M10 | 未开始 | — |
 | M12 Co-op Bot Runtime | M11；另需项目边界授权 | 未开始 | — |

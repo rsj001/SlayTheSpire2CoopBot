@@ -121,6 +121,8 @@ internal sealed partial class UnattendedTestRunner
         await AssertCrossPlayerBlockPotionAsync(source, actorCount: 4);
         await AssertDeadPlayerPotionTargetRejectedAsync(source);
         await AssertRemoteShurikenNativeDifferentialAsync(source);
+        await AssertMultiplayerNativeRoundDifferentialAsync(source, actorCount: 2);
+        await AssertMultiplayerNativeRoundDifferentialAsync(source, actorCount: 4);
         await AssertMultiplayerDirectCardAsync(
             source,
             typeof(DefendDefect),
