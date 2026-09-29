@@ -6,6 +6,7 @@
 - [离线四 Actor 单人功能迁移库存](refactoring/offline-four-actor-feature-inventory-20260929.md)：F0 冻结的功能面、源码入口、迁移状态、最低证据和已知问题单一清单。
 - [原版多人战斗语义适配补齐计划](refactoring/multiplayer-semantic-adaptation-completion-plan-20260929.md)：在已完成的多 Actor 容器上补齐 37 张多人牌、人数缩放、原生多人差分、联合搜索门禁和未来客户端承诺层。
 - [Co-op Bot Host/Client 四人实机演示计划](refactoring/coop-bot-host-client-live-demo-plan-20260929.md)：在 Host 完整可观测假设下，定义同构 Mod、单动作授权、客户端原生执行、四端 UI、严格差分和 C0–C10 实机门禁。
+- [Co-op Bot C0 原版联机接口审计](refactoring/coop-bot-c0-native-interface-audit-20260929.md)：固定 0.111.0 的 Host/owner、Mod 消息、原生动作与稳定完成观察点，并记录远端动作必须由 owner Client 入队的边界。
 - [固定并行度优化试验](performance/fixed-dop-20260927.md)：当前采样、撤回的列表复制原型、长路线单次收尾回放及验证限制。
 
 - [更优世界线逐包策略记录](strategy/strategy-optimization-20260923.md)：逐包同根基线、人工对照和优化结果。
