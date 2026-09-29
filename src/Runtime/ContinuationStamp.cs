@@ -70,6 +70,13 @@ internal sealed record ContinuationStamp(string StateText)
     {
         Player player = LocalContext.GetMe(state)
             ?? throw new InvalidOperationException("找不到本地玩家。");
+        return CaptureLiveForPlayer(state, player);
+    }
+
+    internal static ContinuationStamp CaptureLiveForPlayer(CombatState state, Player player)
+    {
+        if (!state.Players.Contains(player))
+            throw new InvalidOperationException("指定玩家不在当前战斗 roster 中。");
         PlayerCombatState pcs = player.PlayerCombatState
             ?? throw new InvalidOperationException("玩家没有战斗状态。");
         StringBuilder text = Begin(

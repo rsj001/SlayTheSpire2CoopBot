@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## Co-op Bot C6 远端命令与原版 transport（开发中，2026-09-29）
+
+独立 Mod 现按战斗注册单一原版 `INetMessage` envelope。Host 从稳定 roster 广播 ActorAssignment 和只读计划，并把 Prepare/Commit 仅定向发送给动作 owner；Client 以原版 transport sender、每 peer 严格序号、会话/版本、Actor 绑定和 ActionId ledger 校验后，调用与 Host 相同的 LocalActorAgent，再向 Host 返回 Prepared/Rejected/ACK/Failed。重复 Commit 不重复执行，只重发缓存终态；Host 逐 owner 校验响应并在 10 秒 deadline 后稳定超时。Host 目录不含原版 `RequestEnqueue`，远端入队只发生在 owner Client。
+
+由于 continuation 的主视图是本地 Actor，Recorder 现在在主线程为每个 Actor 生成一个 owner-relative 完整根指纹，命令使用 owner 对应值；这不是删减状态，其他 Actor、敌人、Power、牌堆与九条 RNG 仍在每个指纹中。`CoopBot.ContractChecks` 累计 56 项通过，其中三个远端 Actor 各完成协议状态机，并覆盖错误 owner、拒绝、超时和重复 ACK。`COOP-BOT-REMOTE-TRANSPORT` / `398291209a19425e95694de4e79678f3` Passed：四个 owner 指纹和原版 handler 注册/注销通过，实例已删除。该证据不等于三个真实 Client 已原生出牌；真实收发、远端入队和 actual/sim 对账保留为四客户端 C6 实机门禁。
+
 ## Co-op Bot C5 Host 本地执行（开发中，2026-09-29）
 
 新增本地 Actor Agent 的 `Idle→Validating→Prepared→Executing→WaitingNativeCompletion→Reporting→Idle` 状态机。Prepare 校验本地 Actor、完整根指纹、回合/阶段、逐实例卡牌状态、目标以及离线回放捕获的能量/星能费用；Commit 只通过原版 `TryManualPlay` 或 `RequestEnqueue(EndPlayerTurnAction)`，等待对应 GameAction 完成后 ACK。Host 部署协调器当前只授权路线第一步且必须属于 Host；ACK 后等待 Recorder 新稳定根，以完整 continuation 对 predicted checkpoint，首差异会停止该动作链。Agent 未直接写 HP、能量、牌堆、Power 或 readiness。

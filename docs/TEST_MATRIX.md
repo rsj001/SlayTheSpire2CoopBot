@@ -1,5 +1,12 @@
 # CombatSolver 测试清单
 
+## Co-op Bot C6 远端命令与 transport（2026-09-29）
+
+- `CoopBot.ContractChecks`：Passed，累计 56 项；新增三个远端 Actor 的 Prepare→Prepared→Commit→ACK、错误 owner、拒绝、超时和重复 ACK 终态，重复执行数为 0。
+- `COOP-BOT-REMOTE-TRANSPORT` / `398291209a19425e95694de4e79678f3`：Passed；合成四 Actor 各有 owner-relative 完整指纹，原版 `INetGameService` handler 完成注册/注销；1 CPU / 1536 MiB，实例已删除。
+- Windows 结构门禁 Passed，`search_files=255`；Host 目录禁止 `ActionQueueSynchronizer.RequestEnqueue`，原版入队只存在于 LocalActorAgent。CombatSolver 与 CoopBot Release 构建 0 warning / 0 error。
+- 未执行真实四客户端网络收发、三个远端 owner 的原生出牌和逐动作 actual/sim 对账；因此 C6 实机门禁仍待完成，不把内存合同描述成远端游戏执行。
+
 ## Co-op Bot C5 Host 本地执行（2026-09-29）
 
 - `COOP-BOT-HOST-LOCAL-ACTION` / `737579cf05734538a36d2536ba09f27c`：Passed；30 HP 敌人上，Host 本地普通攻击包含目标，经原版动作队列完成并对齐动作 predicted checkpoint；EndTurn 经原版队列完成，跨敌方侧到第 2 回合并对齐 strict replay barrier。证据为 `card_ack=Finished;end_ack=Finished;turn=1->2;strict=card,barrier`，1 CPU / 1536 MiB，实例已删除。

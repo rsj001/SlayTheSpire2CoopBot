@@ -11,6 +11,7 @@
     <Compile Include="../../coopbot/Session/CoopInboundGate.cs" Link="Session/CoopInboundGate.cs" />
     <Compile Include="../../coopbot/Session/CoopSession.cs" Link="Session/CoopSession.cs" />
     <Compile Include="../../coopbot/Session/ActionIdempotencyLedger.cs" Link="Session/ActionIdempotencyLedger.cs" />
+    <Compile Include="../../coopbot/Session/HostRemoteActionTracker.cs" Link="Session/HostRemoteActionTracker.cs" />
     <Compile Include="../../coopbot/Capture/StableRootGate.cs" Link="Capture/StableRootGate.cs" />
   </ItemGroup>
 </Project>

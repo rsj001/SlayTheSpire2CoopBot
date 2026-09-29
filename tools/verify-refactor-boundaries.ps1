@@ -2481,6 +2481,8 @@ $coopUiSnapshotPath = Join-Path $repositoryRoot 'coopbot/UI/CoopUiSnapshot.cs'
 $coopUiRendererPath = Join-Path $repositoryRoot 'coopbot/UI/CoopBotOverlayRenderer.cs'
 $coopLocalAgentPath = Join-Path $repositoryRoot 'coopbot/NativeAdapter/LocalActorAgent.cs'
 $coopHostDeploymentPath = Join-Path $repositoryRoot 'coopbot/Host/HostDeploymentCoordinator.cs'
+$coopNativeTransportPath = Join-Path $repositoryRoot 'coopbot/Protocol/NativeCoopTransport.cs'
+$coopPeerControllerPath = Join-Path $repositoryRoot 'coopbot/Runtime/CoopPeerController.cs'
 foreach ($check in @(
     @{ Path = $combatSolverProjectPath; Text = '<InternalsVisibleTo Include="CoopBot" />' },
     @{ Path = $coopBotProjectPath; Text = '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' },
@@ -2499,10 +2501,20 @@ foreach ($check in @(
     @{ Path = $coopLocalAgentPath; Text = 'prepared.Card.TryManualPlay(prepared.Target)' },
     @{ Path = $coopLocalAgentPath; Text = 'RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(' },
     @{ Path = $coopHostDeploymentPath; Text = 'awaiting.Expected.Continuation.DescribeFirstDifference(actual.Root.ContinuationStamp)' },
+    @{ Path = $coopNativeTransportPath; Text = '_service.RegisterMessageHandler<CoopBotEnvelopeMessage>(OnMessage)' },
+    @{ Path = $coopNativeTransportPath; Text = '_service.UnregisterMessageHandler<CoopBotEnvelopeMessage>(OnMessage)' },
+    @{ Path = $coopNativeTransportPath; Text = '_service.SendMessage(new CoopBotEnvelopeMessage(envelope), networkPlayerId)' },
+    @{ Path = $coopPeerControllerPath; Text = 'HostResponseReceived?.Invoke(envelope, transportSender)' },
+    @{ Path = $coopPeerControllerPath; Text = 'Session.Fail("message_processing_failed", exception.Message)' },
     @{ Path = (Join-Path $repositoryRoot 'tools/run-unattended-test.ps1'); Text = '[switch]$IncludeCoopBot' },
     @{ Path = (Join-Path $repositoryRoot 'tools/run-unattended-test.sh'); Text = 'add_option include-coop-bot 0 switch none' })) {
     if (-not (Select-String -LiteralPath $check.Path -SimpleMatch $check.Text -Quiet)) {
         $violations.Add("$($check.Path): missing CoopBot C2 boundary '$($check.Text)'")
+    }
+}
+foreach ($hostFile in Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'coopbot/Host') -Filter '*.cs') {
+    if (Select-String -LiteralPath $hostFile.FullName -SimpleMatch 'ActionQueueSynchronizer.RequestEnqueue' -Quiet) {
+        $violations.Add("$($hostFile.FullName): Host must not enqueue an action for a remote owner")
     }
 }
 foreach ($forbiddenNativeMutation in @(

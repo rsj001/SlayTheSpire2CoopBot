@@ -17,7 +17,8 @@ internal sealed record RecordedCombatRoot(
     long RootRevision,
     string Fingerprint,
     CombatRootSnapshot Root,
-    HostVisibilityAuditResult Visibility);
+    HostVisibilityAuditResult Visibility,
+    IReadOnlyList<string> ActorFingerprints);
 
 internal sealed record RecorderEvent(
     long Sequence,
@@ -86,7 +87,16 @@ internal sealed class HostCombatRecorder
                 "Host visibility audit failed: " + string.Join(',', visibility.Failures));
         }
 
-        Current = new RecordedCombatRoot(result.RootRevision, fingerprint, root, visibility);
+        string[] actorFingerprints = _combat.Players
+            .Select(player => Fingerprint(
+                ContinuationStamp.CaptureLiveForPlayer(_combat, player).StateText))
+            .ToArray();
+        Current = new RecordedCombatRoot(
+            result.RootRevision,
+            fingerprint,
+            root,
+            visibility,
+            Array.AsReadOnly(actorFingerprints));
         Record("root_recorded", $"revision={result.RootRevision} fingerprint={fingerprint}");
         RootRecorded?.Invoke(Current);
     }

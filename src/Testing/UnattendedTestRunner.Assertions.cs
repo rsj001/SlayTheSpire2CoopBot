@@ -74,6 +74,12 @@ internal sealed partial class UnattendedTestRunner
                 string evidence = await AssertCoopBotHostLocalActionAsync(scenario.CombatState);
                 runner._completedChecks.Add("CoopBotHostLocalAction:PrepareCommitAck:CardTarget:EndTurn:Strict:" + evidence);
             }
+            if (request.ScenarioId == "COOP-BOT-REMOTE-TRANSPORT")
+            {
+                runner.SetStage("coop_bot_remote_transport");
+                string evidence = AssertCoopBotRemoteTransport(scenario.CombatState);
+                runner._completedChecks.Add("CoopBotRemoteTransport:OwnerRoots:NativeHandler:ThreeRemoteContracts:" + evidence);
+            }
             if (request.ScenarioId == "COOP-MULTIPLAYER-NATIVE-DIFF")
             {
                 runner.SetStage("coop_multiplayer_native_diff");

@@ -65,7 +65,8 @@ internal sealed class LocalActorAgent
             if (command.Action.ActorId != localActorId)
                 return RejectAndReset(CoopActionRejectionCode.NotLocalActor,
                     $"command={command.Action.ActorId} local={localActorId}");
-            string actualFingerprint = Fingerprint(ContinuationStamp.CaptureLive(combat).StateText);
+            string actualFingerprint = Fingerprint(
+                ContinuationStamp.CaptureLiveForPlayer(combat, localPlayer).StateText);
             if (!string.Equals(command.ExpectedRootFingerprint, actualFingerprint, StringComparison.Ordinal))
                 return RejectAndReset(CoopActionRejectionCode.StaleRoot,
                     $"expected={command.ExpectedRootFingerprint} actual={actualFingerprint}");

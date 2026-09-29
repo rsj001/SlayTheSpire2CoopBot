@@ -1951,6 +1951,8 @@ coop_ui_snapshot="$repository_root/coopbot/UI/CoopUiSnapshot.cs"
 coop_ui_renderer="$repository_root/coopbot/UI/CoopBotOverlayRenderer.cs"
 coop_local_agent="$repository_root/coopbot/NativeAdapter/LocalActorAgent.cs"
 coop_host_deployment="$repository_root/coopbot/Host/HostDeploymentCoordinator.cs"
+coop_native_transport="$repository_root/coopbot/Protocol/NativeCoopTransport.cs"
+coop_peer_controller="$repository_root/coopbot/Runtime/CoopPeerController.cs"
 require_fixed "$repository_root/CombatSolver.csproj" '<InternalsVisibleTo Include="CoopBot" />' \
     'CombatSolver missing narrow CoopBot internal bridge:'
 require_fixed "$coopbot_project" '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' \
@@ -1973,6 +1975,11 @@ require_fixed "$coop_ui_renderer" 'internal void Render(CoopUiSnapshot snapshot)
 require_fixed "$coop_local_agent" 'prepared.Card.TryManualPlay(prepared.Target)' 'CoopBot local card entry missing:'
 require_fixed "$coop_local_agent" 'RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(' 'CoopBot local EndTurn entry missing:'
 require_fixed "$coop_host_deployment" 'awaiting.Expected.Continuation.DescribeFirstDifference(actual.Root.ContinuationStamp)' 'CoopBot actual/sim verification missing:'
+require_fixed "$coop_native_transport" '_service.RegisterMessageHandler<CoopBotEnvelopeMessage>(OnMessage)' 'CoopBot native message registration missing:'
+require_fixed "$coop_native_transport" '_service.UnregisterMessageHandler<CoopBotEnvelopeMessage>(OnMessage)' 'CoopBot native message cleanup missing:'
+require_fixed "$coop_native_transport" '_service.SendMessage(new CoopBotEnvelopeMessage(envelope), networkPlayerId)' 'CoopBot targeted Host transport missing:'
+require_fixed "$coop_peer_controller" 'HostResponseReceived?.Invoke(envelope, transportSender)' 'CoopBot Host response routing missing:'
+require_fixed "$coop_peer_controller" 'Session.Fail("message_processing_failed", exception.Message)' 'CoopBot message failure boundary missing:'
 require_fixed "$repository_root/tools/run-unattended-test.ps1" '[switch]$IncludeCoopBot' \
     'Windows unattended launcher missing optional CoopBot snapshot:'
 require_fixed "$repository_root/tools/run-unattended-test.sh" 'add_option include-coop-bot 0 switch none' \
@@ -1987,6 +1994,9 @@ for forbidden in \
     'CardPileCmd.'; do
     forbid_fixed "$coop_recorder" "$forbidden" 'read-only CoopBot recorder mutates live combat:'
 done
+while IFS= read -r -d '' file; do
+    forbid_fixed "$file" 'ActionQueueSynchronizer.RequestEnqueue' 'CoopBot Host must not enqueue an action for a remote owner:'
+done < <(find "$repository_root/coopbot/Host" -maxdepth 1 -type f -name '*.cs' -print0)
 for forbidden in \
     'SetCurrentHpInternal(' \
     '.Energy =' \

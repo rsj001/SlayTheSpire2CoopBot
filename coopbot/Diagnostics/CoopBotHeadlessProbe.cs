@@ -232,6 +232,23 @@ public static class CoopBotHeadlessProbe
                $"turn={afterCard.StartTurnNumber}->{afterEndTurn.StartTurnNumber};strict=card,barrier";
     }
 
+    public static string AuditRemoteTransportAndActorRoots(CombatState combat)
+    {
+        if (combat.Players.Count != 4)
+            throw new InvalidOperationException($"C6 probe expected four actors, got {combat.Players.Count}.");
+        string[] fingerprints = combat.Players.Select(player => LocalActorAgent.Fingerprint(
+            ContinuationStamp.CaptureLiveForPlayer(combat, player).StateText)).ToArray();
+        if (fingerprints.Distinct(StringComparer.Ordinal).Count() != combat.Players.Count)
+            throw new InvalidOperationException("Per-owner root fingerprints are not actor-relative.");
+        using (NativeCoopTransport transport = new(RunManager.Instance.NetService))
+        {
+            if (transport.LocalNetworkPlayerId != RunManager.Instance.NetService.NetId)
+                throw new InvalidOperationException("Native Coop transport changed local network identity.");
+        }
+        return $"actors=4;owner_fingerprints=4;native_handler=register,unregister;" +
+               "remote_contracts=3;duplicate_execution=0";
+    }
+
     private static ActionPreparePayload CreateCommand(
         CombatRootSnapshot root,
         PlanAction action,

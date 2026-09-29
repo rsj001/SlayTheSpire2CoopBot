@@ -118,4 +118,48 @@ Check(stableGate.Observe(choiceBusy).Reason == "choice_transaction_active", "cho
 RootStabilitySample rosterChanged = stableB with { RosterStable = false };
 Check(stableGate.Observe(rosterChanged).Reason == "roster_changed", "roster change blocks root");
 
+var remoteTracker = new HostRemoteActionTracker();
+foreach (ActorBinding remote in assignment.Actors.Where(actor => !actor.IsHost))
+{
+    string actionId = $"remote-{remote.ActorId}";
+    Check(remoteTracker.Begin(actionId, remote.ActorId, remote.NetworkPlayerId).State
+        == RemoteActionState.Preparing, $"remote actor {remote.ActorId} preparing");
+    Check(remoteTracker.Prepared(actionId, remote.NetworkPlayerId).State
+        == RemoteActionState.Prepared, $"remote actor {remote.ActorId} prepared");
+    Check(remoteTracker.Commit(actionId).State
+        == RemoteActionState.Committed, $"remote actor {remote.ActorId} committed");
+    Check(remoteTracker.Acknowledge(actionId, remote.NetworkPlayerId).State
+        == RemoteActionState.Completed, $"remote actor {remote.ActorId} acknowledged");
+}
+bool wrongRemoteOwnerRejected = false;
+remoteTracker.Begin("wrong-owner", actorId: 1, ownerNetworkPlayerId: 202);
+try
+{
+    remoteTracker.Prepared("wrong-owner", senderNetworkPlayerId: 303);
+}
+catch (InvalidOperationException)
+{
+    wrongRemoteOwnerRejected = true;
+}
+Check(wrongRemoteOwnerRejected, "remote prepared sender must own actor");
+Check(remoteTracker.Timeout("wrong-owner", "prepare timeout").State == RemoteActionState.TimedOut,
+    "remote prepare timeout terminal");
+remoteTracker.Begin("remote-reject", actorId: 2, ownerNetworkPlayerId: 303);
+Check(remoteTracker.Reject("remote-reject", 303, "stale root").State == RemoteActionState.Rejected,
+    "remote rejection terminal");
+bool duplicateAckRejected = false;
+remoteTracker.Begin("duplicate-ack", actorId: 3, ownerNetworkPlayerId: 404);
+remoteTracker.Prepared("duplicate-ack", 404);
+remoteTracker.Commit("duplicate-ack");
+remoteTracker.Acknowledge("duplicate-ack", 404);
+try
+{
+    remoteTracker.Acknowledge("duplicate-ack", 404);
+}
+catch (InvalidOperationException)
+{
+    duplicateAckRejected = true;
+}
+Check(duplicateAckRejected, "duplicate remote ack rejected");
+
 Console.WriteLine($"Passed {checks} CoopBot protocol and session contracts.");

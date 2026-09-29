@@ -13,7 +13,7 @@ internal static class HostActionCommandFactory
             throw new InvalidOperationException("Replay action expectation is not aligned with the published route.");
         return new ActionPreparePayload(
             CoopPlanSnapshotFactory.CaptureAction(action, actionIndex),
-            result.RecordedRoot.Fingerprint,
+            result.RecordedRoot.ActorFingerprints[action.Actor.Index],
             expectation.Turn,
             expectation.Phase.ToString(),
             expectation.EnergyCost,
