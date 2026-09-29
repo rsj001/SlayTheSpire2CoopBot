@@ -323,7 +323,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M5：跨玩家 Power 与 Hook 生命周期
 
-> 进度：进行中。15 张范围牌的普通/升级版初始 OnPlay 已全部进入精确 mirror，并以两 Actor 原生/预测全状态差分通过；Coordinate/Fade 使用临时属性族唯一入口，Intercept 建立 Covered/Intercept 双 Power 与 covering 引用，Tank 同步建立存活队友 Guarded，TagTeam/Knockdown 已移除旧 spec 双结算。随后补齐 Covered/Flanking/Guarded/Knockdown/Tank 的分支伤害 mirror、Covered/Guarded 的施加者死亡清扫、Intercept/Covered/Knockdown/Flanking 的回合移除，以及 HammerTime 的 Forge 传播。`COOP-MULTIPLAYER-POWER-LIFECYCLE` / `dfc42d469b7e4682bcb3c2a8a33750ae` 已穿过 15 张牌涉及的临时属性恢复、卡牌出牌/耗竭、伤害、格挡、抽牌、生成、Forge、死亡和敌方侧结束；这是预测分支生命周期合同，不替代后续原生 actual/simulated 生命周期差分。目录继续保持 UnderTest/Exact，尚未转 Verified。
+> 进度：已完成。15 张范围牌的普通/升级版初始 OnPlay 均以两 Actor 原生/预测全状态差分通过；预测生命周期 fixture 穿过全部 15 张牌涉及的临时属性恢复、卡牌出牌/耗竭、伤害、格挡、抽牌、生成、Forge、死亡和敌方侧结束，并沿用 M2 的 Intercept/Cacophony/Fork 防重入隔离合同。新增原生差分再从同根核对 Knockdown 队友倍率、Tank/Guarded 双目标受击、HammerTime Forge 传播以及六类敌方侧移除。最终证据：预测生命周期 `dfc42d469b7e4682bcb3c2a8a33750ae`，原生联合差分 `5d9c977d6bc349be97a28f734a4ab050`；目录已转 Verified/Exact。
 
 目标：补齐由后续出牌、伤害、格挡、抽牌、回合边界触发的多人效果。
 
@@ -542,7 +542,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 | M2 身份与私有状态 | M1 | 已完成 | `COOP-MULTIPLAYER-IDENTITY` / `810a49aa1718477b881656c3cac37a19` |
 | M3 玩家人数缩放/生成 | M1-M2 | 已完成 | `COOP-MULTIPLAYER-SCALING` / `ecb0a35c1357491fb57b252a4f856cae` |
 | M4 直接结算牌 | M2-M3 | 已完成 | `COOP-MULTIPLAYER-NATIVE-DIFF` / `79c9fbed9f974699aa5f82cedafdb24c` |
-| M5 Power/Hook 牌 | M2-M4 | 进行中 | 初始原生差分 `920231b15d1447d09379fed727dbf115`；预测生命周期 `dfc42d469b7e4682bcb3c2a8a33750ae`；尚缺原生生命周期差分 |
+| M5 Power/Hook 牌 | M2-M4 | 已完成 | 初始原生差分 `920231b15d1447d09379fed727dbf115`；预测生命周期 `dfc42d469b7e4682bcb3c2a8a33750ae`；原生生命周期代表 `5d9c977d6bc349be97a28f734a4ab050` |
 | M6 选择/转移/复制牌 | M2、M4-M5 | 未开始 | — |
 | M7 球/宠物/角色资源 | M2、M4-M6 | 未开始 | — |
 | M8 药水/遗物/反广播/第三方 | M2-M7 | 未开始 | — |

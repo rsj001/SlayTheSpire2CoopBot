@@ -1,9 +1,10 @@
 # CombatSolver 测试清单
 
-## 原版多人语义 M5 Power 初始应用（进行中，2026-09-29）
+## 原版多人语义 M5 Power 生命周期（2026-09-29）
 
 - `COOP-MULTIPLAYER-POWER-LIFECYCLE`：两 Actor 预测分支依次验证 Coordinate/Fade 回合末恢复、TagTeam 消费、Midnight 耗竭降费、Sneaky 队友攻击、Covered/Intercept/Knockdown/Flanking/Tank/Guarded 伤害倍率、Beacon 格挡传播、Concoct/Underworld 伤害后置、Cacophony 抽牌、Soulbound 生成、HammerTime Forge、施加者死亡清扫和敌方侧移除。最终 `runId=dfc42d469b7e4682bcb3c2a8a33750ae` Passed，目标阶段 430 ms，实例已删除；该 fixture 是预测生命周期合同，不冒充原生差分。
 - `COOP-MULTIPLAYER-NATIVE-DIFF`：Coordinate、Intercept、TagTeam、BeaconOfHope、Knockdown、Midnight、Tank、Concoct、Fade、Flanking、Sneaky、HammerTime、Soulbound、Underworld、Cacophony 普通/升级版分别从独立两 Actor 原生根执行，并与联合预测逐 Actor 做完整快照差分；最终 `runId=920231b15d1447d09379fed727dbf115` Passed，整个多人差分段 15745 ms，实例已删除。
+- `COOP-MULTIPLAYER-NATIVE-DIFF`：在初始应用差分之外，从同一个已含 Power 的原生根分别推进原版和预测，核对 Knockdown 队友伤害倍率、Tank/Guarded 对两个玩家的受击倍率、HammerTime Forge 向队友传播及 Intercept/Covered/Concoct/Underworld/Knockdown/Flanking 的敌方侧移除；最终 `runId=5d9c977d6bc349be97a28f734a4ab050` Passed，目标多人差分段 18440 ms，实例已删除。
 - 本条只证明初始动作与 Power 图一致；这些牌仍保持 UnderTest，尚未把后续 Hook 触发、消费/移除、跨回合和死亡清扫写成 M5 完成结论。Release 构建 0 警告/0 错误；未启动可见 Steam 或 Linux/WSL。
 
 ## 原版多人语义 M4 直接结算牌（2026-09-29）

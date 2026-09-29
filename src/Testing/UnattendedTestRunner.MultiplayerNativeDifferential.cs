@@ -1,12 +1,14 @@
 using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
@@ -110,7 +112,105 @@ internal sealed partial class UnattendedTestRunner
         }
 
         await AssertMultiplayerDirectCardsAsync(source);
+        await AssertMultiplayerPowerLifecycleNativeDifferentialAsync(source);
         await AssertTheBallExpectedGapAsync(source);
+    }
+
+    private async Task AssertMultiplayerPowerLifecycleNativeDifferentialAsync(CombatState source)
+    {
+        await AssertNativeKnockdownDamageAsync(source);
+        await AssertNativeTankDamageAsync(source);
+        await AssertNativeHammerTimeForgeAsync(source);
+        await AssertNativeMultiplayerPowerRemovalAsync(source);
+    }
+
+    private async Task AssertNativeKnockdownDamageAsync(CombatState source)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(source, actorCount: 2);
+        await PowerCmd.Apply<KnockdownPower>(
+            new ThrowingPlayerChoiceContext(), native.Enemy, 2, native.Players[0].Creature, null);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator predicted = root.ForkSimulator();
+        await CreatureCmd.Damage(
+            new ThrowingPlayerChoiceContext(), native.Enemy, 3, ValueProp.Move, native.Players[1].Creature);
+        predicted.Damage(native.Enemy, 3, ValueProp.Move, native.Players[1].Creature);
+        AssertMultiplayerLifecycleSnapshots(native, root, predicted, "KnockdownDamage");
+    }
+
+    private async Task AssertNativeTankDamageAsync(CombatState source)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(source, actorCount: 2);
+        await PowerCmd.Apply<TankPower>(
+            new ThrowingPlayerChoiceContext(), native.Players[0].Creature, 1,
+            native.Players[0].Creature, null);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator predicted = root.ForkSimulator();
+        await CreatureCmd.Damage(
+            new ThrowingPlayerChoiceContext(), native.Players[0].Creature, 10,
+            ValueProp.Move, native.Enemy);
+        await CreatureCmd.Damage(
+            new ThrowingPlayerChoiceContext(), native.Players[1].Creature, 10,
+            ValueProp.Move, native.Enemy);
+        predicted.Damage(native.Players[0].Creature, 10, ValueProp.Move, native.Enemy);
+        predicted.Damage(native.Players[1].Creature, 10, ValueProp.Move, native.Enemy);
+        AssertMultiplayerLifecycleSnapshots(native, root, predicted, "TankGuardedDamage");
+    }
+
+    private async Task AssertNativeHammerTimeForgeAsync(CombatState source)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(source, actorCount: 2);
+        await PowerCmd.Apply<HammerTimePower>(
+            new ThrowingPlayerChoiceContext(), native.Players[0].Creature, 1,
+            native.Players[0].Creature, null);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator predicted = root.ForkSimulator();
+        await ForgeCmd.Forge(2, native.Players[0], source: null);
+        PersistentPowerSupport.Forge(predicted, native.Players[0], 2);
+        AssertMultiplayerLifecycleSnapshots(native, root, predicted, "HammerTimeForge");
+    }
+
+    private async Task AssertNativeMultiplayerPowerRemovalAsync(CombatState source)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(source, actorCount: 2);
+        Player first = native.Players[0];
+        Player second = native.Players[1];
+        await PowerCmd.Apply<InterceptPower>(new ThrowingPlayerChoiceContext(), first.Creature, 1,
+            second.Creature, null);
+        await PowerCmd.Apply<CoveredPower>(new ThrowingPlayerChoiceContext(), second.Creature, 1,
+            first.Creature, null);
+        await PowerCmd.Apply<ConcoctPower>(new ThrowingPlayerChoiceContext(), first.Creature, 1,
+            first.Creature, null);
+        await PowerCmd.Apply<UnderworldPower>(new ThrowingPlayerChoiceContext(), first.Creature, 1,
+            first.Creature, null);
+        await PowerCmd.Apply<KnockdownPower>(new ThrowingPlayerChoiceContext(), native.Enemy, 2,
+            first.Creature, null);
+        await PowerCmd.Apply<FlankingPower>(new ThrowingPlayerChoiceContext(), native.Enemy, 2,
+            first.Creature, null);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator predicted = root.ForkSimulator();
+        await Hook.AfterSideTurnEnd(native.State, CombatSide.Enemy, [native.Enemy]);
+        SimulatedCombatState predictedCombat = (SimulatedCombatState)predicted.State.CombatState;
+        if (!CorePowerSupport.TriggerEnemySideTurnEndEffects(predicted, predictedCombat, [native.Enemy]))
+            throw new InvalidOperationException("Predicted enemy-side multiplayer removal suspended.");
+        AssertMultiplayerLifecycleSnapshots(native, root, predicted, "EnemySideRemoval");
+    }
+
+    private void AssertMultiplayerLifecycleSnapshots(
+        OfflineJointCombat native,
+        CombatRootSnapshot root,
+        CombatPredictionSimulator predicted,
+        string stage)
+    {
+        SimulatedCombatState predictedCombat = (SimulatedCombatState)predicted.State.CombatState;
+        for (int actorIndex = 0; actorIndex < native.Players.Count; actorIndex++)
+        {
+            AssertSnapshotEqual(
+                CaptureSimulated(predicted, predictedCombat, root.Actors[actorIndex].PlayerIdentity,
+                    native.Enemy, root.PlayerIdentity),
+                CaptureActual(native.State, native.Players[actorIndex], native.Enemy),
+                "MultiplayerPowerLifecycleNative",
+                $"{stage}.Actor{actorIndex}");
+        }
     }
 
     private async Task AssertMultiplayerDirectCardsAsync(CombatState source)
