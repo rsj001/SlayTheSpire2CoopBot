@@ -5,10 +5,20 @@ using CoopBot.NativeAdapter;
 using CombatSolver;
 using CombatSolver.Engine.InCombat.Simulation;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Actions;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.GameActions;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using System.Reflection;
 using System.Text.Json;
@@ -249,6 +259,183 @@ public static class CoopBotHeadlessProbe
                "remote_contracts=3;duplicate_execution=0";
     }
 
+    public static async Task<string> ExecuteChoicesAndPotionsAsync(
+        CombatState liveCombat,
+        CombatState tutorCombat,
+        CombatState potionCombat)
+    {
+        await AssertTutorChoiceAsync(tutorCombat);
+        await AssertCrossPlayerPotionAsync(potionCombat);
+        string localPotion = await ExecuteLocalPotionAgentAsync(liveCombat);
+        return "tutor=decision_actor_strict;cross_player_potion=strict;" + localPotion;
+    }
+
+    private static async Task AssertTutorChoiceAsync(CombatState combat)
+    {
+        if (combat.Players.Count != 4)
+            throw new InvalidOperationException($"C7 Tutor probe expected four actors, got {combat.Players.Count}.");
+        Player owner = combat.Players[0];
+        Player decisionActor = combat.Players[^1];
+        CardModel tutor = combat.CreateCard(ModelDb.Card<Tutor>(), owner);
+        owner.PlayerCombatState!.Hand.AddInternal(tutor, silent: true);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(combat);
+        PlanAction unresolved = new(
+            PlanActionKind.PlayCard,
+            root.StartTurnNumber,
+            CardId: tutor.Id.Entry,
+            TargetCombatId: decisionActor.Creature.CombatId,
+            Actor: new CombatActorId(0));
+        JointPendingChoiceFrame frame;
+        CombatPredictionSimulator probe = root.ForkSimulator();
+        try
+        {
+            _ = JointActionTransition.Apply(
+                probe,
+                JointTurnState.Start(4, root.StartTurnNumber),
+                unresolved,
+                JointActionTransition.CaptureProcessedEnemyDeaths(root, probe));
+            throw new InvalidOperationException("Tutor did not suspend for its target Actor choice.");
+        }
+        catch (JointPendingActionChoiceException pending)
+        {
+            frame = pending.Frame;
+        }
+        if (frame.DecisionActor.Index != 3)
+            throw new InvalidOperationException($"Tutor DecisionActor={frame.DecisionActor.Index}, expected 3.");
+        string selectedCardId = frame.Spec.Options.First().Preview.Id.Entry;
+        PlanCardChoice choice = CardChoiceSupport.BuildRequestedChoice(frame.Spec, [selectedCardId]) with
+        {
+            Actor = frame.DecisionActor,
+            SourceId = frame.SourceId,
+            ContextId = frame.ContextId,
+        };
+        PlanAction planned = unresolved with { Choice = choice };
+        JointReplayResult replay = JointPlanReplayer.Replay(root, new JointPlan(4, [planned]));
+        CoopPlanActionSnapshot snapshot = CoopPlanSnapshotFactory.CaptureAction(planned, 0);
+        using (PlannedChoiceDriver wrongOwner = new())
+        {
+            wrongOwner.ConfigureActors(root.Actors.Select(actor => new ActorBinding(
+                actor.Id.Index,
+                actor.Id.Index == frame.DecisionActor.Index
+                    ? root.Actors[1].PlayerIdentity.NetId
+                    : actor.PlayerIdentity.NetId,
+                actor.PlayerIdentity.Character.Id.Entry,
+                actor.Id.Index == 0)));
+            wrongOwner.Arm("C7-TUTOR-WRONG-OWNER", snapshot);
+            try
+            {
+                _ = await CardSelectCmd.Selector!.GetSelectedCards(
+                    decisionActor.PlayerCombatState!.DrawPile.Cards,
+                    minSelect: 1,
+                    maxSelect: 1);
+                throw new InvalidOperationException("Tutor choice accepted options owned by the wrong network player.");
+            }
+            catch (InvalidOperationException exception) when (
+                exception.Message.Contains("native options belong", StringComparison.Ordinal))
+            {
+            }
+            finally
+            {
+                wrongOwner.Cancel("C7-TUTOR-WRONG-OWNER");
+            }
+        }
+        using PlannedChoiceDriver driver = new();
+        driver.ConfigureActors(root.Actors.Select(actor => new ActorBinding(
+            actor.Id.Index,
+            actor.PlayerIdentity.NetId,
+            actor.PlayerIdentity.Character.Id.Entry,
+            actor.Id.Index == 0)));
+        const string actionId = "C7-TUTOR";
+        driver.Arm(actionId, snapshot);
+        await ExecuteSyntheticNativeCardAsync(tutor, decisionActor.Creature);
+        driver.Complete(actionId);
+        AssertContinuation(
+            replay.ActionSnapshots[0].Continuation,
+            ContinuationStamp.CaptureLive(combat),
+            "Tutor");
+    }
+
+    private static async Task AssertCrossPlayerPotionAsync(CombatState combat)
+    {
+        if (combat.Players.Count != 4)
+            throw new InvalidOperationException($"C7 potion probe expected four actors, got {combat.Players.Count}.");
+        Player owner = combat.Players[0];
+        Player target = combat.Players[^1];
+        PotionModel potion = owner.GetPotionAtSlotIndex(0)
+            ?? throw new InvalidOperationException("C7 cross-player potion fixture has no potion in slot 0.");
+        if (potion is not BlockPotion)
+            throw new InvalidOperationException($"C7 expected BLOCK_POTION, got {potion.Id.Entry}.");
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(combat);
+        PlanAction action = JointActionExpander.Expand(
+                root.ForkSimulator(),
+                JointTurnState.Start(4, root.StartTurnNumber))
+            .Select(candidate => candidate.Action)
+            .Single(candidate => candidate.Actor.Index == 0
+                && candidate.Kind == PlanActionKind.UsePotion
+                && candidate.PotionId == "BLOCK_POTION"
+                && candidate.TargetCombatId == target.Creature.CombatId);
+        JointReplayResult replay = JointPlanReplayer.Replay(root, new JointPlan(4, [action]));
+        UsePotionAction native = new(potion, target.Creature, isCombatInProgress: true);
+        native.OnEnqueued(_ => { }, uint.MaxValue - 7);
+        await native.Execute();
+        await native.CompletionTask;
+        if (native.Exception is not null || native.State != GameActionState.Finished)
+            throw new InvalidOperationException("C7 cross-player native potion action failed.", native.Exception);
+        AssertContinuation(
+            replay.ActionSnapshots[0].Continuation,
+            ContinuationStamp.CaptureLive(combat),
+            "cross-player potion");
+    }
+
+    private static async Task<string> ExecuteLocalPotionAgentAsync(CombatState combat)
+    {
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(combat);
+        PlanAction action = JointActionExpander.Expand(
+                root.ForkSimulator(),
+                JointTurnState.Start(root.Actors.Count, root.StartTurnNumber))
+            .Select(candidate => candidate.Action)
+            .First(candidate => candidate.Actor == root.LocalActorId
+                && candidate.Kind == PlanActionKind.UsePotion
+                && candidate.PotionId == "BLOCK_POTION");
+        JointReplayResult replay = JointPlanReplayer.Replay(
+            root,
+            new JointPlan(root.Actors.Count, [action]));
+        PlannedChoiceDriver choices = new();
+        choices.ConfigureActors(root.Actors.Select(actor => new ActorBinding(
+            actor.Id.Index,
+            actor.PlayerIdentity.NetId,
+            actor.PlayerIdentity.Character.Id.Entry,
+            actor.Id == root.LocalActorId)));
+        LocalActorAgent agent = new(choices);
+        const string actionId = "C7-LOCAL-POTION";
+        LocalPrepareResult prepared = agent.Prepare(
+            actionId,
+            CreateCommand(root, action, replay.ActionExpectations[0], 0),
+            combat,
+            action.Actor.Index,
+            root.Actors[action.Actor.Index].PlayerIdentity);
+        if (!prepared.Accepted)
+            throw new InvalidOperationException($"C7 local potion prepare rejected: {prepared.Rejected}.");
+        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(30));
+        ActionAckPayload ack = await agent.CommitAsync(
+            actionId,
+            new ActionCommitPayload(actionId),
+            combat,
+            timeout.Token);
+        await WaitForStablePlayerRootAsync(
+            combat,
+            root.PlayerIdentity,
+            root.StartTurnNumber,
+            timeout.Token);
+        AssertContinuation(
+            replay.ActionSnapshots[0].Continuation,
+            ContinuationStamp.CaptureLive(combat),
+            "local potion Agent");
+        agent.FinishReport(actionId);
+        choices.Dispose();
+        return $"local_potion_ack={ack.CompletionState};agent={agent.State}";
+    }
+
     private static ActionPreparePayload CreateCommand(
         CombatRootSnapshot root,
         PlanAction action,
@@ -308,6 +495,127 @@ public static class CoopBotHeadlessProbe
             throw new InvalidOperationException(
                 $"C5 {stage} actual/sim differs at {expected.DescribeFirstDifference(actual)}.");
     }
+
+    private static async Task ExecuteSyntheticNativeCardAsync(CardModel card, Creature? target)
+    {
+        NetCombatCardDb.Instance.IdCardForTesting(card);
+        MethodInfo powerVfx = typeof(CardModel).GetMethod(
+            "PlayPowerCardFlyVfx",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(typeof(CardModel).FullName, "PlayPowerCardFlyVfx");
+        MethodInfo addCreature = typeof(CombatManager).GetMethod(
+            nameof(CombatManager.AddCreature),
+            BindingFlags.Instance | BindingFlags.Public,
+            binder: null,
+            types: [typeof(Creature)],
+            modifiers: null)
+            ?? throw new MissingMethodException(typeof(CombatManager).FullName, nameof(CombatManager.AddCreature));
+        MethodInfo addCreatureNode = typeof(NCombatRoom).GetMethod(
+            nameof(NCombatRoom.AddCreature),
+            BindingFlags.Instance | BindingFlags.Public,
+            binder: null,
+            types: [typeof(Creature)],
+            modifiers: null)
+            ?? throw new MissingMethodException(typeof(NCombatRoom).FullName, nameof(NCombatRoom.AddCreature));
+        MethodInfo addOrbSlots = typeof(OrbCmd).GetMethod(
+            nameof(OrbCmd.AddSlots),
+            BindingFlags.Static | BindingFlags.Public,
+            binder: null,
+            types: [typeof(Player), typeof(int)],
+            modifiers: null)
+            ?? throw new MissingMethodException(typeof(OrbCmd).FullName, nameof(OrbCmd.AddSlots));
+        MethodInfo addDuringManualPlay = typeof(CardPileCmd).GetMethod(
+            nameof(CardPileCmd.AddDuringManualCardPlay),
+            BindingFlags.Static | BindingFlags.Public,
+            binder: null,
+            types: [typeof(CardModel)],
+            modifiers: null)
+            ?? throw new MissingMethodException(typeof(CardPileCmd).FullName, nameof(CardPileCmd.AddDuringManualCardPlay));
+        MethodInfo addCard = typeof(CardPileCmd).GetMethod(
+            nameof(CardPileCmd.Add),
+            BindingFlags.Static | BindingFlags.Public,
+            binder: null,
+            types: [typeof(CardModel), typeof(CardPile), typeof(CardPilePosition), typeof(AbstractModel), typeof(bool)],
+            modifiers: null)
+            ?? throw new MissingMethodException(typeof(CardPileCmd).FullName, nameof(CardPileCmd.Add));
+        MethodInfo skipTask = typeof(CoopBotHeadlessProbe).GetMethod(
+            nameof(SkipSyntheticTask), BindingFlags.Static | BindingFlags.NonPublic)!;
+        MethodInfo skipRegistration = typeof(CoopBotHeadlessProbe).GetMethod(
+            nameof(SkipSyntheticCreatureRegistration), BindingFlags.Static | BindingFlags.NonPublic)!;
+        MethodInfo addSlots = typeof(CoopBotHeadlessProbe).GetMethod(
+            nameof(AddSyntheticOrbSlots), BindingFlags.Static | BindingFlags.NonPublic)!;
+        MethodInfo moveToPlay = typeof(CoopBotHeadlessProbe).GetMethod(
+            nameof(MoveSyntheticCardToPlay), BindingFlags.Static | BindingFlags.NonPublic)!;
+        MethodInfo skipVisuals = typeof(CoopBotHeadlessProbe).GetMethod(
+            nameof(SkipSyntheticCardPileVisuals), BindingFlags.Static | BindingFlags.NonPublic)!;
+        Harmony isolation = new("CoopBot.Diagnostics.C7." + Guid.NewGuid().ToString("N"));
+        isolation.Patch(powerVfx, prefix: new HarmonyMethod(skipTask));
+        isolation.Patch(addCreature, prefix: new HarmonyMethod(skipRegistration));
+        isolation.Patch(addCreatureNode, prefix: new HarmonyMethod(skipRegistration));
+        isolation.Patch(addOrbSlots, prefix: new HarmonyMethod(addSlots));
+        isolation.Patch(addDuringManualPlay, prefix: new HarmonyMethod(moveToPlay));
+        isolation.Patch(addCard, prefix: new HarmonyMethod(skipVisuals));
+        try
+        {
+            PlayCardAction native = new(card, target);
+            native.OnEnqueued(_ => { }, uint.MaxValue - 6);
+            await native.Execute();
+            await native.CompletionTask;
+            if (native.Exception is not null || native.State != GameActionState.Finished)
+                throw new InvalidOperationException("C7 synthetic native card action failed.", native.Exception);
+        }
+        finally
+        {
+            isolation.Unpatch(powerVfx, skipTask);
+            isolation.Unpatch(addCreature, skipRegistration);
+            isolation.Unpatch(addCreatureNode, skipRegistration);
+            isolation.Unpatch(addOrbSlots, addSlots);
+            isolation.Unpatch(addDuringManualPlay, moveToPlay);
+            isolation.Unpatch(addCard, skipVisuals);
+        }
+    }
+
+    private static bool SkipSyntheticTask(ref Task __result)
+    {
+        __result = Task.CompletedTask;
+        return false;
+    }
+
+    private static bool SkipSyntheticCreatureRegistration() => false;
+
+    private static bool AddSyntheticOrbSlots(Player player, int amount, ref Task __result)
+    {
+        amount = Math.Min(10 - player.PlayerCombatState!.OrbQueue.Capacity, amount);
+        player.PlayerCombatState.OrbQueue.AddCapacity(amount);
+        __result = Task.CompletedTask;
+        return false;
+    }
+
+    private static bool MoveSyntheticCardToPlay(CardModel card, ref Task __result)
+    {
+        __result = MoveSyntheticCardToPlayAsync(card);
+        return false;
+    }
+
+    private static async Task MoveSyntheticCardToPlayAsync(CardModel card)
+    {
+        ICombatState combat = card.Owner.Creature.CombatState
+            ?? throw new InvalidOperationException("Synthetic card has no combat state.");
+        if (!combat.ContainsCard(card))
+            throw new InvalidOperationException($"Synthetic card {card.Id.Entry} is outside its CombatState.");
+        PileType oldPile = card.Pile?.Type ?? PileType.None;
+        card.RemoveFromCurrentPile();
+        PileType.Play.GetPile(card.Owner).AddInternal(card);
+        await MegaCrit.Sts2.Core.Hooks.Hook.AfterCardChangedPiles(
+            card.Owner.RunState,
+            card.CombatState,
+            card,
+            oldPile,
+            null);
+    }
+
+    private static void SkipSyntheticCardPileVisuals(ref bool skipVisuals)
+        => skipVisuals = true;
 
     private static void AssertPublishedDtoIsDetached(Type type, HashSet<Type> visited)
     {

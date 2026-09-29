@@ -26,6 +26,15 @@ internal sealed partial class UnattendedTestRunner
                 Choice: secondChoice,
                 Actor: second),
         ]).Validate();
+        new JointPlan(2,
+        [
+            new PlanAction(
+                PlanActionKind.PlayCard,
+                1,
+                CardId: "TEST.COOP.TARGET.DECIDES",
+                Choice: secondChoice,
+                Actor: default),
+        ]).Validate();
 
         AssertInvalidJointPlan(
             new JointPlan(2, [new PlanAction(PlanActionKind.EndTurn, 1, Actor: new CombatActorId(2))]),
@@ -36,11 +45,11 @@ internal sealed partial class UnattendedTestRunner
                 new PlanAction(
                     PlanActionKind.PlayCard,
                     1,
-                    CardId: "TEST.COOP.CHOICE.OWNER",
-                    Choice: secondChoice with { Actor = default },
+                    CardId: "TEST.COOP.CHOICE.OUT.OF.RANGE",
+                    Choice: secondChoice with { Actor = new CombatActorId(2) },
                     Actor: second),
             ]),
-            "跨 Actor 选牌归属未被拒绝。");
+            "范围外选择 Actor 未被拒绝。");
     }
 
     private static void AssertInvalidJointPlan(JointPlan plan, string message)

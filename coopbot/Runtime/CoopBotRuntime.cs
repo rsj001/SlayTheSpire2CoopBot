@@ -21,6 +21,7 @@ internal sealed class CoopBotRuntime
     private LocalActorAgent? _localAgent;
     private HostDeploymentCoordinator? _hostDeployment;
     private CoopPeerController? _peer;
+    private PlannedChoiceDriver? _choiceDriver;
 
     internal event Action<CoopUiSnapshot>? UiSnapshotChanged;
     internal event Action? UiCleared;
@@ -33,7 +34,8 @@ internal sealed class CoopBotRuntime
             return;
         string combatIdentity = CombatManager.Instance.CurrentCombatId?.ToString()
             ?? throw new InvalidOperationException("Multiplayer combat has no CombatId.");
-        _localAgent = new LocalActorAgent();
+        _choiceDriver = new PlannedChoiceDriver();
+        _localAgent = new LocalActorAgent(_choiceDriver);
         ulong hostNetworkPlayerId = netService.Type == NetGameType.Host
             ? netService.NetId
             : netService is NetClientGameService client
@@ -45,7 +47,8 @@ internal sealed class CoopBotRuntime
             new NativeCoopTransport(netService),
             combatIdentity,
             hostNetworkPlayerId,
-            _localAgent);
+            _localAgent,
+            _choiceDriver);
         _peer.PlanReceived += OnRemotePlanReceived;
         _peer.SessionFailed += OnSessionFailed;
         if (netService.Type != NetGameType.Host)
@@ -67,7 +70,8 @@ internal sealed class CoopBotRuntime
             _hostRecorder,
             _hostSearch,
             _localAgent,
-            _peer);
+            _peer,
+            _choiceDriver);
     }
 
     internal void Poll()
@@ -94,6 +98,8 @@ internal sealed class CoopBotRuntime
             _peer = null;
         }
         _localAgent = null;
+        _choiceDriver?.Dispose();
+        _choiceDriver = null;
         _hostRecorder?.Dispose(reason);
         _hostRecorder = null;
         UiCleared?.Invoke();

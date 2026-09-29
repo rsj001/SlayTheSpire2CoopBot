@@ -1953,6 +1953,8 @@ coop_local_agent="$repository_root/coopbot/NativeAdapter/LocalActorAgent.cs"
 coop_host_deployment="$repository_root/coopbot/Host/HostDeploymentCoordinator.cs"
 coop_native_transport="$repository_root/coopbot/Protocol/NativeCoopTransport.cs"
 coop_peer_controller="$repository_root/coopbot/Runtime/CoopPeerController.cs"
+coop_planned_choice="$repository_root/coopbot/NativeAdapter/PlannedChoiceDriver.cs"
+coop_observer_barrier="$repository_root/coopbot/Session/HostObserverBarrier.cs"
 require_fixed "$repository_root/CombatSolver.csproj" '<InternalsVisibleTo Include="CoopBot" />' \
     'CombatSolver missing narrow CoopBot internal bridge:'
 require_fixed "$coopbot_project" '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' \
@@ -1974,6 +1976,14 @@ require_fixed "$coop_ui_snapshot" 'internal sealed record CoopUiSnapshot(' 'Coop
 require_fixed "$coop_ui_renderer" 'internal void Render(CoopUiSnapshot snapshot)' 'CoopBot snapshot renderer missing:'
 require_fixed "$coop_local_agent" 'prepared.Card.TryManualPlay(prepared.Target)' 'CoopBot local card entry missing:'
 require_fixed "$coop_local_agent" 'RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(' 'CoopBot local EndTurn entry missing:'
+require_fixed "$coop_local_agent" 'prepared.Potion.EnqueueManualUse(prepared.Target)' 'CoopBot local potion entry missing:'
+require_fixed "$coop_planned_choice" 'CardSelectCmd.UseSelector(_selector)' 'CoopBot planned choice selector entry missing:'
+require_fixed "$coop_planned_choice" 'card.Owner.NetId != expectedOwner' 'CoopBot DecisionActor owner validation missing:'
+require_fixed "$coop_peer_controller" 'CoopMessageKind.ActionObserveCommit' 'CoopBot observer choice arming message missing:'
+require_fixed "$coop_peer_controller" 'CoopMessageKind.ActionObservePrepared' 'CoopBot observer-ready ACK missing:'
+require_fixed "$coop_host_deployment" 'BeginObserverBarrier(' 'CoopBot Host observer-ready barrier missing:'
+require_fixed "$coop_observer_barrier" 'public bool Acknowledge(string actionId, ulong observer)' 'CoopBot observer-ready state contract missing:'
+require_fixed "$coop_probe" 'ExecuteChoicesAndPotionsAsync(' 'CoopBot C7 headless choice/potion probe missing:'
 require_fixed "$coop_host_deployment" 'awaiting.Expected.Continuation.DescribeFirstDifference(actual.Root.ContinuationStamp)' 'CoopBot actual/sim verification missing:'
 require_fixed "$coop_native_transport" '_service.RegisterMessageHandler<CoopBotEnvelopeMessage>(OnMessage)' 'CoopBot native message registration missing:'
 require_fixed "$coop_native_transport" '_service.UnregisterMessageHandler<CoopBotEnvelopeMessage>(OnMessage)' 'CoopBot native message cleanup missing:'
@@ -2006,6 +2016,9 @@ for forbidden in \
     'PowerCmd.' \
     'CardPileCmd.'; do
     forbid_fixed "$coop_local_agent" "$forbidden" 'CoopBot LocalActorAgent bypasses original action entry:'
+done
+for forbidden in NOverlayStack NCombatPileCardSelectScreen NPlayerHand EmitSignal InputEvent 'AddInternal(' 'RemoveInternal('; do
+    forbid_fixed "$coop_planned_choice" "$forbidden" 'CoopBot planned choice driver bypasses original selector boundary:'
 done
 for forbidden in CoopBot.Protocol CombatSolver PlanAction ModelDb CombatState RunManager; do
     forbid_fixed "$coop_ui_renderer" "$forbidden" 'CoopBot renderer bypasses read-only snapshot:'

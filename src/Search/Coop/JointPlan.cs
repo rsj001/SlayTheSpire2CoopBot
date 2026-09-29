@@ -18,11 +18,11 @@ internal sealed record JointPlan(
         foreach (PlanAction action in Actions)
         {
             action.ValidateActor(ActorCount);
-            ValidateChoiceOwner(action, action.Choice);
+            ValidateChoiceActor(action.Choice);
             foreach (PlanCardChoice choice in action.NestedChoices ?? [])
-                ValidateChoiceOwner(action, choice);
+                ValidateChoiceActor(choice);
             foreach (PlanCardChoice choice in action.TurnStartChoices ?? [])
-                choice.ValidateActor(ActorCount);
+                ValidateChoiceActor(choice);
         }
         ValidateTurnBarriers(requireFinalBarrier: false);
     }
@@ -33,15 +33,14 @@ internal sealed record JointPlan(
         ValidateTurnBarriers(requireFinalBarrier: true);
     }
 
-    private static void ValidateChoiceOwner(PlanAction action, PlanCardChoice? choice)
+    private void ValidateChoiceActor(PlanCardChoice? choice)
     {
         if (choice is null)
             return;
-        if (choice.Actor != action.Actor)
-        {
-            throw new InvalidOperationException(
-                $"动作 {action.Kind} 的选牌 Actor {choice.Actor} 与动作 Actor {action.Actor} 不一致。");
-        }
+        // Multiplayer effects such as Tutor deliberately let the targeted ally decide.
+        // The replay layer validates the choice against the concrete pending context;
+        // the detached plan contract only owns roster bounds here.
+        choice.ValidateActor(ActorCount);
     }
 
     private void ValidateTurnBarriers(bool requireFinalBarrier)

@@ -39,9 +39,14 @@ internal sealed class LocalActorAgent
         ActionPreparePayload Command,
         Player Player,
         CardModel? Card,
+        PotionModel? Potion,
         Creature? Target);
 
     private PreparedNativeAction? _prepared;
+    private readonly PlannedChoiceDriver? _choiceDriver;
+
+    internal LocalActorAgent(PlannedChoiceDriver? choiceDriver = null)
+        => _choiceDriver = choiceDriver;
 
     internal LocalActorAgentState State { get; private set; }
     internal bool BlocksRootCapture => State is
@@ -79,16 +84,26 @@ internal sealed class LocalActorAgent
                 return RejectAndReset(CoopActionRejectionCode.NotPlayPhase,
                     $"turn={playerState.TurnNumber}/{command.ExpectedTurn} phase={playerState.Phase}/{command.ExpectedPhase}");
             }
-            if (command.Action.Choice is not null
+            bool hasChoices = command.Action.Choice is not null
                 || command.Action.NestedChoices.Count > 0
-                || command.Action.TurnStartChoices.Count > 0)
+                || command.Action.TurnStartChoices.Count > 0;
+            if (hasChoices && _choiceDriver is null)
             {
                 return RejectAndReset(CoopActionRejectionCode.ChoiceChanged,
-                    "C5 local agent does not accept choice-bearing actions.");
+                    "Choice-bearing action has no planned choice driver.");
             }
 
             CardModel? card = null;
-            Creature? target = ResolveTarget(combat, command.Action.TargetCombatId);
+            PotionModel? potion = null;
+            Creature? target;
+            try
+            {
+                target = ResolveTarget(combat, command.Action.TargetCombatId);
+            }
+            catch (InvalidOperationException exception)
+            {
+                return RejectAndReset(CoopActionRejectionCode.InvalidTarget, exception.Message);
+            }
             switch (command.Action.Kind)
             {
                 case "PlayCard":
@@ -112,6 +127,24 @@ internal sealed class LocalActorAgent
                         return RejectAndReset(CoopActionRejectionCode.CostChanged,
                             $"energy={energyCost}/{command.ExpectedEnergyCost} stars={starCost}/{command.ExpectedStarCost}");
                     break;
+                case "UsePotion":
+                    if ((uint)command.Action.PotionSlot >= (uint)localPlayer.PotionSlots.Count)
+                        return RejectAndReset(CoopActionRejectionCode.MissingInstance,
+                            $"potion slot {command.Action.PotionSlot} is out of range");
+                    potion = localPlayer.GetPotionAtSlotIndex(command.Action.PotionSlot);
+                    if (potion is null
+                        || !string.Equals(potion.Id.Entry, command.Action.PotionId, StringComparison.Ordinal))
+                    {
+                        return RejectAndReset(CoopActionRejectionCode.MissingInstance,
+                            $"potion slot {command.Action.PotionSlot} does not contain {command.Action.PotionId}");
+                    }
+                    if (!potion.IsValidTarget(target))
+                        return RejectAndReset(CoopActionRejectionCode.InvalidTarget,
+                            $"potion={potion.Id.Entry} target={command.Action.TargetCombatId?.ToString() ?? "-"}");
+                    if (command.ExpectedEnergyCost != 0 || command.ExpectedStarCost != 0)
+                        return RejectAndReset(CoopActionRejectionCode.CostChanged,
+                            "Potion has a non-zero expected card cost.");
+                    break;
                 case "EndTurn":
                     if (command.ExpectedEnergyCost != 0 || command.ExpectedStarCost != 0)
                         return RejectAndReset(CoopActionRejectionCode.CostChanged, "EndTurn has a non-zero expected cost.");
@@ -121,19 +154,24 @@ internal sealed class LocalActorAgent
                         $"C5 unsupported action kind {command.Action.Kind}.");
             }
 
-            _prepared = new PreparedNativeAction(actionId, command, localPlayer, card, target);
+            _choiceDriver?.Arm(actionId, command.Action);
+            _prepared = new PreparedNativeAction(actionId, command, localPlayer, card, potion, target);
             State = LocalActorAgentState.Prepared;
             return new LocalPrepareResult(
                 new ActionPreparedPayload(
                     localActorId,
                     command.Action.Kind,
-                    card is null
+                    card is null && potion is null
                         ? $"turn:{command.ExpectedTurn}"
-                        : $"{command.Action.CardStateKey}@{command.Action.CardStateOccurrence}"),
+                        : card is not null
+                            ? $"{command.Action.CardStateKey}@{command.Action.CardStateOccurrence}"
+                            : $"{potion!.Id.Entry}@{command.Action.PotionSlot}"),
                 null);
         }
         catch
         {
+            if (_prepared is not null)
+                _choiceDriver?.Cancel(_prepared.ActionId);
             _prepared = null;
             State = LocalActorAgentState.Idle;
             throw;
@@ -163,14 +201,16 @@ internal sealed class LocalActorAgent
                 throw new InvalidOperationException(
                     $"Native action {native.GetType().Name} did not finish in state {native.State}.",
                     native.Exception);
+            _choiceDriver?.Complete(prepared.ActionId);
             State = LocalActorAgentState.Reporting;
             return new ActionAckPayload(
                 native.GetType().Name,
                 native.State.ToString(),
-                Fingerprint(ContinuationStamp.CaptureLive(combat).StateText));
+                Fingerprint(ContinuationStamp.CaptureLiveForPlayer(combat, prepared.Player).StateText));
         }
         catch
         {
+            _choiceDriver?.Cancel(prepared.ActionId);
             _prepared = null;
             State = LocalActorAgentState.Idle;
             throw;
@@ -187,6 +227,7 @@ internal sealed class LocalActorAgent
                 $"Cannot finish action report {actionId} from state {State}.");
         }
         _prepared = null;
+        _choiceDriver?.Cancel(actionId);
         State = LocalActorAgentState.Idle;
     }
 
@@ -194,6 +235,8 @@ internal sealed class LocalActorAgent
     {
         if (State is LocalActorAgentState.Executing or LocalActorAgentState.WaitingNativeCompletion)
             throw new InvalidOperationException("Cannot cancel an already committed native action.");
+        if (_prepared is not null)
+            _choiceDriver?.Cancel(_prepared.ActionId);
         _prepared = null;
         State = LocalActorAgentState.Idle;
     }
@@ -232,6 +275,9 @@ internal sealed class LocalActorAgent
             {
                 "PlayCard" => action is PlayCardAction play
                     && ReferenceEquals(play.NetCombatCard.ToCardModelOrNull(), prepared.Card),
+                "UsePotion" => action is UsePotionAction usePotion
+                    && usePotion.Player.NetId == prepared.Player.NetId
+                    && usePotion.PotionIndex == (uint)prepared.Command.Action.PotionSlot,
                 "EndTurn" => action is EndPlayerTurnAction
                     && action.OwnerId == prepared.Player.NetId,
                 _ => false,
@@ -248,6 +294,10 @@ internal sealed class LocalActorAgent
                 if (!prepared.Card.TryManualPlay(prepared.Target))
                     throw new InvalidOperationException(
                         $"Prepared card {prepared.Card.Id.Entry} lost playability before enqueue.");
+            }
+            else if (prepared.Potion is not null)
+            {
+                prepared.Potion.EnqueueManualUse(prepared.Target);
             }
             else
             {
@@ -268,6 +318,8 @@ internal sealed class LocalActorAgent
 
     private LocalPrepareResult RejectAndReset(CoopActionRejectionCode code, string detail)
     {
+        if (_prepared is not null)
+            _choiceDriver?.Cancel(_prepared.ActionId);
         _prepared = null;
         State = LocalActorAgentState.Idle;
         return Reject(code, detail);

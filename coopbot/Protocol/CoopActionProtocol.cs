@@ -20,6 +20,12 @@ public sealed record ActionRejectedPayload(
 
 public sealed record ActionCommitPayload(string PreparedActionId);
 
+public sealed record ActionObserveCommitPayload(CoopPlanActionSnapshot Action);
+
+public sealed record ActionObservePreparedPayload(int ObserverActorId);
+
+public sealed record PlanCancelledPayload(string Reason);
+
 public sealed record ActionAckPayload(
     string NativeActionType,
     string CompletionState,

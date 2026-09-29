@@ -705,6 +705,37 @@ internal sealed partial class UnattendedTestRunner
         }
     }
 
+    private static async Task<string> AssertCoopBotChoicePotionAsync(CombatState source)
+    {
+        if (source.Players[0].PotionSlots.All(potion => potion?.Id.Entry != "BLOCK_POTION"))
+            throw new InvalidOperationException("COOP-BOT-CHOICE-POTION requires a live BLOCK_POTION fixture.");
+        CombatState tutor = CreateOfflineJointCombat(source, actorCount: 4).State;
+        CombatState potion = CreateOfflineJointCombat(
+            source,
+            actorCount: 4,
+            localPotion: CanonicalModels.Potion<BlockPotion>()).State;
+        Assembly coopBot = AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault(assembly =>
+                string.Equals(assembly.GetName().Name, "CoopBot", StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("COOP-BOT-CHOICE-POTION requires the CoopBot assembly.");
+        Type probe = coopBot.GetType("CoopBot.Diagnostics.CoopBotHeadlessProbe", throwOnError: true)
+            ?? throw new InvalidOperationException("CoopBot headless probe type is missing.");
+        MethodInfo method = probe.GetMethod(
+                "ExecuteChoicesAndPotionsAsync",
+                BindingFlags.Public | BindingFlags.Static,
+                [typeof(CombatState), typeof(CombatState), typeof(CombatState)])
+            ?? throw new MissingMethodException(probe.FullName, "ExecuteChoicesAndPotionsAsync");
+        try
+        {
+            Task<string> task = method.Invoke(null, [source, tutor, potion]) as Task<string>
+                ?? throw new InvalidOperationException("CoopBot C7 probe returned no task.");
+            return await task;
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            throw new InvalidOperationException("CoopBot C7 choice/potion probe failed.", exception.InnerException);
+        }
+    }
+
     private static void AssertAllActorsDeadTerminal(CombatState source)
     {
         OfflineJointCombat offline = CreateOfflineJointCombat(

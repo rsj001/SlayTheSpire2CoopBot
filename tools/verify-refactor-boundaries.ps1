@@ -2483,6 +2483,8 @@ $coopLocalAgentPath = Join-Path $repositoryRoot 'coopbot/NativeAdapter/LocalActo
 $coopHostDeploymentPath = Join-Path $repositoryRoot 'coopbot/Host/HostDeploymentCoordinator.cs'
 $coopNativeTransportPath = Join-Path $repositoryRoot 'coopbot/Protocol/NativeCoopTransport.cs'
 $coopPeerControllerPath = Join-Path $repositoryRoot 'coopbot/Runtime/CoopPeerController.cs'
+$coopPlannedChoicePath = Join-Path $repositoryRoot 'coopbot/NativeAdapter/PlannedChoiceDriver.cs'
+$coopObserverBarrierPath = Join-Path $repositoryRoot 'coopbot/Session/HostObserverBarrier.cs'
 foreach ($check in @(
     @{ Path = $combatSolverProjectPath; Text = '<InternalsVisibleTo Include="CoopBot" />' },
     @{ Path = $coopBotProjectPath; Text = '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' },
@@ -2500,6 +2502,14 @@ foreach ($check in @(
     @{ Path = $coopUiRendererPath; Text = 'internal void Render(CoopUiSnapshot snapshot)' },
     @{ Path = $coopLocalAgentPath; Text = 'prepared.Card.TryManualPlay(prepared.Target)' },
     @{ Path = $coopLocalAgentPath; Text = 'RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(' },
+    @{ Path = $coopLocalAgentPath; Text = 'prepared.Potion.EnqueueManualUse(prepared.Target)' },
+    @{ Path = $coopPlannedChoicePath; Text = 'CardSelectCmd.UseSelector(_selector)' },
+    @{ Path = $coopPlannedChoicePath; Text = 'card.Owner.NetId != expectedOwner' },
+    @{ Path = $coopPeerControllerPath; Text = 'CoopMessageKind.ActionObserveCommit' },
+    @{ Path = $coopPeerControllerPath; Text = 'CoopMessageKind.ActionObservePrepared' },
+    @{ Path = $coopHostDeploymentPath; Text = 'BeginObserverBarrier(' },
+    @{ Path = $coopObserverBarrierPath; Text = 'public bool Acknowledge(string actionId, ulong observer)' },
+    @{ Path = $coopProbePath; Text = 'ExecuteChoicesAndPotionsAsync(' },
     @{ Path = $coopHostDeploymentPath; Text = 'awaiting.Expected.Continuation.DescribeFirstDifference(actual.Root.ContinuationStamp)' },
     @{ Path = $coopNativeTransportPath; Text = '_service.RegisterMessageHandler<CoopBotEnvelopeMessage>(OnMessage)' },
     @{ Path = $coopNativeTransportPath; Text = '_service.UnregisterMessageHandler<CoopBotEnvelopeMessage>(OnMessage)' },
@@ -2527,6 +2537,18 @@ foreach ($forbiddenNativeMutation in @(
     'CardPileCmd.')) {
     if (Select-String -LiteralPath $coopLocalAgentPath -SimpleMatch $forbiddenNativeMutation -Quiet) {
         $violations.Add("${coopLocalAgentPath}: LocalActorAgent bypasses original action entry via '$forbiddenNativeMutation'")
+    }
+}
+foreach ($forbiddenChoiceBypass in @(
+    'NOverlayStack',
+    'NCombatPileCardSelectScreen',
+    'NPlayerHand',
+    'EmitSignal',
+    'InputEvent',
+    'AddInternal(',
+    'RemoveInternal(')) {
+    if (Select-String -LiteralPath $coopPlannedChoicePath -SimpleMatch $forbiddenChoiceBypass -Quiet) {
+        $violations.Add("${coopPlannedChoicePath}: planned choice driver bypasses original selector boundary via '$forbiddenChoiceBypass'")
     }
 }
 foreach ($forbiddenRendererDependency in @(

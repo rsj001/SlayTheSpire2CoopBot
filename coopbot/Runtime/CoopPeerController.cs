@@ -11,6 +11,7 @@ internal sealed class CoopPeerController : IDisposable
     private readonly CombatState _combat;
     private readonly ICoopTransport _transport;
     private readonly LocalActorAgent _agent;
+    private readonly PlannedChoiceDriver _choiceDriver;
     private readonly ActionIdempotencyLedger _ledger = new();
     private readonly Dictionary<string, (CoopMessageKind Kind, object Payload)> _terminalResponses =
         new(StringComparer.Ordinal);
@@ -22,11 +23,13 @@ internal sealed class CoopPeerController : IDisposable
         ICoopTransport transport,
         string combatSessionId,
         ulong hostNetworkPlayerId,
-        LocalActorAgent agent)
+        LocalActorAgent agent,
+        PlannedChoiceDriver choiceDriver)
     {
         _combat = combat;
         _transport = transport;
         _agent = agent;
+        _choiceDriver = choiceDriver;
         Session = new CoopSession(
             combatSessionId,
             transport.LocalNetworkPlayerId,
@@ -45,6 +48,7 @@ internal sealed class CoopPeerController : IDisposable
         if (!Session.IsHost)
             throw new InvalidOperationException("Only Host may publish ActorAssignment.");
         Session.AcceptAssignment(assignment);
+        _choiceDriver.ConfigureActors(Session.Actors);
         Broadcast(CoopMessageKind.ActorAssignment, rootRevision: 0, assignment);
     }
 
@@ -79,6 +83,44 @@ internal sealed class CoopPeerController : IDisposable
             CoopMessageKind.ActionCommit,
             rootRevision,
             new ActionCommitPayload(actionId),
+            planId,
+            actionId);
+
+    internal IReadOnlyList<ulong> GetRemoteObservers(ulong ownerNetworkPlayerId)
+        => Session.Actors
+            .Where(actor => !actor.IsHost && actor.NetworkPlayerId != ownerNetworkPlayerId)
+            .Select(actor => actor.NetworkPlayerId)
+            .Order()
+            .ToArray();
+
+    internal void SendObserveCommit(
+        IReadOnlyList<ulong> observers,
+        long rootRevision,
+        string planId,
+        string actionId,
+        CoopPlanActionSnapshot action)
+    {
+        foreach (ulong observer in observers)
+        {
+            SendToClient(
+                observer,
+                CoopMessageKind.ActionObserveCommit,
+                rootRevision,
+                new ActionObserveCommitPayload(action),
+                planId,
+                actionId);
+        }
+    }
+
+    internal void PublishPlanCancelled(
+        long rootRevision,
+        string planId,
+        string actionId,
+        string reason)
+        => Broadcast(
+            CoopMessageKind.PlanCancelled,
+            rootRevision,
+            new PlanCancelledPayload(reason),
             planId,
             actionId);
 
@@ -140,6 +182,7 @@ internal sealed class CoopPeerController : IDisposable
         {
             case CoopMessageKind.ActorAssignment:
                 Session.AcceptAssignment(envelope.ReadPayload<ActorAssignmentPayload>());
+                _choiceDriver.ConfigureActors(Session.Actors);
                 break;
             case CoopMessageKind.PlanPublished:
                 RequireActive();
@@ -153,10 +196,29 @@ internal sealed class CoopPeerController : IDisposable
                 RequireActive();
                 _ = HandleCommitAsync(envelope);
                 break;
+            case CoopMessageKind.ActionObserveCommit:
+                RequireActive();
+                string observeActionId = envelope.Header.ActionId
+                    ?? throw new InvalidOperationException("ActionObserveCommit has no ActionId.");
+                _choiceDriver.Arm(
+                    observeActionId,
+                    envelope.ReadPayload<ActionObserveCommitPayload>().Action);
+                ActionObservePreparedPayload observed = new(Session.LocalActor.ActorId);
+                _terminalResponses[observeActionId] = (CoopMessageKind.ActionObservePrepared, observed);
+                SendToHost(
+                    CoopMessageKind.ActionObservePrepared,
+                    envelope.Header.RootRevision,
+                    observed,
+                    envelope.Header.PlanId,
+                    observeActionId);
+                break;
             case CoopMessageKind.PlanCancelled:
                 if (_agent.State is LocalActorAgentState.Idle or LocalActorAgentState.Prepared
                     or LocalActorAgentState.Reporting)
                     _agent.Cancel();
+                _choiceDriver.Dispose();
+                if (envelope.Header.ActionId is string cancelledActionId)
+                    _terminalResponses.Remove(cancelledActionId);
                 break;
             default:
                 SessionFailed?.Invoke($"unexpected_host_message:{envelope.Kind}");
@@ -291,6 +353,9 @@ internal sealed class CoopPeerController : IDisposable
                 break;
             case ActionFailedPayload failed:
                 SendToHost(kind, rootRevision, failed, planId, actionId);
+                break;
+            case ActionObservePreparedPayload observed:
+                SendToHost(kind, rootRevision, observed, planId, actionId);
                 break;
             default:
                 throw new InvalidOperationException($"Unsupported stored response {payload.GetType().FullName}.");

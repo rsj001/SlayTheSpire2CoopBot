@@ -1,5 +1,12 @@
 # CombatSolver 测试清单
 
+## Co-op Bot C7 选择与药水（2026-09-29）
+
+- `COOP-BOT-CHOICE-POTION` / `342e3340a01d459b81a81819db815bfa`：Passed；四 Actor `Tutor`/“指导”由 Actor3 从自己的抽牌堆选择，ActorAssignment 错误 owner 哨兵拒绝；Actor0→Actor3 `BLOCK_POTION` 原版动作与离线预测严格一致；单人 live 根上的 LocalActorAgent 经原版队列使用同药水并收到 `Finished` ACK，回到 Idle。1 CPU / 1536 MiB，实例已删除。
+- `COOP-ACTOR-PLAN-CONTRACT` / `261d37c74dba4537b282a88676e6f96f`：Passed；联合计划允许 roster 内异 Actor 选择，动作/选择 Actor 越界仍稳定拒绝。修正此前 P3 将“归属一致”误写成必须同 Actor 的合同。
+- `CoopBot.ContractChecks`：Passed，累计 62 项；observer-ready 屏障要求两个非 owner peer 均 ACK 后才释放，重复 observer ACK 幂等、未知 observer 稳定拒绝，清理后无 pending peer。
+- CombatSolver 与 CoopBot Release 串行构建 0 warning / 0 error。真实四客户端上的选择广播、远端 DecisionActor 和远端药水尚未执行，因此 C7 实机门禁仍待完成。
+
 ## Co-op Bot C6 远端命令与 transport（2026-09-29）
 
 - `CoopBot.ContractChecks`：Passed，累计 56 项；新增三个远端 Actor 的 Prepare→Prepared→Commit→ACK、错误 owner、拒绝、超时和重复 ACK 终态，重复执行数为 0。
@@ -418,7 +425,7 @@
 - 静态证据：新文档链接、标题结构和 `git diff --check` 通过。
 - 构建证据：初次默认路径构建因缺少 `project.assets.json` 和 Steam 引用失败；随后使用已确认的 `D:\SteamLibrary\steamapps\common\Slay the Spire 2` 与 `mods\RitsuLib` 路径运行 `dotnet build CombatSolver.csproj -c Release -p:Sts2Dir=... -p:Sts2DataDir=... -p:RitsuWorkshopRoot=... -p:RitsuLibDir=...`，Release 构建 0 警告/0 错误，并生成 MemoryCleaner。
 - 动态证据：`COOP-P2-SINGLE-ROOT` 使用 `-VerifyCombatRootSnapshot -StopAfterCombatRootSnapshotAssertion -HeadlessMemoryReservationMiB 1024 -HeadlessCpuReservation 1 -CleanupInstanceOnExit`，结果 `status=Passed`，完成 `CombatRootSnapshot` 检查，实例 `.local/headless-instances/coop-p2-single-root-lowmem` 已删除。首次 4 GiB/2 CPU 请求因主机准入资源约束超时并清理，未进入游戏，不计为战斗失败。
-- P3 源码改动：`PlanAction`、`PlanCardChoice` 增加 `CombatActorId Actor`，现有单人构造默认 `Actor0`；`JointPlan.Validate` 统一校验动作、主选牌、嵌套选牌和回合开始选牌的 Actor 范围与归属一致性。
+- P3 源码改动：`PlanAction`、`PlanCardChoice` 增加 `CombatActorId Actor`，现有单人构造默认 `Actor0`；`JointPlan.Validate` 统一校验动作、主选牌、嵌套选牌和回合开始选牌的 Actor 范围。C7 后续明确允许 Tutor 等由目标 Actor 决策的选择，具体上下文由 transition/严格回放验证。
 - 动态证据：`COOP-ACTOR-PLAN-CONTRACT` 使用 1 CPU / 1 GiB 隔离实例，检查单人默认 Actor0、双 Actor 合法动作、越界 Actor 和跨 Actor 选牌拒绝，结果 `status=Passed`，完成检查 `CoopActorPlan:SingleDefault:ActorOne:OutOfRange:ChoiceOwner`，实例已清理。该场景随后按无人测试默认流程完成并非联合搜索的普通战斗，不能解释为多人行为验证。
 - P4 源码改动：新增 `JointTurnState` 和 `JointActorTurnPhase`，显式建模 Actor 可行动、已结束、死亡以及全员结束回合屏障；`JointPlan.ValidateComplete` 拒绝未完成屏障的跨回合动作。
 - 动态证据：`COOP-JOINT-TURN-BARRIER` 使用 `-VerifyCombatRootSnapshot -StopAfterCombatRootSnapshotAssertion`、1 CPU / 1 GiB 隔离实例，验证 Actor1 先结束、Actor0 后结束、死亡 Actor 不阻塞、未完成屏障不能进入下一回合，结果 `status=Passed`，实例 `.local/headless-instances/coop-p4-barrier-fix-lowmem` 已删除。第一次同场景断言失败是夹具在存活 Actor0 仍为 `Playing` 时提前断言死亡屏障，修正夹具后通过。

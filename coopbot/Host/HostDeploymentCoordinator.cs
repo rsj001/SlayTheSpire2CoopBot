@@ -29,6 +29,9 @@ internal sealed class HostDeploymentCoordinator : IDisposable
     private readonly LocalActorAgent _agent;
     private readonly CoopPeerController _peer;
     private readonly HostRemoteActionTracker _remote = new();
+    private readonly HostObserverBarrier _observers = new();
+    private readonly PlannedChoiceDriver _choiceDriver;
+    private TaskCompletionSource? _observerCompletion;
     private long _remoteDeadlineMilliseconds;
     private HostSearchResult? _remotePlan;
     private AwaitingVerification? _awaiting;
@@ -40,13 +43,15 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         HostCombatRecorder recorder,
         HostSearchCoordinator search,
         LocalActorAgent agent,
-        CoopPeerController peer)
+        CoopPeerController peer,
+        PlannedChoiceDriver choiceDriver)
     {
         _combat = combat;
         _recorder = recorder;
         _search = search;
         _agent = agent;
         _peer = peer;
+        _choiceDriver = choiceDriver;
         _recorder.RootRecorded += OnRootRecorded;
         _peer.HostResponseReceived += OnHostResponseReceived;
     }
@@ -64,6 +69,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
             or RemoteActionState.Rejected or RemoteActionState.Failed or RemoteActionState.TimedOut)
             return;
         _remote.Timeout(current.ActionId, "remote response timeout");
+        CancelChoiceFlow(current.ActionId, _remotePlan, "remote response timeout");
         _remotePlan = null;
         EventPublished?.Invoke(new HostDeploymentEvent(
             "timeout", "-", current.ActionId, "remote response timeout"));
@@ -85,6 +91,8 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         _remoteDeadlineMilliseconds = 0;
         if (_agent.State is LocalActorAgentState.Idle or LocalActorAgentState.Prepared or LocalActorAgentState.Reporting)
             _agent.Cancel();
+        if (_observers.ActionId is string observerActionId)
+            CancelChoiceFlow(observerActionId, _remotePlan, "coordinator disposed");
         _awaiting = null;
     }
 
@@ -129,11 +137,18 @@ internal sealed class HostDeploymentCoordinator : IDisposable
             EventPublished?.Invoke(new HostDeploymentEvent(
                 "prepared", planId, actionId, prepared.Prepared!.NativeInstanceIdentity));
             using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(30));
+            await BeginObserverBarrier(
+                result.RecordedRoot.Root.Actors[action.Actor.Index].PlayerIdentity.NetId,
+                result.RecordedRoot.RootRevision,
+                planId,
+                actionId,
+                command.Action).WaitAsync(timeout.Token);
             ActionAckPayload ack = await _agent.CommitAsync(
                 actionId,
                 new ActionCommitPayload(actionId),
                 _combat,
                 timeout.Token);
+            ClearObserverBarrier(actionId);
             _awaiting = new AwaitingVerification(
                 planId,
                 actionId,
@@ -145,6 +160,8 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         }
         catch (Exception exception)
         {
+            if (actionId != "-")
+                CancelChoiceFlow(actionId, result, exception.Message);
             if (_agent.State is LocalActorAgentState.Prepared or LocalActorAgentState.Reporting)
                 _agent.Cancel();
             EventPublished?.Invoke(new HostDeploymentEvent(
@@ -184,6 +201,11 @@ internal sealed class HostDeploymentCoordinator : IDisposable
 
     private void OnHostResponseReceived(CoopWireEnvelope envelope, ulong senderNetworkPlayerId)
     {
+        if (envelope.Kind == CoopMessageKind.ActionObservePrepared)
+        {
+            HandleObserverPrepared(envelope, senderNetworkPlayerId);
+            return;
+        }
         RemoteActionStatus? current = _remote.Current;
         if (current is null
             || !string.Equals(current.ActionId, envelope.Header.ActionId, StringComparison.Ordinal))
@@ -194,20 +216,24 @@ internal sealed class HostDeploymentCoordinator : IDisposable
             {
                 case CoopMessageKind.ActionPrepared:
                     _remote.Prepared(current.ActionId, senderNetworkPlayerId);
-                    _remote.Commit(current.ActionId);
-                    _peer.SendCommit(
+                    HostSearchResult preparedPlan = _remotePlan
+                        ?? throw new InvalidOperationException("Remote prepare has no retained Host plan.");
+                    CoopPlanActionSnapshot preparedAction =
+                        HostActionCommandFactory.Create(preparedPlan, actionIndex: 0).Action;
+                    _choiceDriver.Arm(current.ActionId, preparedAction);
+                    Task observerBarrier = BeginObserverBarrier(
                         current.OwnerNetworkPlayerId,
                         envelope.Header.RootRevision,
                         envelope.Header.PlanId!,
-                        current.ActionId);
-                    StartRemoteTimeout(current.ActionId);
-                    EventPublished?.Invoke(new HostDeploymentEvent(
-                        "commit_sent", envelope.Header.PlanId!, current.ActionId,
-                        $"owner={current.OwnerNetworkPlayerId}"));
+                        current.ActionId,
+                        preparedAction);
+                    if (observerBarrier.IsCompletedSuccessfully)
+                        CommitPreparedRemote(envelope.Header);
                     break;
                 case CoopMessageKind.ActionAck:
                     _remote.Acknowledge(current.ActionId, senderNetworkPlayerId);
                     CancelRemoteTimeout();
+                    ClearObserverBarrier(current.ActionId);
                     HostSearchResult plan = _remotePlan
                         ?? throw new InvalidOperationException("Remote ACK has no retained Host plan.");
                     _awaiting = new AwaitingVerification(
@@ -223,6 +249,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
                     break;
                 case CoopMessageKind.ActionRejected:
                     CancelRemoteTimeout();
+                    CancelChoiceFlow(current.ActionId, _remotePlan, "owner rejected action");
                     ActionRejectedPayload rejected = envelope.ReadPayload<ActionRejectedPayload>();
                     _remote.Reject(current.ActionId, senderNetworkPlayerId, rejected.Detail);
                     _remotePlan = null;
@@ -232,6 +259,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
                     break;
                 case CoopMessageKind.ActionFailed:
                     CancelRemoteTimeout();
+                    CancelChoiceFlow(current.ActionId, _remotePlan, "owner failed action");
                     ActionFailedPayload failed = envelope.ReadPayload<ActionFailedPayload>();
                     _remote.Fail(current.ActionId, senderNetworkPlayerId, failed.Detail);
                     _remotePlan = null;
@@ -244,6 +272,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         catch (Exception exception)
         {
             CancelRemoteTimeout();
+            CancelChoiceFlow(current.ActionId, _remotePlan, exception.Message);
             _remotePlan = null;
             EventPublished?.Invoke(new HostDeploymentEvent(
                 "failed", envelope.Header.PlanId ?? "-", current.ActionId, exception.Message));
@@ -259,4 +288,93 @@ internal sealed class HostDeploymentCoordinator : IDisposable
     {
         _remoteDeadlineMilliseconds = 0;
     }
+
+    private Task BeginObserverBarrier(
+        ulong ownerNetworkPlayerId,
+        long rootRevision,
+        string planId,
+        string actionId,
+        CoopPlanActionSnapshot action)
+    {
+        if (!HasChoices(action))
+            return Task.CompletedTask;
+        IReadOnlyList<ulong> observers = _peer.GetRemoteObservers(ownerNetworkPlayerId);
+        bool ready = _observers.Begin(actionId, observers);
+        _observerCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (ready)
+            _observerCompletion.TrySetResult();
+        else
+            _peer.SendObserveCommit(observers, rootRevision, planId, actionId, action);
+        return _observerCompletion.Task;
+    }
+
+    private void HandleObserverPrepared(CoopWireEnvelope envelope, ulong senderNetworkPlayerId)
+    {
+        string actionId = envelope.Header.ActionId
+            ?? throw new InvalidOperationException("ActionObservePrepared has no ActionId.");
+        ActionObservePreparedPayload payload = envelope.ReadPayload<ActionObservePreparedPayload>();
+        ActorBinding sender = _peer.Session.Actors.Single(actor => actor.NetworkPlayerId == senderNetworkPlayerId);
+        if (sender.ActorId != payload.ObserverActorId)
+            throw new InvalidOperationException(
+                $"Observer {senderNetworkPlayerId} claimed Actor {payload.ObserverActorId}, expected {sender.ActorId}.");
+        if (!_observers.Acknowledge(actionId, senderNetworkPlayerId))
+            return;
+        _observerCompletion?.TrySetResult();
+        RemoteActionStatus? current = _remote.Current;
+        if (current is not null
+            && current.State == RemoteActionState.Prepared
+            && string.Equals(current.ActionId, actionId, StringComparison.Ordinal))
+        {
+            CommitPreparedRemote(envelope.Header);
+        }
+    }
+
+    private void CommitPreparedRemote(CoopMessageHeader header)
+    {
+        RemoteActionStatus current = _remote.Current
+            ?? throw new InvalidOperationException("Observer barrier completed without a remote action.");
+        _remote.Commit(current.ActionId);
+        _peer.SendCommit(
+            current.OwnerNetworkPlayerId,
+            header.RootRevision,
+            header.PlanId!,
+            current.ActionId);
+        StartRemoteTimeout(current.ActionId);
+        EventPublished?.Invoke(new HostDeploymentEvent(
+            "commit_sent", header.PlanId!, current.ActionId,
+            $"owner={current.OwnerNetworkPlayerId}"));
+    }
+
+    private void ClearObserverBarrier(string actionId)
+    {
+        if (!string.Equals(_observers.ActionId, actionId, StringComparison.Ordinal))
+            return;
+        _observers.Clear(actionId);
+        _observerCompletion = null;
+    }
+
+    private void CancelChoiceFlow(string actionId, HostSearchResult? plan, string reason)
+    {
+        bool hadBarrier = string.Equals(_observers.ActionId, actionId, StringComparison.Ordinal);
+        _choiceDriver.Cancel(actionId);
+        if (hadBarrier)
+        {
+            _observerCompletion?.TrySetCanceled();
+            _observers.Clear(actionId);
+            _observerCompletion = null;
+        }
+        if (plan is not null && (hadBarrier || HasChoices(HostActionCommandFactory.Create(plan, 0).Action)))
+        {
+            _peer.PublishPlanCancelled(
+                plan.RecordedRoot.RootRevision,
+                plan.Published.PlanId,
+                actionId,
+                reason);
+        }
+    }
+
+    private static bool HasChoices(CoopPlanActionSnapshot action)
+        => action.Choice is not null
+            || action.NestedChoices.Count > 0
+            || action.TurnStartChoices.Count > 0;
 }

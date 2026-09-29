@@ -162,4 +162,22 @@ catch (InvalidOperationException)
 }
 Check(duplicateAckRejected, "duplicate remote ack rejected");
 
+var observerBarrier = new HostObserverBarrier();
+Check(!observerBarrier.Begin("choice-action", [303, 404]), "choice observers create pending barrier");
+Check(!observerBarrier.Acknowledge("choice-action", 303), "first choice observer does not release barrier");
+Check(observerBarrier.Acknowledge("choice-action", 404), "all choice observers release barrier");
+Check(observerBarrier.Acknowledge("choice-action", 404), "duplicate choice observer ACK is idempotent");
+bool unknownObserverRejected = false;
+try
+{
+    observerBarrier.Acknowledge("choice-action", 202);
+}
+catch (InvalidOperationException)
+{
+    unknownObserverRejected = true;
+}
+Check(unknownObserverRejected, "unknown choice observer rejected");
+observerBarrier.Clear("choice-action");
+Check(observerBarrier.ActionId is null && observerBarrier.Pending.Count == 0, "choice observer barrier clears");
+
 Console.WriteLine($"Passed {checks} CoopBot protocol and session contracts.");

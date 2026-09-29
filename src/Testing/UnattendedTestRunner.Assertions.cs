@@ -22,7 +22,7 @@ internal sealed partial class UnattendedTestRunner
             {
                 runner.SetStage("coop_actor_plan_contract");
                 AssertCoopActorPlanContract();
-                runner._completedChecks.Add("CoopActorPlan:SingleDefault:ActorOne:OutOfRange:ChoiceOwner");
+                runner._completedChecks.Add("CoopActorPlan:SingleDefault:ActorOne:OutOfRange:CrossActorChoice:ChoiceOutOfRange");
             }
             if (request.ScenarioId == "COOP-JOINT-TURN-BARRIER")
             {
@@ -79,6 +79,13 @@ internal sealed partial class UnattendedTestRunner
                 runner.SetStage("coop_bot_remote_transport");
                 string evidence = AssertCoopBotRemoteTransport(scenario.CombatState);
                 runner._completedChecks.Add("CoopBotRemoteTransport:OwnerRoots:NativeHandler:ThreeRemoteContracts:" + evidence);
+            }
+            if (request.ScenarioId == "COOP-BOT-CHOICE-POTION")
+            {
+                runner.SetStage("coop_bot_choice_potion");
+                string evidence = await AssertCoopBotChoicePotionAsync(scenario.CombatState);
+                runner._completedChecks.Add(
+                    "CoopBotChoicePotion:TutorDecisionActor:CrossPlayerPotion:LocalNativeAgent:" + evidence);
             }
             if (request.ScenarioId == "COOP-MULTIPLAYER-NATIVE-DIFF")
             {

@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## Co-op Bot C7 选择与药水（开发中，2026-09-29）
+
+LocalActorAgent 现支持按槽位/ID/目标校验药水并调用原版 `EnqueueManualUse`。选择动作不模拟 UI 点击：Host 在 owner Prepared 后先向其余 peer 发布只读 `ActionObserveCommit`，各端以原版生产 `CardSelectCmd.UseSelector` 装载同一主选择、嵌套选择和跨回合选择序列；选择器按卡牌 ID、升级、状态键和 occurrence 精确匹配，并用 ActorAssignment 校验 DecisionActor 对应的网络 owner。各 observer 回送 `ActionObservePrepared`，Host 收齐屏障后才 Commit owner，避免远端原版动作先于慢 Client 的 selector；同序重发会重发缓存 ACK，重复 observer ACK 幂等，未知 observer 稳定拒绝。取消、拒绝、失败和超时广播 PlanCancelled 并解除尚未消费的选择 scope。纯协议/会话合同累计 62 项，新增两 observer 屏障、重复 ACK 幂等、未知 observer 拒绝和清理。
+
+修复了离线联合计划仍强制“选择 Actor=动作 Actor”的单人遗留合同；现在 detached plan 只校验选择 Actor 位于 roster，Tutor 等具体异 Actor 上下文由联合 transition/严格回放验证。`COOP-ACTOR-PLAN-CONTRACT` / `261d37c74dba4537b282a88676e6f96f` Passed，证明 roster 内异 Actor 合法且越界选择继续拒绝。`COOP-BOT-CHOICE-POTION` / `342e3340a01d459b81a81819db815bfa` Passed：四 Actor Tutor 由 Actor3 从自己的抽牌堆选择、错误 owner 哨兵稳定拒绝，Actor0 对 Actor3 使用 Block Potion，并由本地 Agent 经原版队列完成药水 ACK；三段均与动作 predicted continuation 严格一致，实例已删除。真实四客户端选择同步与远端药水仍保留为实机 C7 门禁。
+
 ## Co-op Bot C6 远端命令与原版 transport（开发中，2026-09-29）
 
 独立 Mod 现按战斗注册单一原版 `INetMessage` envelope。Host 从稳定 roster 广播 ActorAssignment 和只读计划，并把 Prepare/Commit 仅定向发送给动作 owner；Client 以原版 transport sender、每 peer 严格序号、会话/版本、Actor 绑定和 ActionId ledger 校验后，调用与 Host 相同的 LocalActorAgent，再向 Host 返回 Prepared/Rejected/ACK/Failed。重复 Commit 不重复执行，只重发缓存终态；Host 逐 owner 校验响应并在 10 秒 deadline 后稳定超时。Host 目录不含原版 `RequestEnqueue`，远端入队只发生在 owner Client。

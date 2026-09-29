@@ -28,6 +28,8 @@ public enum CoopMessageKind
     PlanCancelled = 12,
     AutomationModeChanged = 13,
     Heartbeat = 14,
+    ActionObserveCommit = 15,
+    ActionObservePrepared = 16,
 }
 
 public readonly record struct CoopMessageHeader(
