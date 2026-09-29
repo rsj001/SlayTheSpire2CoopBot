@@ -22,8 +22,8 @@
 | 每 Actor HP、格挡、能量、Stars、金币 | `Search/SimulatedCombatState.cs` | `JointCombatSnapshot.cs`、Actor continuation | 已迁移 | 2/4 Actor 远端格挡/能量/Stars/金币扰动与 Fork 隔离 |
 | 每 Actor 五个牌堆与卡牌实例状态 | `Search/SimulatedCombatState*.cs` | `ContinuationStamp`、`JointCombatSnapshot` | 已迁移 | 五牌堆进入 Actor continuation；远端升级实例扰动通过 |
 | 每 Actor Power、遗物、药水、球、宠物、角色资源 | `Search/SimulatedCombatState*.cs`、`Prediction/*` | F5a-F5d 已覆盖根元数据、动态机制、五角色代表与真实召唤所有权；F4c2d 补齐逐 Actor 药水奖励展望 | 已迁移 | Power/遗物/药水元数据/Orb/Stars/Shiv/Osty 与 Fork/兄弟隔离均通过 |
-| 敌人 roster、AI、行动和隐藏状态 | `Prediction/Monster*`、`SimulatedCombatState*.cs` | 复用模拟器；完整 continuation 保存 roster、行动、AI 与隐藏状态 | 待迁移 | 已有特殊行动/RNG 代表；仍需跨回合完整路线逐步 strict diff |
-| 九条战斗 RNG、Hook 历史和战斗历史 | `Engine/InCombat/Simulation/*`、`PredictionStateStore` | 九条 RNG 与逐 Actor 历史已进入完整 continuation | 待迁移 | 已有 Niche 单次消费；仍需兄弟 Fork 与跨回合完整路线逐步 strict diff |
+| 敌人 roster、AI、行动和隐藏状态 | `Prediction/Monster*`、`SimulatedCombatState*.cs` | 复用模拟器；完整 continuation 保存 roster、行动、AI 与隐藏状态 | 已迁移 | 2/4 Actor 跨轮搜索/根级回放在每动作与屏障 checkpoint 逐点同 continuation/状态键 |
+| 九条战斗 RNG、Hook 历史和战斗历史 | `Engine/InCombat/Simulation/*`、`PredictionStateStore` | 九条 RNG 与逐 Actor 历史已进入完整 continuation | 已迁移 | Niche 单次消费、兄弟 Fork 隔离和 2/4 Actor 跨轮逐点 strict replay 通过 |
 | 续用戳 | `Runtime/ContinuationStamp.cs` | Actor 分段字段 | 已迁移 | 单人文本兼容；2/4 Actor 代表字段扰动通过，机制字段由 F4/F5继续验证 |
 | 完整状态键 | `CombatBeamSolver.StateEvaluation.cs` | 联合屏障 + 完整 continuation 文本 | 已迁移 | Actor 代表字段及屏障扰动改变键；机制专项由 F4-F7补证据 |
 
@@ -66,8 +66,8 @@
 | BFS/DFS 有限 oracle | 无生产对应 | `JointOfflineSearch` | 已迁移 | 2 Actor 同值/同动作/同键 |
 | 生产规模 Beam/BFWS、Pareto、保路、多样性 | `CombatBeamSolver.*` | 有界联合 Beam/BFWS、共享预算/转置、Actor/药水/Pareto 保路与固定 lane | 已迁移 | 2 Actor 两动作、4 Actor 一动作 oracle 及串并行等价通过 |
 | 串行/固定 lane 并行、预算、取消 | `AdmittedJobScheduler`、`SearchBudgetLedger` | F9 已实现联合固定 lane、共享预算和取消边界 | 已迁移 | DOP1/DOP4 同动作/同键/同展开数，预算与预取消通过 |
-| 内存压力与快照所有权 | `AdmittedJobScheduler`、`SearchMemoryPressureSignal` | 联合搜索使用有界 frontier/OPEN 和共享状态预算；固定工作量已记录 | 待迁移 | 仍需取消/异常后的快照可回收证据和可解释停止原因 |
-| 严格回放 | `ReplayAction`、无人测试差分 | 同根一步搜索终态与重放终态、首差异诊断已通过 | 待迁移 | 仍需 2/4 Actor 跨回合完整路线逐动作/屏障对照 |
+| 内存压力与快照所有权 | `AdmittedJobScheduler`、`SearchMemoryPressureSignal` | 联合搜索使用有界 frontier/OPEN 和共享状态预算；测试观察器不持有节点 | 已迁移 | 固定工作量、停止原因，以及完成/取消/注入异常后三类子模拟器弱引用全部释放 |
+| 严格回放 | `ReplayAction`、无人测试差分 | 搜索节点与根级回放分别产生逐动作/屏障 checkpoint | 已迁移 | 2/4 Actor 先完整跨过敌方轮再终局，全部 checkpoint 与终态严格一致 |
 
 ## F0 冻结基线
 

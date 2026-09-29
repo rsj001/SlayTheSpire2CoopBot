@@ -10,6 +10,7 @@ internal sealed record JointOfflineSearchResult(
     int ExpandedStates)
 {
     internal JointSearchTermination Termination { get; init; } = JointSearchTermination.Completed;
+    internal IReadOnlyList<JointStrictCheckpoint> Checkpoints { get; init; } = [];
 }
 
 internal enum JointSearchTermination
@@ -37,7 +38,8 @@ internal static partial class JointOfflineSearch
         CombatPredictionSimulator Simulator,
         ForkableSet<uint> ProcessedEnemyDeaths,
         JointTurnState Turns,
-        IReadOnlyList<PlanAction> Actions);
+        IReadOnlyList<PlanAction> Actions,
+        IReadOnlyList<JointStrictCheckpoint> Checkpoints);
 
     internal static JointOfflineSearchResult SolveSmartBeam(
         CombatRootSnapshot root,
@@ -85,13 +87,13 @@ internal static partial class JointOfflineSearch
             if (IsBoundary(node, request.MaximumActions))
             {
                 if (request.EffectivePotionPolicy.IsBoundaryEligible(node.Actions))
-                    best = SelectBetter(root, best, snapshot, node.Actions, expanded);
+                    best = SelectBetter(root, best, snapshot, node.Actions, expanded, node.Checkpoints);
                 continue;
             }
 
             if (node.Turns.IsBarrierReached)
             {
-                foreach (Node advanced in ExpandBarrier(node))
+                foreach (Node advanced in ExpandBarrier(root, node))
                     open.Enqueue(advanced);
                 continue;
             }
@@ -101,10 +103,18 @@ internal static partial class JointOfflineSearch
                 if (!request.EffectivePotionPolicy.Allows(candidate.Action, node.Actions))
                     continue;
                 CombatPredictionSimulator child = node.Simulator.Fork();
+                JointSearchLifetimeDiagnostics.Observe(child);
                 ForkableSet<uint> deaths = node.ProcessedEnemyDeaths.Fork();
                 JointTurnState turns = JointActionTransition.Apply(
                     child, node.Turns, candidate.Action, deaths);
-                open.Enqueue(new Node(child, deaths, turns, [.. node.Actions, candidate.Action]));
+                PlanAction[] actions = [.. node.Actions, candidate.Action];
+                JointCombatSnapshot childSnapshot = JointCombatSnapshot.Capture(root, child, turns);
+                open.Enqueue(new Node(
+                    child,
+                    deaths,
+                    turns,
+                    actions,
+                    AppendCheckpoint(node.Checkpoints, childSnapshot, actions.Length, "action")));
             }
         }
         return best ?? throw new InvalidOperationException("联合 BFS 没有到达终局或回合屏障。");
@@ -164,12 +174,12 @@ internal static partial class JointOfflineSearch
                 if (IsBoundary(node, request.MaximumActions))
                 {
                     if (request.EffectivePotionPolicy.IsBoundaryEligible(node.Actions))
-                        best = SelectBetter(root, best, snapshot, node.Actions, expanded);
+                        best = SelectBetter(root, best, snapshot, node.Actions, expanded, node.Checkpoints);
                     continue;
                 }
                 if (node.Turns.IsBarrierReached)
                 {
-                    expandable.AddRange(ExpandBarrier(node));
+                    expandable.AddRange(ExpandBarrier(root, node));
                     continue;
                 }
                 expandable.Add(node);
@@ -225,6 +235,7 @@ internal static partial class JointOfflineSearch
                     if (!request.EffectivePotionPolicy.Allows(candidate.Action, node.Actions))
                         continue;
                     CombatPredictionSimulator child = node.Simulator.Fork();
+                    JointSearchLifetimeDiagnostics.Observe(child);
                     ForkableSet<uint> deaths = node.ProcessedEnemyDeaths.Fork();
                     JointTurnState turns = JointActionTransition.Apply(
                         child,
@@ -232,8 +243,13 @@ internal static partial class JointOfflineSearch
                         candidate.Action,
                         deaths);
                     PlanAction[] actions = [.. node.Actions, candidate.Action];
-                    Node childNode = new(child, deaths, turns, actions);
                     JointCombatSnapshot childSnapshot = JointCombatSnapshot.Capture(root, child, turns);
+                    Node childNode = new(
+                        child,
+                        deaths,
+                        turns,
+                        actions,
+                        AppendCheckpoint(node.Checkpoints, childSnapshot, actions.Length, "action"));
                     children.Add((
                         childNode,
                         childSnapshot,
@@ -248,7 +264,7 @@ internal static partial class JointOfflineSearch
             {
                 JointCombatSnapshot snapshot = JointCombatSnapshot.Capture(root, node.Simulator, node.Turns);
                 if (request.EffectivePotionPolicy.IsBoundaryEligible(node.Actions))
-                    best = SelectBetter(root, best, snapshot, node.Actions, expanded);
+                    best = SelectBetter(root, best, snapshot, node.Actions, expanded, node.Checkpoints);
             }
         }
         return (best ?? throw new JointPotionPolicyUnsatisfiedException(
@@ -291,7 +307,7 @@ internal static partial class JointOfflineSearch
         {
             if (++expanded > request.MaximumStates)
                 throw new InvalidOperationException($"联合 DFS oracle 超过状态上限 {request.MaximumStates}。");
-            Node node = new(simulator, processedEnemyDeaths, turns, actions);
+            Node node = new(simulator, processedEnemyDeaths, turns, actions, []);
             if (IsBoundary(node, request.MaximumActions))
             {
                 JointCombatSnapshot snapshot = JointCombatSnapshot.Capture(root, simulator, turns);
@@ -301,7 +317,7 @@ internal static partial class JointOfflineSearch
             }
             if (turns.IsBarrierReached)
             {
-                foreach (Node advanced in ExpandBarrier(node))
+                foreach (Node advanced in ExpandBarrier(root, node))
                 {
                     Visit(
                         advanced.Simulator,
@@ -316,6 +332,7 @@ internal static partial class JointOfflineSearch
                 if (!request.EffectivePotionPolicy.Allows(candidate.Action, actions))
                     continue;
                 CombatPredictionSimulator child = simulator.Fork();
+                JointSearchLifetimeDiagnostics.Observe(child);
                 ForkableSet<uint> deaths = processedEnemyDeaths.Fork();
                 JointTurnState childTurns = JointActionTransition.Apply(
                     child, turns, candidate.Action, deaths);
@@ -332,6 +349,7 @@ internal static partial class JointOfflineSearch
         ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
         JointTurnState turns = JointTurnState.Start(root.Actors.Count, root.StartTurnNumber);
         List<PlanAction> applied = [];
+        List<JointStrictCheckpoint> checkpoints = [];
         foreach (PlanAction action in request.FixedPrefix)
         {
             if (action.Turn != turns.Turn)
@@ -366,20 +384,30 @@ internal static partial class JointOfflineSearch
                     deaths,
                     turnStartChoices,
                     extraTurnActors);
+                JointCombatSnapshot barrierSnapshot = JointCombatSnapshot.Capture(root, simulator, turns);
+                checkpoints.Add(JointStrictCheckpoint.Capture(
+                    barrierSnapshot,
+                    applied.Count,
+                    "barrier"));
             }
             if (!request.EffectivePotionPolicy.Allows(action, applied))
                 throw new InvalidOperationException($"联合固定前缀违反药水政策：{action}。");
             turns = JointActionTransition.Apply(simulator, turns, action, deaths);
             applied.Add(action);
+            JointCombatSnapshot actionSnapshot = JointCombatSnapshot.Capture(root, simulator, turns);
+            checkpoints.Add(JointStrictCheckpoint.Capture(
+                actionSnapshot,
+                applied.Count,
+                "action"));
         }
-        return new Node(simulator, deaths, turns, applied.ToArray());
+        return new Node(simulator, deaths, turns, applied.ToArray(), checkpoints.AsReadOnly());
     }
 
     private static bool IsBoundary(Node node, int maximumActions)
         => node.Simulator.TerminalStamp.HasValue
             || node.Actions.Count >= maximumActions;
 
-    private static IReadOnlyList<Node> ExpandBarrier(Node parent)
+    private static IReadOnlyList<Node> ExpandBarrier(CombatRootSnapshot parentRoot, Node parent)
     {
         int carrierIndex = -1;
         for (int index = parent.Actions.Count - 1; index >= 0; index--)
@@ -402,6 +430,7 @@ internal static partial class JointOfflineSearch
         while (open.TryDequeue(out var item))
         {
             CombatPredictionSimulator simulator = parent.Simulator.Fork();
+            JointSearchLifetimeDiagnostics.Observe(simulator);
             ForkableSet<uint> deaths = parent.ProcessedEnemyDeaths.Fork();
             PlanAction carrier = item.Actions[carrierIndex];
             IReadOnlyList<PlanCardChoice> transitionChoices = carrier.TurnStartChoices ?? [];
@@ -415,14 +444,32 @@ internal static partial class JointOfflineSearch
                         choice.Timing == PlanChoiceTiming.PlayerTurnEnd).ToArray());
                 if (simulator.TerminalStamp.HasValue)
                 {
-                    results.Add(new Node(simulator, deaths, parent.Turns, item.Actions));
+                    JointCombatSnapshot terminalSnapshot = JointCombatSnapshot.Capture(
+                        parentRoot,
+                        simulator,
+                        parent.Turns);
+                    results.Add(new Node(
+                        simulator,
+                        deaths,
+                        parent.Turns,
+                        item.Actions,
+                        AppendCheckpoint(parent.Checkpoints, terminalSnapshot, item.Actions.Count, "barrier")));
                     continue;
                 }
                 if (extraTurnActors.Count == 0)
                     JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
                 if (simulator.TerminalStamp.HasValue)
                 {
-                    results.Add(new Node(simulator, deaths, parent.Turns, item.Actions));
+                    JointCombatSnapshot terminalSnapshot = JointCombatSnapshot.Capture(
+                        parentRoot,
+                        simulator,
+                        parent.Turns);
+                    results.Add(new Node(
+                        simulator,
+                        deaths,
+                        parent.Turns,
+                        item.Actions,
+                        AppendCheckpoint(parent.Checkpoints, terminalSnapshot, item.Actions.Count, "barrier")));
                     continue;
                 }
                 JointTurnState next = JointRoundTransition.StartBasicPlayerSide(
@@ -432,7 +479,13 @@ internal static partial class JointOfflineSearch
                     transitionChoices.Where(static choice =>
                         choice.Timing != PlanChoiceTiming.PlayerTurnEnd).ToArray(),
                     extraTurnActors);
-                results.Add(new Node(simulator, deaths, next, item.Actions));
+                JointCombatSnapshot barrierSnapshot = JointCombatSnapshot.Capture(parentRoot, simulator, next);
+                results.Add(new Node(
+                    simulator,
+                    deaths,
+                    next,
+                    item.Actions,
+                    AppendCheckpoint(parent.Checkpoints, barrierSnapshot, item.Actions.Count, "barrier")));
             }
             catch (JointPendingActionChoiceException pending)
             {
@@ -471,10 +524,14 @@ internal static partial class JointOfflineSearch
         JointOfflineSearchResult? best,
         JointCombatSnapshot snapshot,
         IReadOnlyList<PlanAction> actions,
-        int expanded)
+        int expanded,
+        IReadOnlyList<JointStrictCheckpoint>? checkpoints = null)
     {
         JointObjectiveScore score = JointObjective.Capture(root, snapshot, actions);
-        JointOfflineSearchResult candidate = new(snapshot, score, actions.ToArray(), expanded);
+        JointOfflineSearchResult candidate = new(snapshot, score, actions.ToArray(), expanded)
+        {
+            Checkpoints = checkpoints ?? [],
+        };
         if (best is null)
             return candidate;
         int comparison = JointObjectiveScore.Compare(candidate.Score, best.Score);
@@ -482,6 +539,14 @@ internal static partial class JointOfflineSearch
             return candidate;
         return best;
     }
+
+    private static IReadOnlyList<JointStrictCheckpoint> AppendCheckpoint(
+        IReadOnlyList<JointStrictCheckpoint> checkpoints,
+        JointCombatSnapshot snapshot,
+        int appliedActionCount,
+        string stage)
+        => Array.AsReadOnly(
+            [.. checkpoints, JointStrictCheckpoint.Capture(snapshot, appliedActionCount, stage)]);
 
     private static JointOfflineSearchResult SolveSmartCounterfactual(
         CombatRootSnapshot root,

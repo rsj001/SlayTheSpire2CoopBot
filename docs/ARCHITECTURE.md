@@ -273,7 +273,9 @@ F4c1 的 `JointPotionSearchPolicy` 以 Actor、槽位和药水 ID 作为指令�
 
 联合额外回合在玩家屏障处先按每个存活 Actor 调用既有 `TryPrepareExtraPlayerTurn`，再完成当前参与者的回合尾。若子集非空，则跳过整个敌方侧、消费各自来源，并用 `JointTurnState.AdvanceExtraTurn` 只把该子集恢复为 Playing；其他存活 Actor 保持 Ended。额外回合只增加参与 Actor 的 TurnNumber，不增加共享 RoundNumber，下一玩家侧 Hook 只接收该子集并标记 `isExtraTurn`。
 
-`src/Search/Coop/` 是离线联合模型的独立职责边界：`JointTurnState` 拥有 Actor 可行动／结束／死亡屏障，`JointPlan` 拥有带 Actor 身份的计划合同，`JointActionExpander`、`JointCombatSnapshot`、`JointPlanReplayer`、`JointStrictReplayVerifier` 和 `JointObjective` 分别拥有候选展开、完整联合快照、从冻结根逐动作/跨屏障回放、搜索终态严格核对和终局比较；`JointExhaustiveOracle` 只服务有限 toy fixture 的穷举证据。严格核对比较联合 Turn/Phase、逐 Actor 投影、完整 `ContinuationStamp` 和状态键，第一处差异必须带动作与字段，不继续接受部分路线。它们只消费冻结的 `CombatRootSnapshot` 和 Fork 后的 `CombatPredictionSimulator`，不读取 Runtime、UI、全局设置、网络或真实客户端，也不部署联合计划。
+`src/Search/Coop/` 是离线联合模型的独立职责边界：`JointTurnState` 拥有 Actor 可行动／结束／死亡屏障，`JointPlan` 拥有带 Actor 身份的计划合同，`JointActionExpander`、`JointCombatSnapshot`、`JointPlanReplayer`、`JointStrictReplayVerifier` 和 `JointObjective` 分别拥有候选展开、完整联合快照、从冻结根逐动作/跨屏障回放、搜索轨迹严格核对和终局比较；`JointExhaustiveOracle` 只服务有限 toy fixture 的穷举证据。搜索节点以不可变 `JointStrictCheckpoint` 保存每个动作和屏障后的 Turn/Phase、完整 continuation 与状态键；根级回放独立重建同序轨迹，第一处差异必须带检查点或动作与字段，不继续接受部分路线。它们只消费冻结的 `CombatRootSnapshot` 和 Fork 后的 `CombatPredictionSimulator`，不读取 Runtime、UI、全局设置、网络或真实客户端，也不部署联合计划。
+
+联合搜索节点的模拟器所有权止于单次搜索调用和返回结果；测试专用 `JointSearchLifetimeDiagnostics` 只发出瞬时观察回调，不保存节点。正常、取消和异常退出后，frontier、lane 与局部诊断不得通过静态引用保留子模拟器。生产单人 Search 不引用 `src/Search/Coop` 类型；ActorCount=1 的兼容性通过既有单人根、候选、回放和生产边界代表集证明，不复制生产 Beam 候选评分/排序到联合候选器。
 
 离线模型按根 Actor 固定顺序保存身份，Actor 数量可为 1 至 4；Actor 身份进入计划、屏障、续用文本和联合状态指纹。`JointActionTransition` 是 BFS、DFS oracle 与严格回放共享的单步权威执行入口，负责已选卡牌、动作内选择、药水与 EndTurn，并把已处理敌人死亡集合随节点 Fork；候选枚举和跨回合生命周期不属于该类型。`JointOfflineSearch` 的 BFS 只负责完整状态键去重，DFS oracle 保持不去重，二者不复制动作结算。原版没有战斗内独立主动遗物提交入口，`PlanRelicEffect` 仍是卡牌/药水等动作触发后的路线注释，不新增伪造的 Relic action。当前生产 `CombatBeamSolver` 仍由 `EnsureSinglePlayerRoot` 保持 ActorCount=1，捕获多人根时稳定拒绝，不把联合类型偷偷降级成本地 Actor。总战损比较目前是跨角色 HP 价值尚未统一时的临时 workaround；由于不同角色 HP 的可比价值可能不同，该缺口只在联合目标研究记录中保留，不作为本阶段语义修复。
 

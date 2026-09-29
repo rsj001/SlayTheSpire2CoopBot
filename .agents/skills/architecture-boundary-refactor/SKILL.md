@@ -79,6 +79,7 @@ description: 重构 CombatSolver 的 Search、Runtime 会话、UI snapshot、无
 - `Expansion` 根分片保留Expand与跨回合剪枝/结束回合准入；Opening、Choices、Replay、Candidates只迁移既有连续成员段。快照、选择预算和租约所有权仍按原调用链交接，不以文件拆分为由新增缓存或调整调用次序。
 - 离线联合 `JointOfflineSearch` 的固定前缀只可在全员屏障处连续推进一轮，并依次调用 `JointRoundTransition` 的玩家尾、基础敌方侧和下一玩家侧；上一轮 EndTurn 持有按 timing 分派的回合尾/回合开始选择，选择 owner 必须来自请求 Player。禁止在前缀回放内复制生命周期、默认 Actor0、跳轮或从未到屏障状态强行推进。
 - 离线联合严格回放必须从同一冻结根重执行完整动作和屏障生命周期；`JointPlanReplayer` 负责回放与逐动作快照，`JointStrictReplayVerifier` 只比较搜索终态和回放终态并报告首个动作/字段差异。不得用数组引用相等、聚合 HP 或同一终态对象冒充 strict diff，也不得在失败后继续接受部分路线。
+- F10/F11 以后，联合搜索节点必须携带每个动作和屏障的不可变 strict checkpoint；验证器先逐点比较轨迹，再比较终态。测试生命周期观察器不得持有模拟器；完成、取消和异常退出都要有弱引用释放证据。不要把一步终局或仅累计分配量写成完整战斗/无泄漏证明。
 - 循环出口的族内、在途和最新候选仅在各自租约前缀同分后共用 `Retention` 内的 `CompareCycleExitQuality`；待准入候选直接使用该质量顺序。区域、跨回合和终局比较器的键次序不同，不因字段相似合并；共享方法不新增状态或依赖。
 - `AdmittedExpansion` 中求解器层的 `AdmittedParent` 持有已预约父节点的作业状态和结果，固定 lane 排空并归并后才复用；提交仍按父节点和动作原序。提前 EndTurn 使用同父 Fork gate，独占批次和暂存基线；全部兄弟动作/选择/药水结束后才移交快照并发布基线，不让 worker 写父 Aggregate。`PrimaryChoiceReplayFrontier` 独占必经首层回放的暂存快照，所有生产作业结束后才移交一个续接消费者；动态预算和 occurrence collector 不跨 lane 共享修改。异常先排空，再释放 probe、frontier、batch 与根。
 - 已撤回的`AdmittedParent`否定就绪缓存实验只能在coordinator内使用；任何改变选择就绪条件的路径都必须失效，实验入口是`MarkDispatched`和`Receive`。worker不能直接改这些条件，正结果继续保持原扫描优先级。

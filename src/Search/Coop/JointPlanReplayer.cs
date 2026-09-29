@@ -5,7 +5,8 @@ namespace CombatSolver;
 internal sealed record JointReplayResult(
     JointCombatSnapshot Snapshot,
     IReadOnlyList<PlanAction> AppliedActions,
-    IReadOnlyList<JointCombatSnapshot> ActionSnapshots);
+    IReadOnlyList<JointCombatSnapshot> ActionSnapshots,
+    IReadOnlyList<JointStrictCheckpoint> Checkpoints);
 
 internal static class JointPlanReplayer
 {
@@ -18,6 +19,7 @@ internal static class JointPlanReplayer
         JointTurnState turnState = JointTurnState.Start(root.Actors.Count, root.StartTurnNumber);
         List<PlanAction> applied = [];
         List<JointCombatSnapshot> actionSnapshots = [];
+        List<JointStrictCheckpoint> checkpoints = [];
         foreach (PlanAction action in plan.Actions)
         {
             while (action.Turn > turnState.Turn)
@@ -48,20 +50,37 @@ internal static class JointPlanReplayer
                             choice.Timing != PlanChoiceTiming.PlayerTurnEnd).ToArray(),
                         extraTurnActors);
                 }
+                JointCombatSnapshot barrierSnapshot = JointCombatSnapshot.Capture(
+                    root,
+                    simulator,
+                    turnState);
+                checkpoints.Add(JointStrictCheckpoint.Capture(
+                    barrierSnapshot,
+                    applied.Count,
+                    "barrier"));
             }
             if (action.Turn < turnState.Turn)
                 throw new InvalidOperationException($"联合回放回合倒退：{action.Turn} < {turnState.Turn}。");
             turnState = JointActionTransition.Apply(
                 simulator, turnState, action, processedEnemyDeaths);
             applied.Add(action);
-            actionSnapshots.Add(JointCombatSnapshot.Capture(root, simulator, turnState));
+            JointCombatSnapshot actionSnapshot = JointCombatSnapshot.Capture(root, simulator, turnState);
+            actionSnapshots.Add(actionSnapshot);
+            checkpoints.Add(JointStrictCheckpoint.Capture(
+                actionSnapshot,
+                applied.Count,
+                "action"));
         }
 
         JointCombatSnapshot snapshot = JointCombatSnapshot.Capture(
             root,
             simulator,
             turnState);
-        return new JointReplayResult(snapshot, applied.AsReadOnly(), actionSnapshots.AsReadOnly());
+        return new JointReplayResult(
+            snapshot,
+            applied.AsReadOnly(),
+            actionSnapshots.AsReadOnly(),
+            checkpoints.AsReadOnly());
     }
 
 }

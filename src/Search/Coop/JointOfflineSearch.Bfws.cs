@@ -43,12 +43,12 @@ internal static partial class JointOfflineSearch
             if (IsBoundary(node, request.MaximumActions))
             {
                 if (request.EffectivePotionPolicy.IsBoundaryEligible(node.Actions))
-                    best = SelectBetter(root, best, snapshot, node.Actions, expanded);
+                    best = SelectBetter(root, best, snapshot, node.Actions, expanded, node.Checkpoints);
                 continue;
             }
             if (node.Turns.IsBarrierReached)
             {
-                foreach (Node advanced in ExpandBarrier(node))
+                foreach (Node advanced in ExpandBarrier(root, node))
                     Enqueue(advanced);
                 continue;
             }
@@ -60,13 +60,21 @@ internal static partial class JointOfflineSearch
                 if (!request.EffectivePotionPolicy.Allows(candidate.Action, node.Actions))
                     continue;
                 CombatPredictionSimulator child = node.Simulator.Fork();
+                JointSearchLifetimeDiagnostics.Observe(child);
                 ForkableSet<uint> deaths = node.ProcessedEnemyDeaths.Fork();
                 JointTurnState turns = JointActionTransition.Apply(
                     child,
                     node.Turns,
                     candidate.Action,
                     deaths);
-                Enqueue(new Node(child, deaths, turns, [.. node.Actions, candidate.Action]));
+                PlanAction[] actions = [.. node.Actions, candidate.Action];
+                JointCombatSnapshot childSnapshot = JointCombatSnapshot.Capture(root, child, turns);
+                Enqueue(new Node(
+                    child,
+                    deaths,
+                    turns,
+                    actions,
+                    AppendCheckpoint(node.Checkpoints, childSnapshot, actions.Length, "action")));
             }
         }
         JointSearchTermination termination = open.Count > 0
@@ -78,7 +86,7 @@ internal static partial class JointOfflineSearch
             {
                 JointCombatSnapshot snapshot = JointCombatSnapshot.Capture(root, node.Simulator, node.Turns);
                 if (request.EffectivePotionPolicy.IsBoundaryEligible(node.Actions))
-                    best = SelectBetter(root, best, snapshot, node.Actions, expanded);
+                    best = SelectBetter(root, best, snapshot, node.Actions, expanded, node.Checkpoints);
             }
         }
         return (best ?? throw new JointPotionPolicyUnsatisfiedException(

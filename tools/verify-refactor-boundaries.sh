@@ -1734,10 +1734,27 @@ joint_strict_replay="$repository_root/src/Search/Coop/JointStrictReplayVerifier.
 for token in \
     'JointPlanReplayer.Replay(' \
     'DescribeFirstDifference(' \
+    'searched.Checkpoints.Count' \
     'expected.TurnState.Phases.SequenceEqual(actual.TurnState.Phases)' \
     'expected.Continuation.DescribeFirstDifference(actual.Continuation)'; do
     require_fixed "$joint_strict_replay" "$token" 'joint strict replay verifier missing F10 boundary:'
 done
+joint_offline_trace="$repository_root/src/Search/Coop/JointOfflineSearch.cs"
+for token in \
+    'IReadOnlyList<JointStrictCheckpoint> Checkpoints' \
+    'AppendCheckpoint(' \
+    '"barrier"' \
+    'JointSearchLifetimeDiagnostics.Observe('; do
+    require_fixed "$joint_offline_trace" "$token" 'joint search missing strict trace/lifetime boundary:'
+done
+joint_lifetime="$repository_root/src/Search/Coop/JointSearchLifetimeDiagnostics.cs"
+require_fixed "$joint_lifetime" 'TestNodeCreated?.Invoke(simulator)' \
+    'joint lifetime diagnostics no longer emits the non-owning test callback:'
+while IFS= read -r -d '' file; do
+    for token in JointOfflineSearch JointActionTransition JointRoundTransition JointStrictReplay; do
+        forbid_fixed "$file" "$token" 'production single-player search references offline joint execution:'
+    done
+done < <(find "$repository_root/src/Search" -maxdepth 1 -type f -name 'CombatBeamSolver*.cs' -print0)
 joint_plan_replayer="$repository_root/src/Search/Coop/JointPlanReplayer.cs"
 for token in \
     'JointRoundTransition.CompletePlayerSide(' \
@@ -1828,8 +1845,8 @@ for token in \
     'Node seed = ReplayFixedPrefix(root, request);' \
     'private static Node ReplayFixedPrefix(' \
     'JointActionTransition.Apply(simulator, turns, action, deaths)' \
-    'private static IReadOnlyList<Node> ExpandBarrier(Node parent)' \
-    'foreach (Node advanced in ExpandBarrier(node))' \
+    'private static IReadOnlyList<Node> ExpandBarrier(CombatRootSnapshot parentRoot, Node parent)' \
+    'foreach (Node advanced in ExpandBarrier(root, node))' \
     'action.Turn != turns.Turn + 1 || !turns.IsBarrierReached' \
     'IReadOnlyList<PlanCardChoice> endTurnChoices = transitionChoices' \
     'JointRoundTransition.CompletePlayerSide(' \
@@ -1838,7 +1855,7 @@ for token in \
     'JointRoundTransition.StartBasicPlayerSide('; do
     require_fixed "$joint_offline_search" "$token" 'joint fixed-prefix search missing F3c boundary:'
 done
-require_fixed "$joint_bfws" 'foreach (Node advanced in ExpandBarrier(node))' \
+require_fixed "$joint_bfws" 'foreach (Node advanced in ExpandBarrier(root, node))' \
     'joint BFWS no longer shares barrier expansion:'
 for token in \
     'combat.GetPotionAtSlot(player, slot)' \

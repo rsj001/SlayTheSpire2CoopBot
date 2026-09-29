@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 联合跨轮逐点 strict replay 与生命周期（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：2 Actor 保存两个 EndTurn、一个完整屏障及下一轮终局动作共 4 个 checkpoint；4 Actor 对应 4 个 EndTurn、屏障和终局动作共 6 个 checkpoint。搜索分支与冻结根回放逐点同 Turn/Phase、完整 continuation、状态键，终态再次严格比较；`runId=d30b2148a2fb41c7bcd76d6f2d13c196` Passed，实例已删除。
+- 同场生命周期探针对正常完成、预定第 4 个子节点取消、预定第 4 个子节点注入异常三条路径收集弱引用；回调清除、搜索栈退出并最多三次强制 GC 后 retained 均为 0。固定工作量仍为 Beam 97/BFWS 123、Completed，`runId=c1e614871b1142c28716a80fdb64466d` Passed，实例已删除。
+- 该 strict 对照是离线搜索增量分支与同根独立回放，不称为真实多人客户端 actual 执行；未运行可见 Steam/WSL。
+
 ## 离线四 Actor F12 最终门禁（2026-09-29）
 
 - 生产单人边界：`COOP-PRODUCTION-SINGLE-BOUNDARY` 接受 ActorCount=1、拒绝 2，串行重试 `runId=9cbc7199dd9a4a29914c9ed6bbb3fe5f` Passed，实例已删除；首次启动仅在进入游戏前被私有实例可执行文件校验拒绝并清理，不计行为结果。

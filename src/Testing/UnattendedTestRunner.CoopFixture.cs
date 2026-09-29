@@ -47,6 +47,7 @@ internal sealed partial class UnattendedTestRunner
         AssertCompleteStrictReplay(source, 2);
         AssertCompleteStrictReplay(source, 4);
         AssertFourActorBoundedWorkload(source);
+        AssertJointSearchLifetime(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -927,25 +928,35 @@ internal sealed partial class UnattendedTestRunner
             source,
             actorCount,
             enemyCurrentHp: 1);
-        JointOfflineSearchRequest request = JointOfflineSearchRequest.Default(
-            maximumActions: 1,
-            maximumStates: 10_000);
+        PlanAction[] endTurnPrefix = Enumerable.Range(0, actorCount)
+            .Select(index => new PlanAction(
+                PlanActionKind.EndTurn,
+                root.StartTurnNumber,
+                Actor: new CombatActorId(index)))
+            .ToArray();
+        JointOfflineSearchRequest request = new(
+            endTurnPrefix,
+            MaximumActions: actorCount + 1,
+            MaximumStates: 10_000);
         JointOfflineSearchResult searched = JointOfflineSearch.SolveBeam(
             root,
             request,
             beamWidth: 10_000);
         if (!searched.Snapshot.Simulator.TerminalStamp.HasValue
-            || searched.Actions.Count != 1)
+            || searched.Actions.Count != actorCount + 1
+            || searched.Actions[^1].Turn != root.StartTurnNumber + 1)
         {
             throw new InvalidOperationException(
-                $"{actorCount} Actor strict replay 夹具没有搜索到一步完整战斗。 ");
+                $"{actorCount} Actor strict replay 夹具没有搜索到跨轮完整战斗。 ");
         }
         JointReplayResult replay = JointStrictReplayVerifier.Verify(root, searched);
-        if (replay.ActionSnapshots.Count != 1
+        if (replay.ActionSnapshots.Count != actorCount + 1
+            || replay.Checkpoints.Count != actorCount + 2
+            || replay.Checkpoints.Count(checkpoint => checkpoint.Stage == "barrier") != 1
             || !replay.Snapshot.Simulator.TerminalStamp.HasValue)
         {
             throw new InvalidOperationException(
-                $"{actorCount} Actor strict replay 未保留逐动作快照或终局。 ");
+                $"{actorCount} Actor strict replay 未保留逐动作/屏障快照或终局。 ");
         }
 
         JointActorSnapshot changedActor = replay.Snapshot.Actors[0] with
@@ -1021,6 +1032,73 @@ internal sealed partial class UnattendedTestRunner
             $"BfwsExpanded={bfws.ExpandedStates}:BfwsStop={bfws.Termination}:" +
             $"BeamElapsedMs={stopwatch.ElapsedMilliseconds}:" +
             $"CoordinatorAllocatedBytes={coordinatorAllocated}";
+    }
+
+    private static void AssertJointSearchLifetime(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(source, 4);
+        foreach (string mode in new[] { "complete", "cancel", "fault" })
+        {
+            WeakReference[] references = RunLifetimeProbe(root, mode);
+            if (references.Length == 0)
+                throw new InvalidOperationException($"联合搜索 {mode} 生命周期探针没有观察到子节点。");
+            for (int attempt = 0; attempt < 3 && references.Any(reference => reference.IsAlive); attempt++)
+            {
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+                GC.WaitForPendingFinalizers();
+            }
+            int retained = references.Count(reference => reference.IsAlive);
+            if (retained != 0)
+            {
+                throw new InvalidOperationException(
+                    $"联合搜索 {mode} 结束后仍保留 {retained}/{references.Length} 个子模拟器。");
+            }
+        }
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static WeakReference[] RunLifetimeProbe(CombatRootSnapshot root, string mode)
+    {
+        List<WeakReference> references = [];
+        using CancellationTokenSource cancellation = new();
+        int observed = 0;
+        JointSearchLifetimeDiagnostics.TestNodeCreated = simulator =>
+        {
+            references.Add(new WeakReference(simulator));
+            observed++;
+            if (mode == "cancel" && observed == 4)
+                cancellation.Cancel();
+            if (mode == "fault" && observed == 4)
+                throw new InvalidOperationException("联合搜索生命周期探针注入异常。");
+        };
+        try
+        {
+            try
+            {
+                _ = JointOfflineSearch.SolveBeam(
+                    root,
+                    JointOfflineSearchRequest.Default(maximumActions: 2, maximumStates: 128),
+                    beamWidth: 16,
+                    cancellation.Token,
+                    degreeOfParallelism: 1);
+                if (mode != "complete")
+                    throw new InvalidOperationException($"联合搜索 {mode} 探针没有中止。");
+            }
+            catch (OperationCanceledException) when (mode == "cancel")
+            {
+            }
+            catch (InvalidOperationException exception) when (
+                mode == "fault"
+                && exception.Message == "联合搜索生命周期探针注入异常。")
+            {
+            }
+        }
+        finally
+        {
+            JointSearchLifetimeDiagnostics.TestNodeCreated = null;
+        }
+        return references.ToArray();
     }
 
     private static void AssertBasicNextPlayerSide(CombatRootSnapshot root)

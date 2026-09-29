@@ -2207,12 +2207,34 @@ $jointStrictReplayPath = Join-Path $repositoryRoot 'src/Search/Coop/JointStrictR
 foreach ($text in @(
     'JointPlanReplayer.Replay(',
     'DescribeFirstDifference(',
+    'searched.Checkpoints.Count',
     'expected.TurnState.Phases.SequenceEqual(actual.TurnState.Phases)',
     'expected.Continuation.DescribeFirstDifference(actual.Continuation)'
 )) {
     if (-not (Select-String -LiteralPath $jointStrictReplayPath -SimpleMatch $text -Quiet)) {
         $violations.Add("Joint strict replay verifier missing F10 boundary: $text")
     }
+}
+$jointOfflineSearchPathForTrace = Join-Path $repositoryRoot 'src/Search/Coop/JointOfflineSearch.cs'
+foreach ($text in @(
+    'IReadOnlyList<JointStrictCheckpoint> Checkpoints',
+    'AppendCheckpoint(',
+    '"barrier"',
+    'JointSearchLifetimeDiagnostics.Observe('
+)) {
+    if (-not (Select-String -LiteralPath $jointOfflineSearchPathForTrace -SimpleMatch $text -Quiet)) {
+        $violations.Add("Joint search missing strict trace/lifetime boundary: $text")
+    }
+}
+$jointLifetimePath = Join-Path $repositoryRoot 'src/Search/Coop/JointSearchLifetimeDiagnostics.cs'
+if (-not (Select-String -LiteralPath $jointLifetimePath `
+        -SimpleMatch 'TestNodeCreated?.Invoke(simulator)' -Quiet)) {
+    $violations.Add('Joint lifetime diagnostics no longer emits the non-owning test callback.')
+}
+foreach ($match in Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'src/Search') `
+        -Filter 'CombatBeamSolver*.cs' |
+        Select-String -Pattern 'JointOfflineSearch|JointActionTransition|JointRoundTransition|JointStrictReplay') {
+    $violations.Add("Production single-player search references offline joint execution: $($match.Path):$($match.LineNumber)")
 }
 foreach ($text in @(
     'JointRoundTransition.CompletePlayerSide(',
@@ -2326,8 +2348,8 @@ foreach ($text in @(
     'Node seed = ReplayFixedPrefix(root, request);',
     'private static Node ReplayFixedPrefix(',
     'JointActionTransition.Apply(simulator, turns, action, deaths)',
-    'private static IReadOnlyList<Node> ExpandBarrier(Node parent)',
-    'foreach (Node advanced in ExpandBarrier(node))',
+    'private static IReadOnlyList<Node> ExpandBarrier(CombatRootSnapshot parentRoot, Node parent)',
+    'foreach (Node advanced in ExpandBarrier(root, node))',
     'action.Turn != turns.Turn + 1 || !turns.IsBarrierReached',
     'IReadOnlyList<PlanCardChoice> endTurnChoices = transitionChoices',
     'JointRoundTransition.CompletePlayerSide(',
@@ -2340,7 +2362,7 @@ foreach ($text in @(
     }
 }
 if (-not (Select-String -LiteralPath $jointBfwsPath `
-        -SimpleMatch 'foreach (Node advanced in ExpandBarrier(node))' -Quiet)) {
+        -SimpleMatch 'foreach (Node advanced in ExpandBarrier(root, node))' -Quiet)) {
     $violations.Add('Joint BFWS no longer shares barrier expansion.')
 }
 foreach ($text in @(
