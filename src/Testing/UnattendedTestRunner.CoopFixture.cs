@@ -16,6 +16,7 @@ using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
+using System.Reflection;
 
 namespace CombatSolver;
 
@@ -100,6 +101,7 @@ internal sealed partial class UnattendedTestRunner
                 AssertBasicNextPlayerSide(root);
                 AssertTurnStartChoiceContinuation(root);
                 AssertEndTurnPowerChoiceContinuation(root);
+                AssertEndTurnRelicChoiceContinuation(root);
             }
             JointActionCandidate selected = candidates.First(candidate =>
                 candidate.Action.Actor.Index == actorCount - 1
@@ -722,6 +724,116 @@ internal sealed partial class UnattendedTestRunner
             throw new InvalidOperationException(
                 "联合 Actor1 回合结束 Power 选择前缀未恢复到稳定屏障。");
         }
+    }
+
+    private static void AssertEndTurnRelicChoiceContinuation(CombatRootSnapshot root)
+    {
+        CombatPredictionSimulator parent = root.ForkSimulator();
+        SimulatedCombatState parentCombat = (SimulatedCombatState)parent.State.CombatState;
+        Player owner = parent.State.Players[1];
+        SimPlayerCombatState ownerState = parent.State.GetPlayerCombatState(owner);
+        parent.RemoveFromCombat(ownerState.AllCards.ToArray());
+        _ = parentCombat.AddPowerInstance<HellraiserPower>(
+            owner.Creature,
+            1,
+            owner.Creature);
+        JossPaper jossPaper = (JossPaper)PredictionUtils.CreateRelic(
+            CanonicalModels.Relic<JossPaper>(),
+            owner);
+        FieldInfo rootRelicsField = typeof(SimulatedCombatState).GetField(
+            "_rootRelics",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("联合遗物选择测试找不到模拟遗物账本。");
+        if (rootRelicsField.GetValue(parentCombat)
+                is not IDictionary<Player, RelicModel[]> rootRelics)
+        {
+            throw new InvalidOperationException("联合遗物选择测试无法写入模拟遗物账本。");
+        }
+        RelicModel[] originalRelics = rootRelics[owner];
+        rootRelics[owner] = [jossPaper];
+        int exhaustThreshold = jossPaper.DynamicVars[JossPaper._exhaustAmountKey].IntValue;
+        if (exhaustThreshold <= 0)
+            throw new InvalidOperationException("联合遗物选择测试的 Joss Paper 阈值无效。");
+        if (!parentCombat.RelicsOf(owner).Any(relic => ReferenceEquals(relic, jossPaper)))
+            throw new InvalidOperationException("联合遗物选择测试注入的 Joss Paper 不在 Actor1 账本中。");
+        for (int index = 0; index < exhaustThreshold; index++)
+        {
+            PredictedCard ethereal = PredictedCard.Create(ModelDb.Card<DefendDefect>(), owner);
+            ethereal.MutablePreview.AddKeyword(CardKeyword.Ethereal);
+            parent.AddGeneratedCardToCombat(
+                ethereal,
+                PileType.Hand,
+                owner,
+                resultKind: CardGenerationResultKind.Fixed);
+        }
+        parent.AddGeneratedCardToCombat(
+            PredictedCard.Create(ModelDb.Card<DefendDefect>(), owner),
+            PileType.Draw,
+            owner,
+            CardPilePosition.Bottom,
+            resultKind: CardGenerationResultKind.Fixed);
+        parent.AddGeneratedCardToCombat(
+            PredictedCard.Create(ModelDb.Card<SeekerStrike>(), owner),
+            PileType.Draw,
+            owner,
+            CardPilePosition.Top,
+            resultKind: CardGenerationResultKind.Fixed);
+
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> parentDeaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, parent);
+        JointPendingChoiceFrame frame;
+        CombatPredictionSimulator probe = parent.Fork();
+        try
+        {
+            JointRoundTransition.CompletePlayerSide(probe, turns, parentDeaths.Fork());
+            SimPlayerCombatState probeOwner = probe.State.GetPlayerCombatState(owner);
+            throw new InvalidOperationException(
+                $"Actor1 回合结束遗物未产生联合选择：threshold={exhaustThreshold} " +
+                $"relics={string.Join(',', ((SimulatedCombatState)probe.State.CombatState).RelicsOf(owner).Select(static relic => relic.Id.Entry))} " +
+                $"hand={string.Join(',', probeOwner.Hand.Cards.Select(static card => card.Preview.Id.Entry))} " +
+                $"draw={string.Join(',', probeOwner.DrawPile.Cards.Select(static card => card.Preview.Id.Entry))} " +
+                $"discard={string.Join(',', probeOwner.DiscardPile.Cards.Select(static card => card.Preview.Id.Entry))} " +
+                $"exhaust={string.Join(',', probeOwner.ExhaustPile.Cards.Select(static card => card.Preview.Id.Entry))}。");
+        }
+        catch (JointPendingActionChoiceException pending)
+        {
+            frame = pending.Frame;
+        }
+        if (frame.OwnerActor != new CombatActorId(1)
+            || frame.SourceId != ModelDb.Power<HellraiserPower>().Id.Entry
+            || frame.Placement != JointPendingChoicePlacement.TurnStart
+            || frame.Timing != PlanChoiceTiming.PlayerTurnEnd)
+        {
+            throw new InvalidOperationException(
+                "联合回合结束遗物选择未保留 Actor1 owner、source 或 timing。");
+        }
+        PlanCardChoice choice = CardChoiceSupport.BuildChoices(
+                frame.Spec,
+                static _ => string.Empty,
+                maxPileBranches: 32,
+                maxHandBranches: 32)
+            .First() with
+        {
+            Actor = frame.OwnerActor,
+            SourceId = frame.SourceId,
+            ContextId = frame.ContextId,
+            Timing = frame.Timing,
+        };
+        CombatPredictionSimulator resumed = parent.Fork();
+        JointRoundTransition.CompletePlayerSide(
+            resumed,
+            turns,
+            parentDeaths.Fork(),
+            [choice]);
+        if (((SimulatedCombatState)resumed.State.CombatState).HasPendingChoice
+            || resumed.State.GetPlayerCombatState(owner).Phase != PlayerTurnPhase.None)
+        {
+            throw new InvalidOperationException(
+                "联合 Actor1 回合结束遗物选择前缀未恢复到稳定屏障。");
+        }
+        rootRelics[owner] = originalRelics;
     }
 
     private static void AssertDeadActorBarrier(CombatRootSnapshot root)

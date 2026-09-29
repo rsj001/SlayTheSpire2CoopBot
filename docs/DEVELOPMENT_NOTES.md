@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 回合尾遗物选择与虚无计数（2026-09-29）
+
+Actor1 的 Joss Paper 现在能在共享 PhaseTwo 抽到 Seeker Strike，并通过 Hellraiser 产生保留 Actor1 owner 的回合尾选择，再从稳定父状态恢复。迁移中发现逐 Actor 循环内统计虚无牌会被较早 Actor 的共享参与者 PhaseOne 提前清空，导致后续 Actor 少计；现改为任何 PhaseOne 前冻结全队总数。`d8805dc2888c4b60988c4422a027a946` 首次精确显示五张牌已耗尽但 draw 未触发；修复后又发现测试替换的共享根遗物需要恢复，最终 `COOP-MULTI-ACTOR-ROOT` 的 `runId=7d629eea37754cdfb240a1d6580bf041` Passed，实例均已删除。F6b 仅余重复出牌 continuation 代表。
+
 ## 离线四 Actor 回合结束选择 owner（2026-09-29）
 
 离线联合模型的选择请求现在记录发起选择的 Player；共享 PhaseTwo 不再把 Power/遗物产生的选择默认归给 Actor0。承载跨回合选择的 EndTurn 动作允许 `TurnStartChoices` 保存不同 Actor 的 owner，而主选择和动作内嵌选择仍必须属于动作 Actor。Actor1 的 Dark Embrace 在回合结束抽到 Seeker Strike，并由 Hellraiser 自动出牌产生 `PlayerTurnEnd` 选择；该选择从同一稳定父状态按前缀恢复完成。首个完整夹具因未隔离 draw pile 未触发选择，`COOP-MULTI-ACTOR-ROOT` 的 `runId=abf2aa3488974e42a6365e7cb111c9f0` Failed；隔离牌堆后 `runId=9bc79f5cdc9548db8f287189f993d54f` Passed，实例均已删除。F6b 仍需遗物及其他自动/重复出牌代表。

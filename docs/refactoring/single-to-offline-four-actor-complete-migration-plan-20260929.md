@@ -256,7 +256,7 @@
 执行拆分：
 
 - F6a（已完成）：新增不可变 `JointPendingChoiceFrame`，明确保存 `OwnerActor`、完整 `SourceAction`、source/spec 与主/嵌套 placement；联合 expander 在生成分支前严格核对 frame owner/source action。Havoc → Second Wind → Defend 动态嵌套严格回放 `runId=78cfa14e6d98479fa14d2104166c5b95` Passed。
-- F6b（进行中）：回合开始阶段现在把 owner、EndTurn SourceAction、source/context/timing 与 spec 封装为 `TurnStart` frame，并可从稳定跨回合父状态以选择前缀重新执行。Actor1 的 `ToolsOfTheTradePower` 首次因 frame 未保存 `ContextId/Timing` 导致计划选择未消费，`runId=0a2554c9ae244ae7b0217ab67e7856c4` Failed；补齐后 `runId=2cf1ac4368ab4ad58ac2c056708b6842` Passed。回合尾请求新增稳定 owner，共享 PhaseTwo 不再把选择归给 Actor0；Actor1 的 Dark Embrace 抽到 Seeker Strike、由 Hellraiser 自动出牌产生的 `PlayerTurnEnd` 选择可从同一父状态恢复，首次夹具牌堆未隔离 `runId=abf2aa3488974e42a6365e7cb111c9f0` Failed，修正后 `runId=9bc79f5cdc9548db8f287189f993d54f` Passed。自动/重复出牌的其他边界及遗物选择 continuation 仍待完成。
+- F6b（进行中）：回合开始阶段现在把 owner、EndTurn SourceAction、source/context/timing 与 spec 封装为 `TurnStart` frame，并可从稳定跨回合父状态以选择前缀重新执行。Actor1 的 `ToolsOfTheTradePower` 首次因 frame 未保存 `ContextId/Timing` 导致计划选择未消费，`runId=0a2554c9ae244ae7b0217ab67e7856c4` Failed；补齐后 `runId=2cf1ac4368ab4ad58ac2c056708b6842` Passed。回合尾请求新增稳定 owner，共享 PhaseTwo 不再把选择归给 Actor0；Actor1 的 Dark Embrace 抽到 Seeker Strike、由 Hellraiser 自动出牌产生的 `PlayerTurnEnd` 选择可从同一父状态恢复，首次夹具牌堆未隔离 `runId=abf2aa3488974e42a6365e7cb111c9f0` Failed，修正后 `runId=9bc79f5cdc9548db8f287189f993d54f` Passed。Joss Paper 的回合尾抽牌也以 Actor1 owner 挂起并恢复；诊断 `d8805dc2888c4b60988c4422a027a946` 暴露跨 Actor 虚无计数时点错误，修复并恢复测试根遗物后 `runId=7d629eea37754cdfb240a1d6580bf041` Passed。遗物代表和自动出牌代表已完成，重复出牌 continuation 仍待完成。
 - F6c（已完成）：`JointChoiceContinuation` 为每个 Actor 最多保存一帧，并按插入原序及完整 SourceAction 消费；Actor0/1 的真实 Gambler's Brew 主选择帧验证同 Actor 重入和后置抢占稳定拒绝，`runId=ddf9af571fc24faba81fb18eccbd3805` Passed。
 - F6d（已完成）：明确 `CardOccurrence`/`CardStateOccurrence` 是相对于每个动作当前前缀状态的实例地址；三张同 ID/同状态 Strike 每步重新枚举后 occurrence 均为 0，增量执行与从原根严格回放整条计划得到同状态键/续用文本，`runId=b05b87d8492e48a391e785f18c419b7f` Passed，关闭 F-ISSUE-006。单人 replay helper 未分叉，最终等价哨兵归 F12。
 
@@ -282,7 +282,7 @@
 
 执行拆分：
 
-- F7a（已完成）：`JointRoundTransition.CompletePlayerSide` 只接受已到达屏障的状态，按 Actor 固定顺序运行各自 PhaseOne/手牌清理，再对全部存活参与者运行一次共享 PhaseTwo；单 Actor EndTurn 不提前改变 live phase，`runId=92d774c3b3f341c8a11472a246c717ec` Passed。共享 PhaseTwo 的选择现在按请求 owner 归属并消费 `PlayerTurnEnd` 前缀，Actor1 代表见 `runId=9bc79f5cdc9548db8f287189f993d54f`。
+- F7a（已完成）：`JointRoundTransition.CompletePlayerSide` 只接受已到达屏障的状态，在任何 PhaseOne 前冻结全体 Actor 的虚无牌总数，再按 Actor 固定顺序运行 PhaseOne/手牌清理，最后对全部存活参与者运行一次共享 PhaseTwo；单 Actor EndTurn 不提前改变 live phase，基础屏障 `runId=92d774c3b3f341c8a11472a246c717ec` Passed。共享 PhaseTwo 的选择按请求 owner 归属并消费 `PlayerTurnEnd` 前缀，Power 代表见 `runId=9bc79f5cdc9548db8f287189f993d54f`，Joss Paper 遗物代表见 `runId=7d629eea37754cdfb240a1d6580bf041`。
 - F7b（进行中）：远端 Actor 强制死亡后不再产生候选、不阻塞屏障，玩家侧只处理存活参与者且死者保持死亡，`runId=672c2a82f07e41d2a73c5538e5f3fd1d` Passed；复活/逃跑/额外回合待补。
 - F7c（进行中）：F7c1 已按冻结敌方行动名单执行敌方侧开始、纯攻击行动、侧结束、毒与下一行动准备；Fuzzy Wurm Crawler 的纯攻击对两个 Actor 同序结算，`runId=3f9a5c67effa42c5b10791292be1309b` Passed。带 `MonsterMoveEffects` 已登记后效的行动仍明确拒绝，死亡/召唤、特殊后效和 RNG 严格对照待补。
 - F7d（进行中）：F7d1 按原版多人顺序对全体存活 Actor 只触发一次共享 side hook，并逐 Actor 重置资源、抽牌、执行玩家开始 hook、球与自动阶段；两 Actor 的轮数/能量/手牌和共享 round 推进通过，`runId=9ad70ea00a2d493ead5c090991c9d263` Passed。F7d2 已让 Actor1 的 `ToolsOfTheTradePower` 在回合开始挂起后从稳定父状态按前缀恢复，`runId=2cf1ac4368ab4ad58ac2c056708b6842` Passed；其他开始阶段选择来源随 F6b 继续补齐。

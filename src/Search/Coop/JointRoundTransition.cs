@@ -244,10 +244,10 @@ internal static class JointRoundTransition
         try
         {
             combat.SetActionChoiceTiming(PlanChoiceTiming.PlayerTurnEnd);
-            int etherealExhaustCount = 0;
+            int etherealExhaustCount = players.Sum(player =>
+                combat.CountEtherealCardsInHand(simulator, player));
             foreach (Player player in players)
             {
-                etherealExhaustCount += combat.CountEtherealCardsInHand(simulator, player);
                 if (!PlayerTurnEndLifecycle.RunPhaseOne(
                         simulator,
                         combat,

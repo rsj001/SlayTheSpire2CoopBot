@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 联合 Actor1 回合结束遗物选择续执行（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：Actor1 的五张虚无牌在 PhaseOne 前统一计数，Joss Paper 于共享 PhaseTwo 抽到 Seeker Strike，Hellraiser 选择保持 Actor1 owner 并从稳定父状态恢复；`runId=7d629eea37754cdfb240a1d6580bf041`，Passed，实例已删除。
+- `runId=a98ff3f6186643708f63c4afbcb5d33f` 与 `4bff8b942dfd4f73b1e1b70a31e925ab` 排除不确定 draw 位置；`d8805dc2888c4b60988c4422a027a946` 证明五张牌已耗尽但 Joss 未抽牌，从而定位 PhaseOne 前计数时点。`eadf09267fe54dfdb14f27f8b5961963` 证明选择恢复已完成，但夹具未恢复共享根遗物；这些失败实例均已删除。
+- Release 构建 0 警告/0 错误；Linux 和可见 Steam 未运行。
+
 ## 联合 Actor1 回合结束 Power 选择续执行（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：Actor1 的回合尾 Dark Embrace 抽牌触发 Hellraiser 自动出牌选择，请求保持 Actor1 owner、`PlayerTurnEnd` timing 和跨回合 placement，并从稳定父状态带前缀恢复；`runId=9bc79f5cdc9548db8f287189f993d54f`，Passed，实例已删除。
