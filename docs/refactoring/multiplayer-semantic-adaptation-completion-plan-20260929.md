@@ -428,7 +428,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 目标：从单动作正确推广到完整玩家侧、敌方侧和下一玩家侧。
 
-> 进度：进行中。机器目录现从当前游戏程序集枚举所有怪物 `MoveState`，并对求解器已支持的 174 个特殊行动逐项记录多人作用域；`--verify-multiplayer-semantics` 已证明目录不存在未分类作用域。新增合成原版多人回合驱动器，以 2/4 Actor 的 Oil Spray 从同一根严格对账玩家尾、敌方开始/行动/结束、AI 换招、下一玩家开始及完整 Actor 状态，`runId=58578b4335464a2d96fc1df476659676` Passed。原版多人 EndTurn/Ready 双屏障的可撤销/挂起顺序及死亡中断矩阵仍待本阶段后续验证，因此尚不关闭 M9。
+> 进度：已完成。机器目录从当前游戏程序集枚举所有怪物 `MoveState`，对求解器已支持的 174 个特殊行动逐项记录多人作用域，未知项为零。2/4 Actor 以 Oil Spray 从同一根严格对账玩家尾、敌方开始/行动/结束、AI 换招、下一玩家开始及完整 Actor 状态；动作中一名 Actor 死亡仍按原版完成目标后效、下一轮只恢复存活 Actor，全员死亡则离线立即终止且不执行终止后的后效。最终 `COOP-MULTIPLAYER-NATIVE-DIFF` / `86de689bcf08494dad9735710d0ba25a` 与 `COOP-MULTI-ACTOR-ROOT` / `cfe89fb1039c4243a6e0d475f942e08a` Passed。EndTurn readiness 可在屏障前不可变撤销；全员屏障后拒绝撤销，从而不回滚已经可能开始的 Hook，`COOP-JOINT-TURN-BARRIER` / `a5230c1d49324e5f90e8e81f94b4c315` Passed。强制 EndTurn 在离线搜索中等价为不可撤销地选择该分支；放弃分支由 Fork 隔离，不修改父状态。
 
 工作：
 
@@ -554,7 +554,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 | M6 选择/转移/复制牌 | M2、M4-M5 | 已完成 | 八张直接入口原生差分 `eaf4c2c85834405997b1b07a4e69e2fe`；Tutor 身份/结算 `ec8b1d83ac2c414f8bdb4162b3536aab`；ImitationLearning AutoPlay 生命周期 `2d8abe21720a4bbd92ab24b16996a14b` |
 | M7 球/宠物/角色资源 | M2、M4-M6 | 已完成 | 两 Actor 入口 `69d21e089dd2494bad39fe7c07585655`；四 Actor 混合资源与 Hibernate 生命周期 `94100373a0f04ddebd6465b1971fe156` |
 | M8 药水/遗物/反广播/第三方 | M2-M7 | 已完成 | BlockPotion 2/4 Actor `e750f21354d94bd6866a4fa8df1fb20f`；取消、远端 Shuriken、自用牌 `78a22003c4284ccbb635bb451cee62d8`；九类选择药水与第三方拒绝由 COOP 根门禁覆盖 |
-| M9 回合/敌人/死亡/并发选择 | M3-M8 | 进行中 | 174 个作用域目录；2/4 Actor 完整跨侧 actual/simulated `58578b4335464a2d96fc1df476659676`；屏障顺序/死亡矩阵待补 |
+| M9 回合/敌人/死亡/并发选择 | M3-M8 | 已完成 | 作用域目录 174/0 未知；屏障 `a5230c1d49324e5f90e8e81f94b4c315`；原生跨侧/单员死亡 `86de689bcf08494dad9735710d0ba25a`；全员终止 `cfe89fb1039c4243a6e0d475f942e08a` |
 | M10 完整内容门禁 | M3-M9 | 未开始 | — |
 | M11 联合搜索质量 | M10 | 未开始 | — |
 | M12 Co-op Bot Runtime | M11；另需项目边界授权 | 未开始 | — |

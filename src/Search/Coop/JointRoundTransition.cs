@@ -146,9 +146,15 @@ internal static class JointRoundTransition
             combat.SetPredictedEnemyIntents(
                 moves.Where(move => move.AttackHits.Count > 0).Select(move => move.Owner));
             simulator.CheckWinCondition(combat.GetPlayerTurnNumber(players[0]));
+            JointTurnState synchronizedTurns = turns;
+            for (int index = 0; index < simulator.State.Players.Count; index++)
+            {
+                if (simulator.State.GetCreature(simulator.State.Players[index].Creature).IsDead)
+                    synchronizedTurns = synchronizedTurns.MarkDead(new CombatActorId(index));
+            }
             return isExtraTurn
-                ? turns.AdvanceExtraTurn(extraActors!)
-                : turns.AdvanceTurn();
+                ? synchronizedTurns.AdvanceExtraTurn(extraActors!)
+                : synchronizedTurns.AdvanceTurn();
         }
         finally
         {

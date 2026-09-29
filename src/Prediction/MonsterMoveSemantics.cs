@@ -128,10 +128,48 @@ internal static class MonsterMoveSemantics
             throw new PredictionUnsupportedException(
                 $"联合敌方轮尚未登记 move={move.Owner.Monster?.Id.Entry}/{move.Move.Id} 的多人后效。");
         }
+        if (targetOnly && move.AttackHits.Count > 0)
+        {
+            Creature[] originalTargets = players
+                .Where(player => simulator.State.GetCreature(player).IsAlive)
+                .ToArray();
+            foreach (Creature player in originalTargets)
+            {
+                _ = ApplyForecastMove(
+                    simulator,
+                    combat,
+                    move,
+                    player,
+                    processedEnemyDeaths,
+                    plannedChoices: null,
+                    applyMoveEffect: false);
+                if (simulator.HasPendingChoice || simulator.State.GetCreature(move.Owner).IsDead)
+                    return;
+            }
+            if (originalTargets.All(player => simulator.State.GetCreature(player).IsDead))
+                return;
+            foreach (Creature player in originalTargets)
+            {
+                ApplyForecastMoveEffect(
+                    simulator,
+                    combat,
+                    move,
+                    player,
+                    processedEnemyDeaths,
+                    plannedChoices: null,
+                    applyTargetPortion: true,
+                    applyOwnerPortion: false);
+                if (simulator.HasPendingChoice || simulator.State.GetCreature(move.Owner).IsDead)
+                    return;
+            }
+            return;
+        }
         foreach (Creature player in players)
         {
             if (simulator.State.GetCreature(player).IsAlive)
+            {
                 _ = ApplyForecastMove(simulator, combat, move, player, processedEnemyDeaths);
+            }
             if (simulator.HasPendingChoice || simulator.State.GetCreature(move.Owner).IsDead)
                 return;
         }

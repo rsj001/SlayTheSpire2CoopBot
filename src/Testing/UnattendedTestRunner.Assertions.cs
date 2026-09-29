@@ -28,7 +28,7 @@ internal sealed partial class UnattendedTestRunner
             {
                 runner.SetStage("coop_joint_turn_barrier");
                 AssertCoopJointTurnBarrier();
-                runner._completedChecks.Add("JointTurn:AnyActorOrder:FullBarrier:DeadActor:RejectEarlyNextTurn");
+                runner._completedChecks.Add("JointTurn:AnyActorOrder:UndoBeforeBarrier:RejectUndoAfterBarrier:FullBarrier:DeadActor:RejectEarlyNextTurn");
             }
             if (request.ScenarioId == "COOP-ACTOR-CANDIDATES")
             {
@@ -46,7 +46,7 @@ internal sealed partial class UnattendedTestRunner
             {
                 runner.SetStage("coop_multi_actor_root");
                 AssertCoopMultiActorRoots(scenario.CombatState);
-                runner._completedChecks.Add("MultiActorRoot:Two:Four:MixedCharacters:ActorRelicMetadata:RemotePowerLifecycle:RemoteTeamPower:RemoteRelicTrigger:RemoteRelicConsumption:SilentShivs:NecrobinderSummonOwnership:ThirdPartySubscriberBoundary:JointChoiceContinuation:RepeatedAutoPlayChoice:PrefixRelativeCardIdentity:PlayerEndBarrier:DeadActorBarrier:BasicEnemySide:OwnerOnlyEnemyMove:TargetOnlyEnemyMove:MixedEnemyMove:SplitMixedEnemyMove:OwnerRemovalEnemyMove:PreAttackSummonEnemyMove:EnemyRevive:EnemyEscape:RemoteActorExtraTurn:OwnerOnlyEnemyRng:StrictReplay2:StrictReplay4:StrictDiffDiagnostic:BasicNextPlayerSide:TurnStartChoicePrefix:EndTurnPowerChoicePrefix:EndTurnRelicChoicePrefix:CrossTurnPrefix:AutomaticCrossTurn:CrossTurnPotion:Orb:Stars:Osty:SingleCompatibility:Candidates:Potions:NinePotionChoices:EntropicGeneration:PotionChoiceOwner:PotionDisabled:PotionForced:PotionStrategicCost:PotionSmartThreshold:PotionSmartBeamBudget:PotionSmartBfwsBudget:PotionSmartUseLayers:PotionRewardCredit:PotionBossRelief:PotionAmbergris:Snapshot:RemoteActorStateKey:ForkIsolation:RemoteActorReplay:FixedPrefix:BfsVsDfs:BeamVsDfs:BfwsVsDfs:BeamDeterminism:BeamBudget:BeamCancellation:BeamFixedLanes:FourActorBeamOracle:FourActorBfwsOracle");
+                runner._completedChecks.Add("MultiActorRoot:Two:Four:MixedCharacters:ActorRelicMetadata:RemotePowerLifecycle:RemoteTeamPower:RemoteRelicTrigger:RemoteRelicConsumption:SilentShivs:NecrobinderSummonOwnership:ThirdPartySubscriberBoundary:JointChoiceContinuation:RepeatedAutoPlayChoice:PrefixRelativeCardIdentity:PlayerEndBarrier:DeadActorBarrier:BasicEnemySide:OwnerOnlyEnemyMove:TargetOnlyEnemyMove:MixedEnemyMove:SplitMixedEnemyMove:OwnerRemovalEnemyMove:PreAttackSummonEnemyMove:EnemyRevive:EnemyEscape:RemoteActorExtraTurn:OwnerOnlyEnemyRng:AllActorsDeadTerminal:StrictReplay2:StrictReplay4:StrictDiffDiagnostic:BasicNextPlayerSide:TurnStartChoicePrefix:EndTurnPowerChoicePrefix:EndTurnRelicChoicePrefix:CrossTurnPrefix:AutomaticCrossTurn:CrossTurnPotion:Orb:Stars:Osty:SingleCompatibility:Candidates:Potions:NinePotionChoices:EntropicGeneration:PotionChoiceOwner:PotionDisabled:PotionForced:PotionStrategicCost:PotionSmartThreshold:PotionSmartBeamBudget:PotionSmartBfwsBudget:PotionSmartUseLayers:PotionRewardCredit:PotionBossRelief:PotionAmbergris:Snapshot:RemoteActorStateKey:ForkIsolation:RemoteActorReplay:FixedPrefix:BfsVsDfs:BeamVsDfs:BfwsVsDfs:BeamDeterminism:BeamBudget:BeamCancellation:BeamFixedLanes:FourActorBeamOracle:FourActorBfwsOracle");
                 runner._completedChecks.Add(_coopWorkloadEvidence);
                 runner._completedChecks.Add("JointLifetime:Complete:Cancel:Fault:WeakReferencesReleased");
             }
@@ -56,7 +56,7 @@ internal sealed partial class UnattendedTestRunner
                 runner.AssertMultiplayerNativeDifferentialSubstrate(scenario.CombatState);
                 await runner.AssertMultiplayerNativeSimpleActionDifferentialAsync(scenario.CombatState);
                 runner._completedChecks.Add(
-                    "MultiplayerNativeDiff:ActorCount2:ActorCount3:ActorCount4:AllActorRootProjection:IndependentForks:RootIsolation:M4TenCardsBaseUpgrade:M4AllAlliesFourActorDead:M4DemonicShieldLethal:M5FifteenCardsBaseUpgrade:M5InitialPowerGraph:M5KnockdownDamage:M5TankGuardedDamage:M5HammerTimeForge:M5EnemySideRemoval:M6EightCardsBaseUpgrade:M6CardOwnerTransfer:M6ImitationTarget:M6ImitationAutoPlayLifecycle:M7ThreeCardsBaseUpgrade:M7FourActorMixedResources:M7HibernateLifecycle:M8BlockPotion2And4Actor:M8DeadPotionTargetRejected:M8RemoteShurikenOwner:M8SelfCardAntiBroadcast:M9FullRound2And4Actor");
+                    "MultiplayerNativeDiff:ActorCount2:ActorCount3:ActorCount4:AllActorRootProjection:IndependentForks:RootIsolation:M4TenCardsBaseUpgrade:M4AllAlliesFourActorDead:M4DemonicShieldLethal:M5FifteenCardsBaseUpgrade:M5InitialPowerGraph:M5KnockdownDamage:M5TankGuardedDamage:M5HammerTimeForge:M5EnemySideRemoval:M6EightCardsBaseUpgrade:M6CardOwnerTransfer:M6ImitationTarget:M6ImitationAutoPlayLifecycle:M7ThreeCardsBaseUpgrade:M7FourActorMixedResources:M7HibernateLifecycle:M8BlockPotion2And4Actor:M8DeadPotionTargetRejected:M8RemoteShurikenOwner:M8SelfCardAntiBroadcast:M9FullRound2And4Actor:M9SingleActorDeath");
             }
             if (request.ScenarioId == "COOP-MULTIPLAYER-IDENTITY")
             {

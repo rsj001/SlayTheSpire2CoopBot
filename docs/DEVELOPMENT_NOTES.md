@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 原版多人语义 M9 回合、死亡和终止（已完成，2026-09-29）
+
+联合 EndTurn readiness 现在可在全员屏障前不可变撤销，屏障一旦到达便明确拒绝撤销，避免回滚已经可能开始的玩家尾 Hook；`COOP-JOINT-TURN-BARRIER` / `a5230c1d49324e5f90e8e81f94b4c315` Passed。Oil Spray 的死亡差分进一步发现原版是先攻击全部原始目标，队伍仍存活时再对全部原始目标施加 Weak；因此动作中死亡的目标仍得到后效，而全员在攻击段死亡时整个行动终止、无人得到 Weak。联合 target-only 分派已按此两段顺序修正，敌方尾持续时间也不再推进死亡 owner。最终一名 Actor 死亡并返回下一玩家侧的原生/预测全状态差分 `86de689bcf08494dad9735710d0ba25a` Passed；全员死亡纯离线终止 `cfe89fb1039c4243a6e0d475f942e08a` Passed。合成原版全员死亡会触发宿主真实 CombatManager 的全局 PendingLoss，故没有把污染真实战斗的尝试当作证据，保留为纯离线终止门禁。
+
 ## 多人完整轮次原生差分（2026-09-29）
 
 新增仅供 unattended 使用的合成原版多人回合驱动器，直接复用原版 Hook、牌堆命令、怪物 `TakeTurn`、AI 换招和玩家 setup；生产 Runtime 不接入。2/4 Actor 均从同一冻结根经历玩家尾、Sludge Spinner Oil Spray 对全员攻击/Weak、敌方尾和下一玩家开始，再按每名 Actor 的 HP/格挡/资源/牌堆/Power、敌人状态、Round/TurnNumber 与 continuation 严格对账，`COOP-MULTIPLAYER-NATIVE-DIFF` / `58578b4335464a2d96fc1df476659676` Passed，实例已删除。首次 `a7f0e651d6094e269b2f7f63546da28e` 因 fixture 未执行原版 side-switch 导致怪物仍标记为本轮召唤而跳过行动；第二次 `1de8e4c469424a0996f910a1d7c509e0` 因四人根的 Necrobinder 起始遗物尝试向 live CombatManager 注册合成宠物而失败。最终 fixture 显式执行 side-switch 并移除无关起始遗物，隔离目标回合语义。

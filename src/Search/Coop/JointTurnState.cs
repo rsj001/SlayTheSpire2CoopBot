@@ -51,6 +51,22 @@ internal sealed record JointTurnState
         return new JointTurnState(Turn, next);
     }
 
+    public JointTurnState UndoEndTurn(CombatActorId actor)
+    {
+        if (IsBarrierReached)
+        {
+            throw new InvalidOperationException(
+                "联合回合已到达全员屏障，不能撤销可能已触发结算的 EndTurn。");
+        }
+        int index = ValidateActor(actor);
+        JointActorTurnPhase phase = Phases[index];
+        if (phase != JointActorTurnPhase.Ended)
+            throw new InvalidOperationException($"{actor} 当前阶段为 {phase}，没有可撤销的 EndTurn。");
+        JointActorTurnPhase[] next = [.. Phases];
+        next[index] = JointActorTurnPhase.Playing;
+        return new JointTurnState(Turn, next);
+    }
+
     public JointTurnState MarkDead(CombatActorId actor)
     {
         int index = ValidateActor(actor);

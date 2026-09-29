@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Monsters;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using MegaCrit.Sts2.Core.Runs;
 using CombatSolver.Engine.Common;
@@ -61,6 +62,69 @@ internal sealed partial class UnattendedTestRunner
         {
             throw new InvalidOperationException(
                 $"{actorCount} Actor full-round boundary did not return to an equivalent player side.");
+        }
+    }
+
+    private async Task AssertMultiplayerNativeRoundDeathDifferentialAsync(
+        CombatState source,
+        bool allPlayersDie)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(
+            source,
+            actorCount: 2,
+            enemyModel: ModelDb.Monster<SludgeSpinner>());
+        foreach (Player player in native.Players)
+        {
+            foreach (RelicModel relic in player.Relics.ToArray())
+                player.RemoveRelicInternal(relic, silent: true);
+        }
+        native.Players[0].Creature.SetCurrentHpInternal(1);
+        if (allPlayersDie)
+            native.Players[1].Creature.SetCurrentHpInternal(1);
+        ForceNativeMove(native.Enemy, "OIL_SPRAY_MOVE");
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator predicted = root.ForkSimulator();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, predicted);
+        JointRoundTransition.CompletePlayerSide(predicted, turns, deaths);
+        JointRoundTransition.CompleteBasicEnemySide(predicted, deaths);
+        await CompleteSyntheticNativePlayerSideAsync(native);
+        await CompleteSyntheticNativeEnemySideAsync(native);
+
+        if (!native.Players[0].Creature.IsDead
+            || native.Players[1].Creature.IsDead != allPlayersDie
+            || !predicted.State.GetCreature(root.Actors[0].PlayerIdentity.Creature).IsDead
+            || predicted.State.GetCreature(root.Actors[1].PlayerIdentity.Creature).IsDead != allPlayersDie)
+        {
+            throw new InvalidOperationException("Enemy-side player death projection diverged.");
+        }
+        if (allPlayersDie)
+        {
+            if (predicted.IsInProgress)
+                throw new InvalidOperationException("All-player death did not terminate predicted combat.");
+            SimulatedCombatState predictedCombat = (SimulatedCombatState)predicted.State.CombatState;
+            for (int index = 0; index < native.Players.Count; index++)
+            {
+                int actualWeak = native.Players[index].Creature.GetPower<WeakPower>()?.Amount ?? 0;
+                int predictedWeak = predictedCombat.GetAmount<WeakPower>(
+                    root.Actors[index].PlayerIdentity.Creature);
+                if (actualWeak != predictedWeak)
+                    throw new InvalidOperationException(
+                        $"All-player terminal move effects diverged for Actor{index}: " +
+                        $"native Weak={actualWeak}, predicted Weak={predictedWeak}.");
+            }
+            return;
+        }
+
+        JointTurnState nextTurns = JointRoundTransition.StartBasicPlayerSide(predicted, turns, deaths);
+        await StartSyntheticNativePlayerSideAsync(native);
+        AssertMultiplayerLifecycleSnapshots(native, root, predicted, "FullRound.OneActorDies.NextSide");
+        if (nextTurns.Phases[0] != JointActorTurnPhase.Dead
+            || nextTurns.Phases[1] != JointActorTurnPhase.Playing)
+        {
+            throw new InvalidOperationException("Dead Actor was not excluded from the next player side.");
         }
     }
 
@@ -141,6 +205,8 @@ internal sealed partial class UnattendedTestRunner
     {
         foreach (Creature creature in native.State.Creatures)
             creature.OnSideSwitch();
+        foreach (Player player in native.Players)
+            player.PlayerCombatState!.Phase = PlayerTurnPhase.None;
         native.State.CurrentSide = CombatSide.Player;
         native.State.RoundNumber++;
         foreach (Player player in native.Players.Where(static player => !player.Creature.IsDead))

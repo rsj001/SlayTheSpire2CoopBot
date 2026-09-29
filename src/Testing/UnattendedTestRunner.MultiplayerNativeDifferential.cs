@@ -121,8 +121,6 @@ internal sealed partial class UnattendedTestRunner
         await AssertCrossPlayerBlockPotionAsync(source, actorCount: 4);
         await AssertDeadPlayerPotionTargetRejectedAsync(source);
         await AssertRemoteShurikenNativeDifferentialAsync(source);
-        await AssertMultiplayerNativeRoundDifferentialAsync(source, actorCount: 2);
-        await AssertMultiplayerNativeRoundDifferentialAsync(source, actorCount: 4);
         await AssertMultiplayerDirectCardAsync(
             source,
             typeof(DefendDefect),
@@ -130,6 +128,11 @@ internal sealed partial class UnattendedTestRunner
             actorCount: 4,
             deadActor: false,
             sourceActorIndex: 1);
+        // Synthetic native monster moves write the original global combat history. Keep the
+        // full-round probes last so that this test-only observation cannot affect earlier fixtures.
+        await AssertMultiplayerNativeRoundDifferentialAsync(source, actorCount: 2);
+        await AssertMultiplayerNativeRoundDifferentialAsync(source, actorCount: 4);
+        await AssertMultiplayerNativeRoundDeathDifferentialAsync(source, allPlayersDie: false);
     }
 
     private async Task AssertCrossPlayerBlockPotionAsync(CombatState source, int actorCount)

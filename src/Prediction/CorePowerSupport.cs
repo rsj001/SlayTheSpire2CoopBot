@@ -564,7 +564,7 @@ internal static class CorePowerSupport
             return false;
         TriggerTransientSideTurnEndPowers(simulator, combat, CombatSide.Enemy, enemies);
         combat.RestoreTemporaryStrength(enemies);
-        TickDurations(combat);
+        TickDurations(combat, simulator);
         return HookMirrors.AfterSideTurnEndLate(simulator, CombatSide.Enemy, enemies);
     }
 
@@ -716,6 +716,24 @@ internal static class CorePowerSupport
     {
         foreach (Creature creature in combat.Creatures)
         {
+            Tick<WeakPower>(combat, creature);
+            Tick<VulnerablePower>(combat, creature);
+            Tick<FrailPower>(combat, creature);
+            Tick<IntangiblePower>(combat, creature);
+            int noBlock = combat.GetAmount<NoBlockPower>(creature);
+            if (noBlock > 0)
+                combat.SetAmount<NoBlockPower>(creature, noBlock - 1);
+        }
+    }
+
+    private static void TickDurations(
+        SimulatedCombatState combat,
+        CombatPredictionSimulator simulator)
+    {
+        foreach (Creature creature in combat.Creatures)
+        {
+            if (simulator.State.GetCreature(creature).IsDead)
+                continue;
             Tick<WeakPower>(combat, creature);
             Tick<VulnerablePower>(combat, creature);
             Tick<FrailPower>(combat, creature);

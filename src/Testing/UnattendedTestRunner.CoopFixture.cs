@@ -49,6 +49,7 @@ internal sealed partial class UnattendedTestRunner
         AssertEnemyEscape(source);
         AssertRemoteActorExtraTurn(source);
         AssertOwnerOnlyEnemyRng(source);
+        AssertAllActorsDeadTerminal(source);
         AssertCompleteStrictReplay(source, 2);
         AssertCompleteStrictReplay(source, 4);
         AssertFourActorBoundedWorkload(source);
@@ -570,6 +571,33 @@ internal sealed partial class UnattendedTestRunner
                         "四 Actor 一层 BFWS 与 DFS oracle 的最优值、动作序或状态不一致。");
                 }
             }
+        }
+    }
+
+    private static void AssertAllActorsDeadTerminal(CombatState source)
+    {
+        OfflineJointCombat offline = CreateOfflineJointCombat(
+            source,
+            actorCount: 2,
+            enemyModel: ModelDb.Monster<SludgeSpinner>());
+        foreach (Player player in offline.Players)
+            player.Creature.SetCurrentHpInternal(1);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(offline.State);
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        combat.ForceMonsterMove(combat.Enemies.Single(), "OIL_SPRAY_MOVE");
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+        if (simulator.IsInProgress
+            || simulator.State.Players.Any(player => simulator.State.GetCreature(player.Creature).IsAlive)
+            || simulator.State.Players.Any(player => combat.GetAmount<WeakPower>(player.Creature) != 0))
+        {
+            throw new InvalidOperationException(
+                "全员死亡没有立即终止联合战斗，或仍错误执行了终止后的 Oil Spray 后效。");
         }
     }
 

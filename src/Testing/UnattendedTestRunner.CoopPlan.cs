@@ -67,9 +67,21 @@ internal sealed partial class UnattendedTestRunner
         state = state.EndTurn(actor1);
         if (state.IsBarrierReached || !state.IsActionable(actor0))
             throw new InvalidOperationException("单个 Actor 结束回合错误地越过了全员屏障。");
+        state = state.UndoEndTurn(actor1);
+        if (!state.IsActionable(actor0) || !state.IsActionable(actor1) || state.IsBarrierReached)
+            throw new InvalidOperationException("屏障前撤销 EndTurn 没有恢复 Actor 可行动状态。");
+        state = state.EndTurn(actor1);
         state = state.EndTurn(actor0);
         if (!state.IsBarrierReached)
             throw new InvalidOperationException("全员结束回合后未到达屏障。");
+        try
+        {
+            _ = state.UndoEndTurn(actor1);
+            throw new InvalidOperationException("全员屏障后仍允许撤销 EndTurn。");
+        }
+        catch (InvalidOperationException error) when (error.Message.Contains("全员屏障", StringComparison.Ordinal))
+        {
+        }
         state = state.AdvanceTurn();
         if (state.Turn != 2 || !state.IsActionable(actor0) || !state.IsActionable(actor1))
             throw new InvalidOperationException("联合回合屏障推进后阶段错误。");
