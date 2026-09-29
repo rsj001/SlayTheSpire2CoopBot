@@ -6,6 +6,12 @@
 - 同场生命周期探针对正常完成、预定第 4 个子节点取消、预定第 4 个子节点注入异常三条路径收集弱引用；回调清除、搜索栈退出并最多三次强制 GC 后 retained 均为 0。固定工作量仍为 Beam 97/BFWS 123、Completed，`runId=c1e614871b1142c28716a80fdb64466d` Passed，实例已删除。
 - 该 strict 对照是离线搜索增量分支与同根独立回放，不称为真实多人客户端 actual 执行；未运行可见 Steam/WSL。
 
+## F12 最终同源码单人代表集（2026-09-29）
+
+- 主 DLL 哈希 `CB1B22002B0B89F92B9B9191046C137F4153DC3645982D2F85FC4DA3432CE870`：`COOP-P2-SINGLE-ROOT` / `d8b31fee5d69496ca51c350b9105b784`、`COOP-ACTOR-PLAN-CONTRACT` / `66f76f63db5049298715b50ff04d50ec`、`COOP-ACTOR-CANDIDATES` / `fae495b9f9b74ff4abd5bcb77370a331`、`COOP-JOINT-REPLAY` / `ebca11006dca45b086f3ac853810a3a5` 均 Passed，实例逐次删除。
+- 同 DLL 的 `COOP-PRODUCTION-SINGLE-BOUNDARY` / `beef4d605bbf478b82af256922b256b1` Passed：生产 Search 接受 ActorCount=1、拒绝 2。首次相同请求在进入游戏前被私有实例可执行文件校验拒绝并删除，串行重试通过，不计行为失败。
+- 结构门禁另禁止 `CombatBeamSolver*.cs` 引用联合执行器；单人候选评分/保路仍归生产 Search，联合候选器不复制其政策。未启动可见 Steam/WSL。
+
 ## 离线四 Actor F12 最终门禁（2026-09-29）
 
 - 生产单人边界：`COOP-PRODUCTION-SINGLE-BOUNDARY` 接受 ActorCount=1、拒绝 2，串行重试 `runId=9cbc7199dd9a4a29914c9ed6bbb3fe5f` Passed，实例已删除；首次启动仅在进入游戏前被私有实例可执行文件校验拒绝并清理，不计行为结果。

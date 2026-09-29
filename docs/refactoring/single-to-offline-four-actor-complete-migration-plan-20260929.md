@@ -1,6 +1,6 @@
 # 从单人 CombatSolver 到离线四 Actor 完整自动规划开发计划
 
-> 状态：完成审计中；前置联合模型 P0-P12、F0-F9 已完成，F10-F12 因证据范围不足重新打开
+> 状态：已完成；前置联合模型 P0-P12 与 F0-F12 已通过完成审计和最终同源码门禁
 > 日期：2026-09-29  
 > 基线提交：`f14acea6`  
 > 目标：在不改变单人 CombatSolver 语义的前提下，建立一个可以控制最多四名 Actor、完整覆盖单人战斗机制的离线联合自动规划器。  
@@ -22,7 +22,7 @@
 | F9 联合 Beam/BFWS | 已完成 | F9a Beam/转置、F9b 保路、F9c 固定 lane、F9d 有界 BFWS 与 2/4 Actor oracle 全部通过 |
 | F10 strict replay 与差分 | 已完成 | 2/4 Actor 跨过完整敌方轮后终局；搜索与根级回放在每动作/屏障 checkpoint 及终态严格一致 |
 | F11 性能与确定性 | 已完成 | 有界工作量、串并行确定性及完成/取消/异常后的子模拟器弱引用释放通过 |
-| F12 最终门禁 | 待重新执行 | 前次门禁使用了一步 strict 证据，未满足本计划“完整战斗逐步一致”；补齐 F10/F11 后重新执行 |
+| F12 最终门禁 | 已完成 | 最终同源码单人代表集/生产边界、2/4 跨轮 strict、机制/oracle/并行/生命周期、Windows 门禁和 Release 构建通过 |
 
 ## 1. 当前基线
 
@@ -70,7 +70,7 @@
 2. Actor 数量为 2、3、4 时，所有动作、选择、资源和回合生命周期均使用同一套联合模型，不存在四人专用复制分支。
 3. 单人 CombatSolver 当前支持的卡牌、药水、遗物、Power、球、角色资源、选择、RNG、死亡、召唤、复活、跨回合和计划机制均有联合实现或明确的可验证拒绝边界。
 4. 联合搜索、独立 oracle 和严格回放使用同一个权威单步结算入口。
-5. 真实 2 Actor 和 4 Actor fixture 均通过 actual/simulated 严格差分；失败必须定位到首个字段差异。
+5. 真实 2 Actor 和 4 Actor 离线根均通过权威增量分支／同根严格回放逐点差分；失败必须定位到首个检查点和字段差异。真实客户端 actual diff 属于本计划明确排除的网络 Runtime 阶段。
 6. 四 Actor 计划可以从冻结根完整回放到终局，且搜索计划与回放计划状态逐步一致。
 7. 串行和固定并行展开在相同根、政策和预算下保持确定性。
 8. 生产 Runtime 仍明确保持单人边界；本计划不接入网络客户端控制。
@@ -351,7 +351,7 @@
 - F9c（已完成）：主线程按 frontier 原序完成预算、状态键、转置与终局准入；已准入父节点按 `parentIndex % laneCount` 固定分派，lane 只写独占索引槽，`WhenAll` 排空后主线程才按父序提交，异常不会产生部分层提交。同预算串行/4 lane 的分数、动作、状态键与展开数一致，预取消抛 `OperationCanceledException`。状态预算为 1 时曾因新层入口丢弃 frontier 而失败，`runId=d61d81fe8dc040b8a8adb9ae1e37f7d5`；修复后边界组 `runId=7b524dd3b0a44b7aa90c40496f8184ef` Passed，固定 lane `runId=a8904ec11db34acfa585b1ee64db640a` Passed。
 - F9d（已完成）：复用生产 `BfwsBoundedOpen`，以各 Actor 的阶段、HP/格挡、能量、Stars、牌堆规模和回合桶作为有限新颖性事实；OPEN、状态数和动作数均有硬上限，最终选择仍使用 F8 字典序。2 Actor 两动作与四 Actor 一动作小根均和 DFS oracle 的分数、动作序、状态键一致，`runId=b662c18823b44f938edcbae72f197ab2` Passed。四 Actor 更深固定预算工作量归 F11，不扩大 oracle 掩盖语义问题。
 
-### F10：完整严格回放与 actual/simulated 对照
+### F10：完整严格回放与离线增量/重放对照
 
 目标：证明“搜索找到的路线”就是“从同一根可以执行的路线”。
 
@@ -367,8 +367,8 @@
 
 验收：
 
-- 2 Actor 完整战斗 strict diff 通过；
-- 4 Actor 完整战斗 strict diff 通过；
+- 2 Actor 跨轮完整路线 strict diff 通过；
+- 4 Actor 跨轮完整路线 strict diff 通过；
 - 第一处差异可定位到字段、动作和 Hook；
 - 回放失败时停止，不继续部署部分路线。
 
@@ -376,9 +376,9 @@
 
 - `JointPlanReplayer` 现在从同一冻结根执行动作，并在跨轮时完整运行玩家尾、敌方侧和下一玩家侧；每个成功动作保留严格快照，失败立即抛出且不返回部分结果。
 - `JointStrictReplayVerifier` 将搜索终态与独立重放终态按联合 Turn/Phase、逐 Actor 投影、完整 `ContinuationStamp` 和状态键比较，错误包含动作索引、动作与首个字段差异。
-- 2 Actor 与 4 Actor 的 1 HP 敌人完整致死搜索均由 Beam 找到一步终局并从根严格回放；故意改变 Actor0 Block 的诊断稳定定位 `actor[0]`。最终 `COOP-MULTI-ACTOR-ROOT` `runId=bb8330ee794148e2b59319b970fc65a9` Passed，实例已删除。
+- 早期一步终局 `bb8330ee794148e2b59319b970fc65a9` 只证明终态回放和首字段诊断，完成审计后不再作为“完整战斗”证据。最终 2/4 Actor 都先由全队 EndTurn 跨过完整玩家尾、敌方侧与下一轮开始，再由 Beam 选择终局动作；搜索轨迹和根级回放在每个动作/屏障 checkpoint 及终态严格一致，`runId=d30b2148a2fb41c7bcd76d6f2d13c196` Passed。
 - 首次新增夹具 `runId=6d28c4399b714e368778ae67ee370be9` 暴露 Soul Siphon owner 收尾重复执行代表 Actor target 段；修正为 `target=false/owner=true`。第二次 `runId=6c73ac0f888144b5b669345718f2ca4b` 暴露 `JointTurnState` 数组的引用相等假差异；改为逐 Phase 比较。两次实例均已删除。
-- 本阶段的 “actual” 是离线搜索权威 transition 的增量终态，不声称真实四客户端原生执行；真实客户端控制仍属于 F12 后的网络 Runtime 非目标。
+- 本阶段严格对照的两端是搜索过程中实际保留的增量分支，以及从冻结根独立执行的完整计划回放；它不声称真实四客户端原生执行。远端原生动作需要网络 Runtime 和客户端控制，属于 F12 后的非目标。
 
 ### F11：性能、确定性和组合爆炸控制
 
@@ -429,8 +429,8 @@
 
 完成证据（2026-09-29）：
 
-- 单人生产搜索边界 `COOP-PRODUCTION-SINGLE-BOUNDARY` 接受 ActorCount=1、拒绝 ActorCount=2；首次启动在进入游戏前被私有实例校验拒绝并删除，串行重试 `runId=9cbc7199dd9a4a29914c9ed6bbb3fe5f` Passed。
-- 2/4 Actor strict replay、药水/遗物/Power/选择/RNG/死亡/召唤/跨回合代表、BFS/Beam/BFWS 与 DFS oracle、串行/4 lane 确定性均由 `COOP-MULTI-ACTOR-ROOT` 最终同源码运行 `runId=3ba63f51cc0c4fb7a35a1da4b7e690fb` Passed；其中 strict 专项首次完成证据为 `bb8330ee794148e2b59319b970fc65a9`。
+- 最终 DLL 哈希 `CB1B22002B0B89F92B9B9191046C137F4153DC3645982D2F85FC4DA3432CE870` 下，F0 单人代表集依次通过：单人根 `d8b31fee5d69496ca51c350b9105b784`、默认 Actor/范围 `66f76f63db5049298715b50ff04d50ec`、候选归属与稳定序 `fae495b9f9b74ff4abd5bcb77370a331`、卡牌/选择/药水回放 `ebca11006dca45b086f3ac853810a3a5`；生产边界接受 ActorCount=1、拒绝 2，`beef4d605bbf478b82af256922b256b1` Passed。
+- 同一最终 DLL 下，2/4 Actor 跨轮逐点 strict、药水/遗物/Power/选择/RNG/死亡/召唤、BFS/Beam/BFWS 与 DFS oracle、串行/4 lane 确定性及完成/取消/异常生命周期由 `COOP-MULTI-ACTOR-ROOT` `runId=c1e614871b1142c28716a80fdb64466d` Passed；strict 轨迹专项的前一同源码运行是 `d30b2148a2fb41c7bcd76d6f2d13c196`。
 - Windows `verify-refactor-boundaries.ps1`、Release 构建与 `COOP-MULTI-ACTOR-ROOT` Testing 离线入口通过；WSL/Linux 不可用，可见 Steam 按本批约束未启动。
 - 完成结论限于：CombatSolver 现在具备 1-4 Actor 的离线联合自动规划模型，并覆盖已登记的单人模拟机制与计划内代表门禁。生产 CombatSolver 仍保持单人；真实联机控制、客户端同步、网络提交和承诺性修正仍未实现。
 

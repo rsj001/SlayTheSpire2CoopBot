@@ -4,6 +4,8 @@
 
 完成审计撤回了“一步终局即完整 strict diff”和“累计分配即无泄漏”的过度结论。联合搜索节点现保存每个动作与跨轮屏障后的不可变 checkpoint；2/4 Actor 都先让全队 EndTurn，完整经历玩家尾、敌方行动、AI/RNG 推进和下一轮开始，再由搜索终局，根级回放逐点比较 Turn/Phase、完整 continuation 与状态键，`runId=d30b2148a2fb41c7bcd76d6f2d13c196` Passed。生命周期探针对正常完成、取消和注入异常三条路径收集子模拟器弱引用，搜索栈退出并强制 GC 后全部释放，`runId=c1e614871b1142c28716a80fdb64466d` Passed。权威库存已同步关闭敌方/RNG/历史、strict replay 和快照所有权缺口；真实客户端 actual diff 仍不是本离线阶段结论。
 
+最终同源码 F0 代表集为 `d8b31fee5d69496ca51c350b9105b784`、`66f76f63db5049298715b50ff04d50ec`、`fae495b9f9b74ff4abd5bcb77370a331`、`ebca11006dca45b086f3ac853810a3a5`；生产单人边界 `beef4d605bbf478b82af256922b256b1` Passed。全部使用相同主 DLL 哈希 `CB1B22002B0B89F92B9B9191046C137F4153DC3645982D2F85FC4DA3432CE870`，实例均删除。首次最终生产边界启动在进入游戏前命中私有实例校验竞争并清理，串行重试通过。
+
 ## 离线四 Actor F0-F12 完成（2026-09-29）
 
 完整迁移计划 F0-F12 已收口：生产单人搜索继续只接受 ActorCount=1；离线联合模型支持 1-4 Actor，具备 Actor-aware 状态/Fork/续用、卡牌/药水/Power/遗物/角色资源、选择链、完整回合与敌方生命周期、联合目标、Beam/BFWS、根级 strict replay 和有界确定性证据。单人边界最终 `runId=9cbc7199dd9a4a29914c9ed6bbb3fe5f` Passed；联合最终同源码入口 `3ba63f51cc0c4fb7a35a1da4b7e690fb` Passed。该结论不包含真实多人 Runtime、客户端控制、网络动作或承诺性修正；总战损仍是不同角色 HP 价值模型完成前的 workaround。

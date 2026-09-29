@@ -1,6 +1,6 @@
 # 离线四 Actor 单人功能迁移库存
 
-> 状态：F10-F12 完成审计中  
+> 状态：F0-F12 已完成并通过最终同源码门禁  
 > 冻结提交：`00a4193f`  
 > 维护规则：后续 F 阶段只能把本表中的 `待迁移` 关闭为 `已迁移`，或用实际原版证据改为 `明确不支持`；不得只凭编译或静态阅读改变状态。
 
@@ -86,7 +86,7 @@
 |---|---|---|---|
 | F-ISSUE-001 | 不同角色 HP 价值不可直接相加 | 保留总战损 workaround，同时保留逐 Actor 向量；不在迁移阶段重设权重 | F8 后续研究 |
 | F-ISSUE-002 | 生产 Runtime/UI/部署大量使用 `LocalContext.GetMe()` | 保持生产单人边界，不把它们纳入离线联合模型 | F12 非目标门禁 |
-| F-ISSUE-003 | 联合 BFS/DFS 在全员屏障处停止，未执行敌方生命周期 | 明确标为待迁移，不把现有 oracle 证据外推 | F7/F10 |
+| F-ISSUE-003 | 联合 BFS/DFS 曾在全员屏障处停止，未执行敌方生命周期 | 已统一经 `ExpandBarrier` 执行玩家尾、额外回合或敌方侧和下一轮；2/4 Actor 跨轮逐点 strict replay 关闭缺口 | F7/F10 已关闭 |
 | F-ISSUE-004 | `CombatRootSnapshot` 的可再生药水、Throwing Axe、战后回血与可搜索药水原先只捕获本地玩家 | F5a 移入 `CombatActorRoot`；旧根字段保留为本地 Actor 兼容视图 | F8 联合终局继续消费逐 Actor 元数据 |
 | F-ISSUE-004 | `PlanRelicEffect` 是路线显示证据，不等于主动遗物动作 | 反编译原版未发现战斗内 `UseRelic`/`ActivateRelic` 提交入口；不新增动作类型，遗物 Hook 触发语义归 F5 | F1 已定边界，F5 验证触发 |
 | F-ISSUE-005 | 多 Actor 远端玩家获得格挡时，multiplayer scaling mirror 直接按玩家数拒绝 | 按原版精确镜像：玩家目标/非 powered 不缩放；主次敌人按人数及 Act/Boss 系数缩放 | F2 已修复；失败 `e62462a1435d4bbbbe0c48965528985b`，通过 `34221092e12f40f5addc9fb89219ff94` |
