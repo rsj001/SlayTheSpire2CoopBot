@@ -1794,6 +1794,15 @@ require_fixed "$monster_move_semantics" 'applyMoveEffect: false' \
     'joint mixed monster move split missing:'
 require_fixed "$joint_round_transition" 'processedEnemyDeaths.Remove(revivedCombatId)' \
     'joint enemy revive no longer restores death-processing eligibility:'
+for token in \
+    'TryPrepareExtraPlayerTurn(' \
+    'ConsumeExtraTurnSources(' \
+    'turns.AdvanceExtraTurn(extraActors!)' \
+    'isExtraTurn'
+do
+    require_fixed "$joint_round_transition" "$token" \
+        'joint extra-turn subset boundary missing:'
+done
 joint_offline_search="$repository_root/src/Search/Coop/JointOfflineSearch.cs"
 for token in \
     'internal sealed record JointOfflineSearchRequest(' \

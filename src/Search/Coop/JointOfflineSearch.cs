@@ -329,17 +329,19 @@ internal static partial class JointOfflineSearch
                 IReadOnlyList<PlanCardChoice> turnStartChoices = transitionChoices
                     .Where(static choice => choice.Timing != PlanChoiceTiming.PlayerTurnEnd)
                     .ToArray();
-                JointRoundTransition.CompletePlayerSide(
+                IReadOnlyList<CombatActorId> extraTurnActors = JointRoundTransition.CompletePlayerSide(
                     simulator,
                     turns,
                     deaths,
                     endTurnChoices);
-                JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+                if (extraTurnActors.Count == 0)
+                    JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
                 turns = JointRoundTransition.StartBasicPlayerSide(
                     simulator,
                     turns,
                     deaths,
-                    turnStartChoices);
+                    turnStartChoices,
+                    extraTurnActors);
             }
             if (!request.EffectivePotionPolicy.Allows(action, applied))
                 throw new InvalidOperationException($"联合固定前缀违反药水政策：{action}。");

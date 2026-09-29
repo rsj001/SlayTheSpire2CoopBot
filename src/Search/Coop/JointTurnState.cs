@@ -74,6 +74,26 @@ internal sealed record JointTurnState
         return new JointTurnState(Turn + 1, next);
     }
 
+    public JointTurnState AdvanceExtraTurn(IReadOnlySet<CombatActorId> activeActors)
+    {
+        if (!IsBarrierReached)
+            throw new InvalidOperationException("仍有存活 Actor 未到达结束回合屏障。");
+        if (activeActors.Count == 0)
+            throw new ArgumentException("额外回合至少需要一个 Actor。", nameof(activeActors));
+        JointActorTurnPhase[] next = [.. Phases];
+        for (int index = 0; index < next.Length; index++)
+        {
+            if (next[index] == JointActorTurnPhase.Dead)
+                continue;
+            next[index] = activeActors.Contains(new CombatActorId(index))
+                ? JointActorTurnPhase.Playing
+                : JointActorTurnPhase.Ended;
+        }
+        if (!next.Any(static phase => phase == JointActorTurnPhase.Playing))
+            throw new InvalidOperationException("额外回合 Actor 集合没有存活成员。");
+        return new JointTurnState(Turn + 1, next);
+    }
+
     private JointActorTurnPhase? TryGetPhase(CombatActorId actor)
         => (uint)actor.Index < (uint)Phases.Count ? Phases[actor.Index] : null;
 

@@ -58,7 +58,7 @@
 |---|---|---|---|---|
 | Actor 独立结束与全员屏障 | 单人 `EndTurn` 尾部 | `JointTurnState` | 已迁移 | 任意顺序、死亡 Actor、提前跨回合拒绝 |
 | 玩家回合尾 Hook、敌方回合、下一回合开始/抽牌 | `CombatBeamSolver.Terminal.cs`、simulation commands | F7a 玩家侧、F7c1 纯攻击敌方侧、F7d1 基础下一轮、F7d2 Power 回合选择前缀已接通 | 部分迁移 | 2 Actor 基础两轮及 Tools of the Trade 恢复通过；特殊敌方后效和其余选择待 F6b/F7c-d |
-| 额外回合、死亡、复活、逃跑和失去资格 | `Prediction/*`、`SimulatedCombatState*.cs` | F7b 已通过死亡 Actor 候选/屏障/玩家侧参与者、Parafright 复活与 Fat Gremlin 逃跑 | 部分迁移 | 死亡、复活、逃跑代表通过；额外回合待验证 |
+| 额外回合、死亡、复活、逃跑和失去资格 | `Prediction/*`、`SimulatedCombatState*.cs` | F7b 完成死亡资格、Parafright 复活、Fat Gremlin 逃跑及远端 Actor Ambergris 额外回合子集 | 已迁移 | 死亡/复活/逃跑及额外回合 Actor 子集、TurnNumber/RoundNumber、敌方跳过和来源消费通过 |
 | 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | F7c1 支持纯攻击；F7c2-c3 分类 owner-only、target-only、前置/后置 mixed | 部分迁移 | Inhale、Oil Spray、Rage、Gas Bomb 自移除与 Living Fog 召唤通过；RNG 和其余特殊分类待逐类严格对照 |
 | 单人终局政策 | `FinalPlanOrdering`、`RouteQualityPolicy` | 联合比较器独立位于 `Search/Coop`，单人入口未改 | 已保留 | 结构门禁 + 最终 F12 单人等价哨兵 |
 | 团队目标 | 无单人对应 | `JointObjective` 完整字典序；总战损仍为 workaround | 已迁移 | 终局边界、存活、分布、资源、成长、偷窃和稳定决胜通过 |

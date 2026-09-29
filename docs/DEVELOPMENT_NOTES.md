@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线联合远端 Actor 额外回合（2026-09-29）
+
+联合玩家屏障新增原版多人额外回合子集语义：按 Actor owner 检测并消费来源，子集存在时跳过敌方侧，只为子集增加 TurnNumber、恢复行动并执行额外回合玩家开始生命周期；其他存活 Actor 保持 Ended，共享 RoundNumber 不变。Actor1 Ambergris 夹具验证 Actor0 不行动、敌方不造成伤害且来源归零；`COOP-MULTI-ACTOR-ROOT` 的 `runId=544bf8bc1d4248ff952622314b289b94` Passed，实例已删除。F7b 至此关闭。
+
 ## 离线联合敌方复活与逃跑（2026-09-29）
 
 联合敌方 owner-only 分类新增 Parafright 复活与 Fat Gremlin 逃跑；复活完成后同步撤销已处理死亡 CombatId，使后续再次死亡仍能执行死亡尾部，逃跑保持独立 roster 语义。两 Actor 夹具验证复活恢复满血并重新获得死亡处理资格、逃跑从活动 roster 移入逃跑集合；`COOP-MULTI-ACTOR-ROOT` 的 `runId=43e62fb1701d44fb9257fcbd4e5a3db9` Passed，实例已删除。额外回合仍待 F7b 后续。

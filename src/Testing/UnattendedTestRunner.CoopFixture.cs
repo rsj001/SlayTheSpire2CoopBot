@@ -39,6 +39,7 @@ internal sealed partial class UnattendedTestRunner
         AssertPreAttackSummonEnemyMove(source);
         AssertEnemyRevive(source);
         AssertEnemyEscape(source);
+        AssertRemoteActorExtraTurn(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -771,6 +772,54 @@ internal sealed partial class UnattendedTestRunner
         JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
         if (!combat.EscapedCreatures.Contains(enemy) || combat.Enemies.Contains(enemy))
             throw new InvalidOperationException("联合敌方逃跑没有从活动 roster 移入逃跑集合。");
+    }
+
+    private static void AssertRemoteActorExtraTurn(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(source, 2);
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Player remote = simulator.State.Players[1];
+        combat.Apply<AmbergrisPower>(remote.Creature, 1, remote.Creature);
+        int roundBefore = combat.RoundNumber;
+        int[] turnsBefore = simulator.State.Players
+            .Select(combat.GetPlayerTurnNumber)
+            .ToArray();
+        int[] hpBefore = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        IReadOnlyList<CombatActorId> extras = JointRoundTransition.CompletePlayerSide(
+            simulator,
+            turns,
+            deaths);
+        if (!extras.SequenceEqual([new CombatActorId(1)]))
+            throw new InvalidOperationException($"联合额外回合 Actor 子集错误：{string.Join(',', extras)}。");
+        JointTurnState next = JointRoundTransition.StartBasicPlayerSide(
+            simulator,
+            turns,
+            deaths,
+            extraTurnActors: extras);
+        int[] hpAfter = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        if (combat.RoundNumber != roundBefore
+            || combat.GetPlayerTurnNumber(simulator.State.Players[0]) != turnsBefore[0]
+            || combat.GetPlayerTurnNumber(remote) != turnsBefore[1] + 1
+            || next.Phases[0] != JointActorTurnPhase.Ended
+            || next.Phases[1] != JointActorTurnPhase.Playing
+            || combat.GetAmount<AmbergrisPower>(remote.Creature) != 0
+            || !hpBefore.SequenceEqual(hpAfter))
+        {
+            throw new InvalidOperationException(
+                $"联合远端 Actor 额外回合生命周期错误：round={roundBefore}->{combat.RoundNumber} " +
+                $"turns={string.Join(',', turnsBefore)}->{combat.GetPlayerTurnNumber(simulator.State.Players[0])}," +
+                $"{combat.GetPlayerTurnNumber(remote)} phases={string.Join(',', next.Phases)} " +
+                $"ambergris={combat.GetAmount<AmbergrisPower>(remote.Creature)}。");
+        }
     }
 
     private static void AssertBasicNextPlayerSide(CombatRootSnapshot root)

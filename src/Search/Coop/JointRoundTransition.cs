@@ -14,21 +14,28 @@ internal static class JointRoundTransition
         CombatPredictionSimulator simulator,
         JointTurnState turns,
         ForkableSet<uint> processedEnemyDeaths,
-        IReadOnlyList<PlanCardChoice>? turnStartChoices = null)
+        IReadOnlyList<PlanCardChoice>? turnStartChoices = null,
+        IReadOnlyList<CombatActorId>? extraTurnActors = null)
     {
         if (!turns.IsBarrierReached)
             throw new InvalidOperationException("联合玩家侧尚未完成上一轮屏障。");
         SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        HashSet<CombatActorId>? extraActors = extraTurnActors?.ToHashSet();
+        bool isExtraTurn = extraActors is { Count: > 0 };
         Player[] players = simulator.State.Players
-            .Where(player => simulator.State.GetCreature(player.Creature).IsAlive)
+            .Where((player, index) => simulator.State.GetCreature(player.Creature).IsAlive
+                && (!isExtraTurn || extraActors!.Contains(new CombatActorId(index))))
             .ToArray();
+        if (players.Length == 0)
+            throw new InvalidOperationException("联合下一玩家轮没有可行动 Actor。");
         Creature[] participants = players.Select(static player => player.Creature).ToArray();
         combat.BeginActionChoices(turnStartChoices);
         try
         {
             combat.SetActionChoiceTiming(PlanChoiceTiming.PlayerTurnStart);
             combat.CurrentSide = CombatSide.Player;
-            combat.RoundNumber++;
+            if (!isExtraTurn)
+                combat.RoundNumber++;
             foreach (Player player in players)
             {
                 combat.AdvancePlayerTurn(player);
@@ -107,7 +114,8 @@ internal static class JointRoundTransition
                     simulator,
                     CombatSide.Player,
                     participants,
-                    decrementPlating: players.Any(player => combat.GetPlayerTurnNumber(player) != 1)),
+                    decrementPlating: players.Any(player => combat.GetPlayerTurnNumber(player) != 1),
+                    isExtraTurn),
                 combat,
                 "AfterSideTurnStart");
             RequireNoChoice(
@@ -138,7 +146,9 @@ internal static class JointRoundTransition
             combat.SetPredictedEnemyIntents(
                 moves.Where(move => move.AttackHits.Count > 0).Select(move => move.Owner));
             simulator.CheckWinCondition(combat.GetPlayerTurnNumber(players[0]));
-            return turns.AdvanceTurn();
+            return isExtraTurn
+                ? turns.AdvanceExtraTurn(extraActors!)
+                : turns.AdvanceTurn();
         }
         finally
         {
@@ -232,7 +242,7 @@ internal static class JointRoundTransition
         combat.PrepareMonsterMovesForNextRound(simulator, performedMoves);
     }
 
-    internal static void CompletePlayerSide(
+    internal static IReadOnlyList<CombatActorId> CompletePlayerSide(
         CombatPredictionSimulator simulator,
         JointTurnState turns,
         ForkableSet<uint> processedEnemyDeaths,
@@ -249,6 +259,20 @@ internal static class JointRoundTransition
         try
         {
             combat.SetActionChoiceTiming(PlanChoiceTiming.PlayerTurnEnd);
+            List<CombatActorId> extraTurnActors = [];
+            foreach (Player player in players)
+            {
+                if (!combat.TryPrepareExtraPlayerTurn(
+                        simulator,
+                        player,
+                        out bool takingExtraTurn,
+                        out _))
+                {
+                    throw PendingChoice(combat, player, turns);
+                }
+                if (takingExtraTurn)
+                    extraTurnActors.Add(ActorOf(combat, player));
+            }
             int etherealExhaustCount = players.Sum(player =>
                 combat.CountEtherealCardsInHand(simulator, player));
             foreach (Player player in players)
@@ -273,7 +297,7 @@ internal static class JointRoundTransition
                     throw PendingChoice(combat, player, turns);
                 }
                 if (!simulator.IsInProgress)
-                    return;
+                    return extraTurnActors;
                 CorePowerSupport.FlushPlayerHandAtTurnEnd(simulator, combat, player);
             }
             if (!PlayerTurnEndLifecycle.RunPhaseTwo(
@@ -292,6 +316,9 @@ internal static class JointRoundTransition
             {
                 throw PendingChoice(combat, turns);
             }
+            foreach (CombatActorId actor in extraTurnActors)
+                combat.ConsumeExtraTurnSources(simulator.State.Players[actor.Index]);
+            return extraTurnActors;
         }
         finally
         {

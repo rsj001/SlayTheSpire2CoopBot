@@ -2286,6 +2286,16 @@ if (-not (Select-String -LiteralPath $jointRoundTransitionPath `
         -SimpleMatch 'processedEnemyDeaths.Remove(revivedCombatId)' -Quiet)) {
     $violations.Add('Joint enemy revive no longer restores death-processing eligibility.')
 }
+foreach ($text in @(
+    'TryPrepareExtraPlayerTurn(',
+    'ConsumeExtraTurnSources(',
+    'turns.AdvanceExtraTurn(extraActors!)',
+    'isExtraTurn'
+)) {
+    if (-not (Select-String -LiteralPath $jointRoundTransitionPath -SimpleMatch $text -Quiet)) {
+        $violations.Add("Joint extra-turn subset boundary missing: $text")
+    }
+}
 $jointOfflineSearchPath = Join-Path $repositoryRoot 'src/Search/Coop/JointOfflineSearch.cs'
 foreach ($text in @(
     'internal sealed record JointOfflineSearchRequest(',

@@ -146,3 +146,4 @@ writeLive 和 writePredicted，复用 store 的 Fork context。状态描述按�
 - 离线联合卡牌候选不得在来源牌离手前从根手牌静态预建普通主选择；主选择与嵌套选择都由 `JointActionTransition` 实际执行到 pending 后返回的 spec 展开，避免 Decisions 等手牌选择包含已进入打出区的来源牌。仅原版要求的空选择可预填。
 - 离线联合敌方行动须把逐玩家目标效果与 owner/global 一次性前置或后置显式分类；不能为每个 Actor 重复调用同时包含两类效果的完整 move。未分类特殊行动继续拒绝；owner-only 代表只执行一次，mixed 必须保持原版前置→逐 Actor 目标→后置顺序，召唤、owner 自移除和 RNG 消耗不能按 Actor 倍增。
 - 联合敌方复活后必须像单人敌方循环一样移除已处理死亡 CombatId，否则该敌人下一次死亡的 Power/召唤尾部会被错误跳过；逃跑则从活动 roster 和已知敌人集合移除并进入逃跑集合，不伪造成死亡。
+- 多人额外回合是 Actor 子集而不是全队新回合：只对子集增加 TurnNumber、执行玩家开始生命周期和开放动作，其他存活 Actor 保持结束；共享 RoundNumber 不变并跳过敌方侧，来源在当前回合尾后按 owner 各消费一次。

@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 联合远端 Actor 额外回合（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：Actor1 持有一层 Ambergris，当前全员屏障完成后只返回 Actor1 额外回合子集；敌方侧被跳过，Actor0 保持 Ended/TurnNumber 不变，Actor1 恢复 Playing/TurnNumber `+1`，共享 RoundNumber 不变且 Ambergris 归零；`runId=544bf8bc1d4248ff952622314b289b94`，Passed，实例已删除。
+- 该证据不覆盖 Pael's Eye 选择来源、Linux 或可见 Steam；额外回合子集的核心生命周期与 Ambergris owner 消费已覆盖。
+
 ## 联合敌方复活与逃跑（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：Parafright 强制进入复活阶段后执行 `REVIVE_MOVE`，HP 恢复到最大值且 CombatId 不再留在已处理死亡集合；Fat Gremlin 执行 `FLEE_MOVE` 后进入逃跑集合并离开活动敌人 roster；`runId=43e62fb1701d44fb9257fcbd4e5a3db9`，Passed，实例已删除。
