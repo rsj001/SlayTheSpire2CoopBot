@@ -1,10 +1,10 @@
 {
   "MULTIPLAYER-SEMANTIC-M2-IDENTITY-20260929": {
-    "status": "PassedWithDocumentedBoundaries",
-    "level": "HeadlessMultiplayerIdentityForkAndContinuation",
-    "procedure": "COOP-MULTIPLAYER-IDENTITY；Source/Decision 计划身份；Power Applier/Target/Imitation PlayerTarget；CardOwner；父与兄弟 Fork",
+    "status": "Passed",
+    "level": "HeadlessMultiplayerIdentityPrivateStateForkAndContinuation",
+    "procedure": "COOP-MULTIPLAYER-IDENTITY；Source/Decision；Applier/Target/PlayerTarget/CardOwner；Intercept/Cacophony；Beacon/Soulbound 事务边界；父与兄弟 Fork",
     "expected": "影响合法动作或未来结算的跨玩家身份进入计划身份或状态键和 continuation，兄弟修改不污染父分支",
-    "observed": "runId=900557e659464532a18ab8da752da865 Passed，fixture 231ms，实例已删除。Intercept/Beacon/Soulbound/Cacophony 私有状态仍待 M2 后续。",
+    "observed": "最终 runId=810a49aa1718477b881656c3cac37a19 Passed，fixture 260ms，实例已删除。身份与稳定私有状态进入指纹/continuation，防重入事务显式拒绝 Fork。",
     "evidence": "src/Testing/UnattendedTestRunner.MultiplayerIdentity.cs; src/Runtime/ContinuationStamp.cs; docs/TEST_MATRIX.md"
   },
   "MULTIPLAYER-SEMANTIC-M1-ROOT-20260929": {

@@ -2437,7 +2437,45 @@ internal sealed partial class SimulatedCombatState
             count++;
         }
         AddUnordered(ref fingerprint, 'T', count, first, second);
+        AddMultiplayerPrivatePowerStates(ref fingerprint, simulator, effectivePowers);
         AddThirdPartyPowerHiddenStates(ref fingerprint, simulator, effectivePowers);
+    }
+
+    private static void AddMultiplayerPrivatePowerStates(
+        ref StateFingerprintBuilder fingerprint,
+        CombatPredictionSimulator simulator,
+        IReadOnlyList<PowerModel> effectivePowers)
+    {
+        ulong first = 0;
+        ulong second = 0;
+        int count = 0;
+        for (int index = 0; index < effectivePowers.Count; index++)
+        {
+            PowerModel power = effectivePowers[index];
+            if (power.Amount <= 0)
+                continue;
+            StateFingerprintBuilder item = new();
+            switch (power)
+            {
+                case InterceptPower intercept:
+                    item.Add(intercept.Owner.CombatId ?? uint.MaxValue);
+                    item.Add(intercept.Id.Entry);
+                    foreach (Creature covered in PowerPredictionStateSupport
+                                 .InterceptCoveredCreatures(simulator, intercept))
+                        item.Add(covered.CombatId ?? uint.MaxValue);
+                    break;
+                case ImitationLearningPower imitation:
+                    item.Add(imitation.Owner.CombatId ?? uint.MaxValue);
+                    item.Add(imitation.Id.Entry);
+                    item.Add(imitation.PlayerTarget.NetId);
+                    break;
+                default:
+                    continue;
+            }
+            AddUnorderedItem(item.Finish(), ref first, ref second);
+            count++;
+        }
+        AddUnordered(ref fingerprint, 'M', count, first, second);
     }
 
     /// <summary>

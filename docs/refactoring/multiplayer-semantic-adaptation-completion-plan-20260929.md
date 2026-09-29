@@ -1,6 +1,6 @@
 # 原版多人战斗语义适配补齐计划
 
-> 状态：执行中；M0-M1 已完成，下一阶段为 M2 跨玩家身份与私有状态<br>
+> 状态：执行中；M0-M2 已完成，下一阶段为 M3 人数缩放与生成规则<br>
 > 日期：2026-09-29<br>
 > 规划基线：`bae3f5ea`<br>
 > 原版语义基线：当前游戏 `v0.111.0` 的只读反编译 Core 源码；wiki 只用于发现内容，不作为最终结算依据<br>
@@ -256,7 +256,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M2：显式建模跨玩家身份和私有状态
 
-> 进度：进行中。已显式区分计划 `SourceActor`、选择 `DecisionActor`，多人 continuation 新增 Power `Applier/Target` 与 `ImitationLearning.PlayerTarget`；CardOwner、Applier、Target、PlayerTarget 的兄弟 Fork/状态键/continuation 隔离由 `COOP-MULTIPLAYER-IDENTITY` / `900557e659464532a18ab8da752da865` 证明。待补 `Intercept.Covering` 及 Beacon/Soulbound/Cacophony 等私有状态的统一描述器与稳定边界。
+> 进度：已完成。计划显式区分 `SourceActor` / `DecisionActor`；多人 continuation 和指纹覆盖 Power `Applier/Target`、`ImitationLearning.PlayerTarget`、`Intercept.Covering`，CardOwner 继续由逐 Actor 有序牌堆表达。Beacon/Soulbound 防重入事务禁止 Fork，Cacophony 计数进入状态；父与兄弟 Fork 隔离通过。最终证据为 `COOP-MULTIPLAYER-IDENTITY` / `810a49aa1718477b881656c3cac37a19`。
 
 目标：先修正共用底层身份，再逐卡实现，避免 37 张牌各自发明 Owner 规则。
 

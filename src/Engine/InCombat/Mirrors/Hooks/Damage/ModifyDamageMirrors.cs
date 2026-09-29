@@ -93,6 +93,7 @@ internal static class ModifyDamageMirrors
         var registry = new Registry(ModifyDamageMultiplicative);
 
         registry.Register<FlutterPower>(HandleFlutterPower);
+        registry.Register<InterceptPower>(HandleInterceptPower);
         registry.Register<GigantificationPower>(GigantificationPowerMirrors.ModifyDamageMultiplicative);
         registry.Register<ColossusPower>(HandleColossusPower);
         registry.Register<LethalityPower>(HandleLethalityPower);
@@ -106,6 +107,17 @@ internal static class ModifyDamageMirrors
         registry.Register<UndyingSigil>(HandleUndyingSigil);
 
         return registry;
+    }
+
+    private static decimal HandleInterceptPower(
+        InterceptPower power,
+        ModifyDamageMirrorContext context)
+    {
+        if (context.Target != power.Owner || !context.Props.IsPoweredAttack())
+            return 1;
+        return PowerPredictionStateSupport.InterceptCoveredCreatures(
+            context.Simulator,
+            power).Count + 1;
     }
 
     private static decimal HandleFlutterPower(FlutterPower power, ModifyDamageMirrorContext context)

@@ -63,7 +63,7 @@ internal sealed partial class UnattendedTestRunner
                 runner.SetStage("coop_multiplayer_identity");
                 AssertMultiplayerIdentityContracts(scenario.CombatState);
                 runner._completedChecks.Add(
-                    "MultiplayerIdentity:SourceActor:DecisionActor:Applier:Target:ImitationPlayerTarget:CardOwner:ForkIsolation");
+                    "MultiplayerIdentity:SourceActor:DecisionActor:Applier:Target:ImitationPlayerTarget:CardOwner:InterceptCovering:CacophonyCounter:BeaconForkBoundary:SoulboundForkBoundary:ForkIsolation");
             }
             if (request.ScenarioId == "COOP-JOINT-OBJECTIVE")
             {

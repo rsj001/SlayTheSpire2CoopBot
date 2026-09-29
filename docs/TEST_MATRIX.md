@@ -1,9 +1,9 @@
 # CombatSolver 测试清单
 
-## 原版多人语义 M2 身份合同（进行中，2026-09-29）
+## 原版多人语义 M2 身份与私有状态（2026-09-29）
 
-- `COOP-MULTIPLAYER-IDENTITY`：SourceActor 与 DecisionActor 独立；Applier、Target、ImitationLearning PlayerTarget、CardOwner 分别在兄弟 Fork 修改后同时改变联合状态键与多人 continuation，父 Fork 不变。`runId=900557e659464532a18ab8da752da865` Passed，fixture 阶段 231 ms，实例已删除。
-- 多人 Power 身份字段仅附加到 ActorCount>1 continuation；单人文本格式未改。Release 构建 0 警告/0 错误；私有 Power 状态、可见 Steam 和 Linux/WSL 尚未验证。
+- `COOP-MULTIPLAYER-IDENTITY`：SourceActor 与 DecisionActor 独立；Applier、Target、ImitationLearning PlayerTarget、CardOwner、Intercept Covering、Cacophony 计数分别在兄弟 Fork 修改后改变联合状态，父 Fork 不变；Beacon/Soulbound 防重入事务为真时 Fork 稳定拒绝。最终 `runId=810a49aa1718477b881656c3cac37a19` Passed，fixture 阶段 260 ms，实例已删除。
+- 多人 Power 身份/私有状态字段仅附加到 ActorCount>1 continuation；单人文本格式未改。Release 构建 0 警告/0 错误；未运行可见 Steam 或 Linux/WSL。
 
 ## 原版多人语义 M1 原生动作差分底座（2026-09-29）
 

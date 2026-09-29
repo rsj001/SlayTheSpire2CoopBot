@@ -1,10 +1,10 @@
 # CombatSolver 开发笔记与未来构想
 
-## 原版多人语义 M2 身份合同（进行中，2026-09-29）
+## 原版多人语义 M2 身份与私有状态（2026-09-29）
 
 计划动作与选择新增不改变序列化形态的 `SourceActor` / `DecisionActor` 明确身份；联合 pending frame 同时暴露来源与决策 Actor，不再要求调用者把选择 Owner 猜成动作 Actor。多人 `ContinuationStamp` 补入 Power 的 Owner、类型、`Applier`、`Target`，并记录 `ImitationLearningPower.PlayerTarget`；该段只在 ActorCount>1 出现，单人 continuation 文本不变。
 
-`COOP-MULTIPLAYER-IDENTITY` 在两个兄弟 Fork 中分别修改 Applier、Target、ImitationLearning PlayerTarget 和 CardOwner，每项都改变联合状态键与 continuation，父 Fork 再捕获保持不变；SourceActor/DecisionActor 的计划值相等合同也通过。`runId=900557e659464532a18ab8da752da865` Passed，实例已删除。M2 尚未关闭，仍需统一承载 `Intercept.Covering`、Beacon/Soulbound 防重入和 Cacophony 计数等私有状态。
+`Intercept.Covering` 现从原生 `_internalData` 捕获到 `StateStore`、随 Fork 深复制并由伤害倍率 mirror 读取，同时进入多人 continuation 与模拟指纹；`ImitationLearning.PlayerTarget` 同样进入两者。Beacon/Soulbound 防重入标志被定义为事务状态，为真时明确拒绝 Fork；Cacophony 计数继续由动态变量进入状态。`COOP-MULTIPLAYER-IDENTITY` 对上述字段逐项做兄弟 Fork 修改和父状态回看，最终 `runId=810a49aa1718477b881656c3cac37a19` Passed，实例已删除，M2 完成。
 
 ## 原版多人语义 M1 原生动作差分底座（2026-09-29）
 

@@ -102,9 +102,15 @@ internal sealed class AfterBlockGainedMirrorContext : CombatMirrorContext
     public required PredictedCard? Source { get; init; }
 }
 
-internal sealed class BeaconOfHopePredictionState : IPredictionStateForkable
+internal sealed class BeaconOfHopePredictionState : IPredictionStateForkable, IPredictionForkBoundary
 {
     public bool HasAlreadyBeenGivenBlock { get; set; }
 
     public object Fork(PredictionForkContext context) => MemberwiseClone();
+
+    public void AssertForkable()
+    {
+        if (HasAlreadyBeenGivenBlock)
+            throw new InvalidOperationException("Cannot fork Beacon of Hope during recursive block distribution.");
+    }
 }

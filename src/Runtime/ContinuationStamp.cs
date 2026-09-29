@@ -9,6 +9,8 @@ using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using CombatSolver.Engine.Common;
+using CombatSolver.Engine.InCombat.Mirrors.Hooks.Block;
+using CombatSolver.Engine.InCombat.Mirrors.Hooks.Card;
 using CombatSolver.Engine.InCombat.Mirrors.Orbs;
 using CombatSolver.Engine.InCombat.Simulation;
 
@@ -213,12 +215,13 @@ internal sealed record ContinuationStamp(string StateText)
             Player player = combat.Players[index];
             AppendActorContinuation(text, index, CapturePredictedActorContinuation(combat, simulator, player));
         }
-        AppendMultiplayerPowerIdentities(text, combat.EffectivePowers());
+        AppendMultiplayerPowerIdentities(text, combat.EffectivePowers(), simulator);
     }
 
     private static void AppendMultiplayerPowerIdentities(
         StringBuilder text,
-        IEnumerable<PowerModel> powers)
+        IEnumerable<PowerModel> powers,
+        CombatPredictionSimulator? simulator = null)
     {
         text.Append(";multiplayer_power_identities=");
         int slot = 0;
@@ -231,6 +234,35 @@ internal sealed record ContinuationStamp(string StateText)
                 .Append(power.Target?.CombatId ?? uint.MaxValue);
             if (power is ImitationLearningPower imitation)
                 text.Append(":player_target=").Append(imitation.PlayerTarget.NetId);
+            if (power is InterceptPower intercept)
+            {
+                IEnumerable<Creature> covered = simulator == null
+                    ? intercept.GetInternalData<InterceptPower.Data>().coveredCreatures
+                    : PowerPredictionStateSupport.InterceptCoveredCreatures(simulator, intercept);
+                text.Append(":covered=");
+                foreach (Creature creature in covered)
+                    text.Append(creature.CombatId).Append('/');
+            }
+            if (power is BeaconOfHopePower beacon)
+            {
+                bool active = simulator == null
+                    ? beacon._hasAlreadyBeenGivenBlock
+                    : simulator.StateStore.Peek(
+                        beacon,
+                        static () => new BeaconOfHopePredictionState()).HasAlreadyBeenGivenBlock;
+                text.Append(":distributing=").Append(active);
+            }
+            if (power is SoulboundPower soulbound)
+            {
+                bool active = simulator == null
+                    ? soulbound._isAddingSoul
+                    : simulator.StateStore.Peek(
+                        soulbound,
+                        () => new SoulboundPredictionState(soulbound)).IsAddingSoul;
+                text.Append(":adding_soul=").Append(active);
+            }
+            if (power is CacophonyPower cacophony)
+                text.Append(":cards_drawn=").Append(cacophony.DynamicVars.Cards.IntValue);
             text.Append(',');
         }
     }

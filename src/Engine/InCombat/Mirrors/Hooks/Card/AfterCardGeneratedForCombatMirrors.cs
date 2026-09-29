@@ -166,11 +166,18 @@ internal sealed class AfterCardGeneratedForCombatMirrorContext : CombatCardMirro
     public required Player? Creator { get; init; }
 }
 
-internal sealed class SoulboundPredictionState(SoulboundPower power) : IPredictionStateForkable
+internal sealed class SoulboundPredictionState(SoulboundPower power)
+    : IPredictionStateForkable, IPredictionForkBoundary
 {
     public bool IsAddingSoul { get; set; } = power._isAddingSoul;
 
     public object Fork(PredictionForkContext context) => MemberwiseClone();
+
+    public void AssertForkable()
+    {
+        if (IsAddingSoul)
+            throw new InvalidOperationException("Cannot fork Soulbound during recursive Soul generation.");
+    }
 }
 
 internal sealed class RegalitePredictionState(Regalite relic) : IPredictionStateForkable

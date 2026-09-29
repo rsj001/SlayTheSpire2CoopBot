@@ -1,5 +1,7 @@
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
+using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Mirrors.Hooks.Attack;
 using CombatSolver.Engine.InCombat.Mirrors.Hooks.Card;
 using CombatSolver.Engine.InCombat.Mirrors.Hooks.Damage;
@@ -37,6 +39,9 @@ internal static class PowerPredictionStateSupport
             case (CacophonyPower value, CacophonyPower original):
                 _ = simulator.StateStore.GetReadOnly(value, () => new CacophonyPredictionState(original));
                 break;
+            case (InterceptPower value, InterceptPower original):
+                _ = simulator.StateStore.GetReadOnly(value, () => new InterceptPredictionState(original));
+                break;
             case (AutomationPower value, AutomationPower original):
                 _ = simulator.StateStore.GetReadOnly(value, () => new AutomationPredictionState(original));
                 break;
@@ -63,5 +68,23 @@ internal static class PowerPredictionStateSupport
         // InitInternalData()，所以靠它保存状态的第三方 Power 同样必须在这里把实机实例的值搬进
         // StateStore，否则模拟一开始读到的就是初值。
         PowerHiddenStateMirrors.CaptureRootState(simulator, target, source);
+    }
+
+    internal static IReadOnlyList<Creature> InterceptCoveredCreatures(
+        CombatPredictionSimulator simulator,
+        InterceptPower power)
+        => simulator.StateStore.Peek(power, () => new InterceptPredictionState(power)).CoveredCreatures;
+}
+
+internal sealed class InterceptPredictionState(InterceptPower power) : IPredictionStateForkable
+{
+    public List<Creature> CoveredCreatures { get; private set; } =
+        [.. power.GetInternalData<InterceptPower.Data>().coveredCreatures];
+
+    public object Fork(PredictionForkContext context)
+    {
+        InterceptPredictionState fork = (InterceptPredictionState)MemberwiseClone();
+        fork.CoveredCreatures = [.. CoveredCreatures];
+        return fork;
     }
 }
