@@ -470,6 +470,8 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M11：联合搜索与质量验收
 
+> 进度：已完成。两 Actor 的直接全队效果、状态 Power、卡牌转移、选择、球、宠物、药水和跨回合，以及四 Actor `OneForAll`，均由 BFS/Beam/BFWS 与不去重 DFS 对齐分数、逐 Actor HP 向量、状态键、动作序并从原根严格回放；Beam DOP1/DOP4 展开数一致。最终 `COOP-MULTI-ACTOR-ROOT` / `8f48eaa6e34a4d97b7ec917852d891af` Passed。首轮 `0b364f3d6c8b47d1b7b1d42b2f9b717d` 发现并修正 Tutor 候选展开混淆 SourceActor/DecisionActor。目标排序 `05ef8d023d3145349d31502f32491471`、生产单人拒绝边界 `bde4805b09694abb916bea856c517e7e` 与 Windows 结构门禁通过。结论仅为有限 oracle 和固定预算 best-found；总战损 workaround 保留。
+
 目标：在语义门禁完成后，证明搜索正确消费新增多人状态。
 
 工作：
@@ -560,7 +562,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 | M8 药水/遗物/反广播/第三方 | M2-M7 | 已完成 | BlockPotion 2/4 Actor `e750f21354d94bd6866a4fa8df1fb20f`；取消、远端 Shuriken、自用牌 `78a22003c4284ccbb635bb451cee62d8`；九类选择药水与第三方拒绝由 COOP 根门禁覆盖 |
 | M9 回合/敌人/死亡/并发选择 | M3-M8 | 已完成 | 作用域目录 174/0 未知；屏障 `a5230c1d49324e5f90e8e81f94b4c315`；原生跨侧/单员死亡 `86de689bcf08494dad9735710d0ba25a`；全员终止 `cfe89fb1039c4243a6e0d475f942e08a` |
 | M10 完整内容门禁 | M3-M9 | 已完成 | 37×基础/升级差分 `9d1d2016daae43199d2e85fcfdd40fbd`；schema 2 机器目录 74/0 未知；3/4 Actor 代表与程序集身份已记录 |
-| M11 联合搜索质量 | M10 | 未开始 | — |
+| M11 联合搜索质量 | M10 | 已完成 | 八类 2 Actor + `OneForAll` 4 Actor oracle `8f48eaa6e34a4d97b7ec917852d891af`；目标排序、单人边界与结构门禁通过 |
 | M12 Co-op Bot Runtime | M11；另需项目边界授权 | 未开始 | — |
 
 实施时每个阶段：

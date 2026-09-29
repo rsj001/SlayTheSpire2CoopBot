@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线联合搜索 M11 质量验收（已完成，2026-09-29）
+
+新增按语义族划分的有限联合搜索 oracle：直接全队效果、状态 Power、卡牌转移、跨玩家选择、球、宠物、药水和跨回合各从同一冻结根由 BFS、Beam、BFWS 与不去重 DFS 对照；四 Actor 另以 `OneForAll` 验证一轮内联合搜索。每个结果核对终局排序、逐 Actor HP 损失向量、完整状态键、动作序和严格原根回放，Beam 的 DOP1/DOP4 还要求展开数一致。`COOP-MULTI-ACTOR-ROOT` / `8f48eaa6e34a4d97b7ec917852d891af` Passed。
+
+首轮 oracle 暴露 `Tutor`（“指导”）候选展开仍把 DecisionActor 当作动作 owner：动作语义本身正确，但搜索在目标队友选择时错误拒绝选择帧。联合候选展开现以 SourceActor 核对原动作，同时仍把选择 Actor 保存为 DecisionActor；修复后七类 oracle 全部通过。目标排序门禁 `05ef8d023d3145349d31502f32491471`、生产单人边界 `bde4805b09694abb916bea856c517e7e` 和 Windows 结构门禁通过。当前终局仍以逐 Actor HP 向量及其总和排序；不同角色 HP 价值继续作为已记录 workaround，不在本阶段偷偷改变。
+
 ## 原版多人语义 M10 完整覆盖门禁（已完成，2026-09-29）
 
 37 张多人专属牌现均以普通/升级版在独立两 Actor 根走原版动作与预测动作的逐 Actor 全状态差分；最后补齐的是 `Tutor`（官方中文名“指导”）的原生跨玩家选牌。另以三 Actor `OneForAll` 和四 Actor 的全队、队友目标、卡牌转移、球/宠物、选择代表覆盖人数奇偶与死亡成员。最终 `COOP-MULTIPLAYER-NATIVE-DIFF` / `9d1d2016daae43199d2e85fcfdd40fbd` Passed，实例已删除。

@@ -1,5 +1,13 @@
 # CombatSolver 测试清单
 
+## 离线联合搜索 M11（已完成，2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：直接全队效果、状态 Power、卡牌转移、`Tutor`（“指导”）跨玩家选择、球、宠物、药水和跨回合共八类两 Actor 小空间，由 BFS/Beam/BFWS 与不去重 DFS 对齐分数、逐 Actor HP 损失、状态键与动作序，并从原根严格回放；四 Actor `OneForAll` 同样对齐。Beam DOP1/DOP4 动作、状态和展开数一致。最终 `runId=8f48eaa6e34a4d97b7ec917852d891af` Passed，程序集 SHA-256 `6F69DAC1863BB14897FE8530CB00D424C41D3585A12E25FBCAB9A3334928260B`，实例已删除。
+- 失败基线 `0b364f3d6c8b47d1b7b1d42b2f9b717d`：`Tutor` 的 DecisionActor=目标队友时，候选展开错误要求选择 owner 等于 SourceActor；修复为校验 frame.SourceActor 与动作 Actor 后通过。该失败证明是搜索消费层缺口，不是卡牌结算层偏差。
+- `COOP-JOINT-OBJECTIVE` / `05ef8d023d3145349d31502f32491471`：Passed；胜负、存活人数、总战损、逐 Actor 战损、药水战略成本、复活、成长、偷窃、回合和动作排序及 Beam Actor/药水 Pareto 保留通过。
+- `COOP-PRODUCTION-SINGLE-BOUNDARY` / `bde4805b09694abb916bea856c517e7e`：Passed；生产搜索接受 ActorCount=1、拒绝 ActorCount=2；两个实例均删除。Windows `verify-refactor-boundaries.ps1` 通过，`search_files=255`。Release 构建 0 warning / 0 error。未启动可见 Steam。
+- 结论限定为有限 oracle 与固定预算 best-found；普通 Beam/BFWS 不称为任意战斗的数学全局最优。总战损仍为各 Actor HP 损失和，角色间 HP 价值差异留作后续研究。
+
 ## 多人语义补全 M10（已完成，2026-09-29）
 
 - `COOP-MULTIPLAYER-NATIVE-DIFF` / `9d1d2016daae43199d2e85fcfdd40fbd`：Passed；37 张多人专属牌均覆盖普通/升级版两 Actor 原版/预测逐 Actor 全状态差分。`Tutor`（“指导”）由目标 Actor 的抽牌堆选择并进入其手牌；三 Actor `OneForAll` 与四 Actor `Tutor` 补齐独立人数代表。运行程序集 SHA-256 为 `4A5DC5B94C8FA8E49A36B236A0E6956D29125DED28C44F5C32AC888283E3CE61`，实例已删除。
