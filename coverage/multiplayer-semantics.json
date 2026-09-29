@@ -125,7 +125,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Hibernate",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M7",
       "discoveredInGame": true,
@@ -141,7 +141,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Ignition",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M7",
       "discoveredInGame": true,
@@ -181,7 +181,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.LegionOfBone",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M7",
       "discoveredInGame": true,
