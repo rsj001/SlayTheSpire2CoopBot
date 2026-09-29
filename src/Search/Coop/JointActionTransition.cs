@@ -156,13 +156,25 @@ internal static class JointActionTransition
         TurnStartChoiceRequest request = combat.PendingTurnStartChoice
             ?? throw new InvalidOperationException(
                 $"联合动作挂起但没有选择请求：Actor {action.Actor} card={action.CardId}。");
-        CardChoiceSpec spec = TurnStartChoiceSupport.BuildSpec(simulator, player, request);
+        Player decisionPlayer = request.Owner ?? player;
+        CardChoiceSpec spec = TurnStartChoiceSupport.BuildSpec(simulator, decisionPlayer, request);
+        int decisionIndex = -1;
+        for (int index = 0; index < simulator.State.Players.Count; index++)
+        {
+            if (ReferenceEquals(simulator.State.Players[index], decisionPlayer))
+            {
+                decisionIndex = index;
+                break;
+            }
+        }
+        if (decisionIndex < 0)
+            throw new InvalidOperationException("联合选择的 DecisionActor 不在当前玩家 roster 中。");
         JointPendingChoicePlacement placement = action.Choice == null
             && string.IsNullOrEmpty(request.SourceId)
                 ? JointPendingChoicePlacement.Primary
                 : JointPendingChoicePlacement.Nested;
         return new JointPendingActionChoiceException(new(
-            action.Actor,
+            new CombatActorId(decisionIndex),
             action,
             request.SourceId,
             spec,

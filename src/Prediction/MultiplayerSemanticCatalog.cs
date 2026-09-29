@@ -68,7 +68,7 @@ public static class MultiplayerSemanticCatalog
         Exact<Largesse>("M6"),
         Exact<Plot>("M6"),
         Verified<HammerTime>("M5"),
-        Missing<Tutor>("M6"),
+        Exact<Tutor>("M6"),
 
         Missing<LegionOfBone>("M7"),
         Verified<Soulbound>("M5"),

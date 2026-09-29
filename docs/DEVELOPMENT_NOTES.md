@@ -4,6 +4,8 @@
 
 M6 已补齐 TheBall 的伤害成长、Outrage 的队友复制、BladeSymphony 的队友 Shiv、Plot 的下回合抽牌、GlimpseBeyond 的队友 Soul 和 ImitationLearning 的目标玩家 Power；HuddleUp 与 Largesse 沿用既有精确入口。普通/升级版两 Actor原生/预测全状态差分 `eaf4c2c85834405997b1b07a4e69e2fe` Passed，目标阶段 22278ms，实例已删除；ImitationLearning 差分期间修正其原版 Power.Target 为 null、PlayerTarget 独立保存。八张目录保持 UnderTest，Tutor 选择 continuation 与 ImitationLearning 后续自动出牌仍待完成。
 
+Tutor 已接入目标玩家的动作选择 cursor；联合挂起帧保留出牌者 SourceActor 和目标玩家 DecisionActor，候选/结算均使用目标抽牌堆与手牌。`COOP-MULTIPLAYER-IDENTITY` / `ec8b1d83ac2c414f8bdb4162b3536aab` Passed，目标阶段349ms，实例已删除。ImitationLearning 的后续原生合成双动作在复制 Power 自动出牌时因测试生成牌缺少网络/牌堆登记，于原版 `CardPileCmd.AddDuringManualCardPlay` 空引用；未吞异常，也未据此判定模拟错误，M6 继续进行中。
+
 ## 原版多人语义 M5 Power 生命周期（2026-09-29）
 
 M5 的 15 张牌普通/升级版分别与原版动作做全状态差分。差分补齐了 Coordinate/Fade 的临时属性伴随 Power、Intercept 的 Covered/Intercept 双实例与 covering 引用、Tank 对存活队友施加 Guarded；TagTeam/Knockdown 从通用 spec 移到精确 mirror，避免同一 Power 双结算。生命周期审计又补齐五类多人伤害倍率的精确分支 mirror、Covered/Guarded 随施加者死亡移除、四类回合边界移除和 HammerTime 的 Forge 队友传播。预测生命周期 `dfc42d469b7e4682bcb3c2a8a33750ae` 穿过全部触发族；原生联合差分 `5d9c977d6bc349be97a28f734a4ab050` 另从同根核对 Knockdown、Tank/Guarded、HammerTime 和敌方侧移除，实例均已清理。目录已提升为 `Verified / ExactMirror`，M5 完成。

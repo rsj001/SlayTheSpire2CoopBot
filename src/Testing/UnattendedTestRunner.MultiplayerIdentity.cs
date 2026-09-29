@@ -1,6 +1,8 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Mirrors.Hooks.Block;
@@ -135,6 +137,7 @@ internal sealed partial class UnattendedTestRunner
             "Cacophony.CardsDrawn");
 
         AssertTransientPowerForkBoundaries(root);
+        AssertTutorDecisionActor(source);
 
         JointCombatSnapshot parentAgain = JointCombatSnapshot.Capture(root, parent, turns);
         if (parentAgain.StateKey != baseline.StateKey
@@ -147,6 +150,65 @@ internal sealed partial class UnattendedTestRunner
         {
             throw new InvalidOperationException(
                 "多人身份兄弟 Fork 修改污染了父状态。 ");
+        }
+    }
+
+    private static void AssertTutorDecisionActor(CombatState source)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(source, actorCount: 2);
+        Player sourcePlayer = native.Players[0];
+        Player decisionPlayer = native.Players[1];
+        sourcePlayer.PlayerCombatState!.Energy = 99;
+        CardModel tutor = native.State.CreateCard(ModelDb.Card<Tutor>(), sourcePlayer);
+        sourcePlayer.PlayerCombatState.Hand.AddInternal(tutor, silent: true);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        PlanAction action = new(
+            PlanActionKind.PlayCard,
+            root.StartTurnNumber,
+            CardId: tutor.Id.Entry,
+            TargetCombatId: decisionPlayer.Creature.CombatId,
+            Actor: new CombatActorId(0));
+        CombatPredictionSimulator probe = root.ForkSimulator();
+        JointPendingChoiceFrame frame;
+        try
+        {
+            _ = JointActionTransition.Apply(
+                probe,
+                JointTurnState.Start(2, root.StartTurnNumber),
+                action,
+                JointActionTransition.CaptureProcessedEnemyDeaths(root, probe));
+            throw new InvalidOperationException("Tutor did not suspend for its target player's choice.");
+        }
+        catch (JointPendingActionChoiceException pending)
+        {
+            frame = pending.Frame;
+        }
+        if (frame.SourceActor != new CombatActorId(0)
+            || frame.DecisionActor != new CombatActorId(1)
+            || frame.Spec.SourcePile != PileType.Draw
+            || frame.Spec.Options.Count == 0)
+        {
+            throw new InvalidOperationException("Tutor did not preserve SourceActor/DecisionActor and target draw options.");
+        }
+
+        PlanCardChoice choice = CardChoiceSupport.BuildAutomaticPolicyChoice(frame.Spec) with
+        {
+            Actor = frame.DecisionActor,
+            SourceId = frame.SourceId,
+            ContextId = frame.ContextId,
+        };
+        CombatPredictionSimulator resolved = root.ForkSimulator();
+        int sourceHandBefore = resolved.State.GetPlayerCombatState(sourcePlayer).Hand.Cards.Count;
+        int targetHandBefore = resolved.State.GetPlayerCombatState(decisionPlayer).Hand.Cards.Count;
+        _ = JointActionTransition.Apply(
+            resolved,
+            JointTurnState.Start(2, root.StartTurnNumber),
+            action with { Choice = choice },
+            JointActionTransition.CaptureProcessedEnemyDeaths(root, resolved));
+        if (resolved.State.GetPlayerCombatState(sourcePlayer).Hand.Cards.Count != sourceHandBefore - 1
+            || resolved.State.GetPlayerCombatState(decisionPlayer).Hand.Cards.Count != targetHandBefore + 1)
+        {
+            throw new InvalidOperationException("Tutor moved the selected card to the source actor instead of DecisionActor.");
         }
     }
 

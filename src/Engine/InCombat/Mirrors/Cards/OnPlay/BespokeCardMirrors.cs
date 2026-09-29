@@ -237,6 +237,18 @@ internal static class BespokeCardMirrors
         created.PlayerTarget = context.TargetPlayer;
     }
 
+    public static void TutorOnPlay(Tutor card, CardOnPlayMirrorContext context)
+    {
+        if (context.CombatState is not ICombatPredictionChoiceSink choices)
+            throw new InvalidOperationException("Tutor requires multiplayer choice state.");
+        _ = choices.ResolvePileChoice(
+            context.Simulator,
+            card.Id.Entry,
+            context.TargetPlayer,
+            PileType.Draw,
+            1);
+    }
+
     private static SimulatedCombatState RequireCombat(CardOnPlayMirrorContext context)
         => context.CombatState as SimulatedCombatState
            ?? throw new InvalidOperationException("Multiplayer card effect requires SimulatedCombatState.");

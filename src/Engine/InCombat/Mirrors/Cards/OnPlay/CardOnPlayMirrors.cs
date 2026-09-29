@@ -133,6 +133,7 @@ internal static partial class CardOnPlayMirrors
         registry.Register<Plot>(BespokeCardMirrors.PlotOnPlay);
         registry.Register<GlimpseBeyond>(BespokeCardMirrors.GlimpseBeyondOnPlay);
         registry.Register<ImitationLearning>(BespokeCardMirrors.ImitationLearningOnPlay);
+        registry.Register<Tutor>(BespokeCardMirrors.TutorOnPlay);
         registry.Register<Maul>(BespokeCardMirrors.MaulOnPlay);
         registry.Register<Sacrifice>(BespokeCardMirrors.SacrificeOnPlay);
         registry.Register<Spite>(BespokeCardMirrors.SpiteOnPlay);
