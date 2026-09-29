@@ -232,15 +232,18 @@ internal static partial class MonsterMoveEffects
         ForecastMove move,
         Creature player,
         out bool killedOwner,
-        IReadOnlyList<PlanCardChoice>? plannedChoices = null)
+        IReadOnlyList<PlanCardChoice>? plannedChoices = null,
+        bool applyTargetPortion = true,
+        bool applyOwnerPortion = true)
     {
         killedOwner = false;
         MonsterModel monster = move.Owner.Monster!;
         string type = monster.GetType().Name;
         string id = move.Move.Id;
 
-        combat.ResolveReviveMove(simulator, move.Owner, id);
-        if (id == "STUNNED")
+        if (applyOwnerPortion)
+            combat.ResolveReviveMove(simulator, move.Owner, id);
+        if (applyOwnerPortion && id == "STUNNED")
         {
             switch (monster)
             {
@@ -255,9 +258,11 @@ internal static partial class MonsterMoveEffects
             }
         }
 
-        if (type == "FrogKnight" && id == "BEETLE_CHARGE")
+        if (applyOwnerPortion && type == "FrogKnight" && id == "BEETLE_CHARGE")
             combat.SetMonsterBool(move.Owner, "_hasBeetleCharged", true);
-        if (type == "TwoTailedRat" && id is "SCRATCH_MOVE" or "DISEASE_BITE_MOVE" or "SCREECH_MOVE")
+        if (applyOwnerPortion
+            && type == "TwoTailedRat"
+            && id is "SCRATCH_MOVE" or "DISEASE_BITE_MOVE" or "SCREECH_MOVE")
         {
             combat.SetMonsterInt(
                 move.Owner,
@@ -360,15 +365,17 @@ internal static partial class MonsterMoveEffects
             case ("TestSubject", "BIG_POUNCE"):
                 return true;
             case ("TestSubject", "BURNING_GROWL_MOVE"):
-                simulator.AddToCombat<Burn>(
-                    player,
-                    PileType.Discard,
-                    combat.GetMonsterStaticInt(move.Owner, "BurningGrowlBurnCount"),
-                    null);
-                combat.Apply<StrengthPower>(
-                    move.Owner,
-                    combat.GetMonsterStaticInt(move.Owner, "BurningGrowlStrengthGain"),
-                    move.Owner);
+                if (applyTargetPortion)
+                    simulator.AddToCombat<Burn>(
+                        player,
+                        PileType.Discard,
+                        combat.GetMonsterStaticInt(move.Owner, "BurningGrowlBurnCount"),
+                        null);
+                if (applyOwnerPortion)
+                    combat.Apply<StrengthPower>(
+                        move.Owner,
+                        combat.GetMonsterStaticInt(move.Owner, "BurningGrowlStrengthGain"),
+                        move.Owner);
                 return true;
             case ("SludgeSpinner", "OIL_SPRAY_MOVE"):
                 Debuff<WeakPower>(combat, player, 1, move.Owner);
@@ -463,9 +470,13 @@ internal static partial class MonsterMoveEffects
                 GainBlock(simulator, move.Owner, combat.GetMonsterStaticInt(move.Owner, "Slash2Block"));
                 return true;
             case ("LagavulinMatriarch", "SOUL_SIPHON_MOVE"):
-                combat.Apply<StrengthPower>(player, -2, move.Owner);
-                combat.Apply<DexterityPower>(player, -2, move.Owner);
-                combat.Apply<StrengthPower>(move.Owner, 2, move.Owner);
+                if (applyTargetPortion)
+                {
+                    combat.Apply<StrengthPower>(player, -2, move.Owner);
+                    combat.Apply<DexterityPower>(player, -2, move.Owner);
+                }
+                if (applyOwnerPortion)
+                    combat.Apply<StrengthPower>(move.Owner, 2, move.Owner);
                 return true;
             case ("LeafSlimeM", "STICKY_SHOT"):
                 simulator.AddToCombat<Slimed>(player, PileType.Discard, 2, null);
@@ -522,8 +533,10 @@ internal static partial class MonsterMoveEffects
                 combat.Apply<StrengthPower>(move.Owner, 4, move.Owner);
                 return true;
             case ("Wriggler", "WRIGGLE_MOVE"):
-                simulator.AddToCombat<Infection>(player, PileType.Discard, 1, null);
-                combat.Apply<StrengthPower>(move.Owner, 2, move.Owner);
+                if (applyTargetPortion)
+                    simulator.AddToCombat<Infection>(player, PileType.Discard, 1, null);
+                if (applyOwnerPortion)
+                    combat.Apply<StrengthPower>(move.Owner, 2, move.Owner);
                 return true;
             case ("FlailKnight", "WAR_CHANT"):
                 combat.Apply<StrengthPower>(move.Owner, 3, move.Owner);
@@ -545,8 +558,10 @@ internal static partial class MonsterMoveEffects
                 return true;
             case ("TheLost", "DEBILITATING_SMOG"):
                 int strength = combat.GetMonsterStaticInt(move.Owner, "DebilitatingSmogStrengthStealAmount");
-                combat.Apply<StrengthPower>(player, -strength, move.Owner);
-                combat.Apply<StrengthPower>(move.Owner, strength, move.Owner);
+                if (applyTargetPortion)
+                    combat.Apply<StrengthPower>(player, -strength, move.Owner);
+                if (applyOwnerPortion)
+                    combat.Apply<StrengthPower>(move.Owner, strength, move.Owner);
                 return true;
             case ("CalcifiedCultist", "INCANTATION_MOVE"):
                 combat.Apply<RitualPower>(
@@ -622,8 +637,10 @@ internal static partial class MonsterMoveEffects
                 simulator.AddToCombat<Slimed>(player, PileType.Discard, 10, null);
                 return true;
             case ("SlimedBerserker", "LEECHING_HUG_MOVE"):
-                Debuff<WeakPower>(combat, player, 3, move.Owner);
-                combat.Apply<StrengthPower>(move.Owner, 3, move.Owner);
+                if (applyTargetPortion)
+                    Debuff<WeakPower>(combat, player, 3, move.Owner);
+                if (applyOwnerPortion)
+                    combat.Apply<StrengthPower>(move.Owner, 3, move.Owner);
                 return true;
             case ("TerrorEel", "TERROR_MOVE"):
                 Debuff<VulnerablePower>(combat, player, 99, move.Owner);
@@ -671,19 +688,25 @@ internal static partial class MonsterMoveEffects
                 GainBlock(simulator, move.Owner, combat.GetMonsterStaticInt(move.Owner, "HardeningStrikeBlock"));
                 return true;
             case ("TheForgotten", "MIASMA"):
-                combat.Apply<DexterityPower>(player, -combat.GetMonsterStaticInt(move.Owner, "DebilitatingSmogDexStealAmount"), move.Owner);
-                GainBlock(simulator, move.Owner, 8);
-                combat.Apply<DexterityPower>(
-                    move.Owner,
-                    combat.GetMonsterStaticInt(move.Owner, "DebilitatingSmogDexStealAmount"),
-                    move.Owner);
+                if (applyTargetPortion)
+                    combat.Apply<DexterityPower>(player, -combat.GetMonsterStaticInt(move.Owner, "DebilitatingSmogDexStealAmount"), move.Owner);
+                if (applyOwnerPortion)
+                {
+                    GainBlock(simulator, move.Owner, 8);
+                    combat.Apply<DexterityPower>(
+                        move.Owner,
+                        combat.GetMonsterStaticInt(move.Owner, "DebilitatingSmogDexStealAmount"),
+                        move.Owner);
+                }
                 return true;
             case ("OwlMagistrate", "JUDICIAL_FLIGHT"):
                 combat.Apply<SoarPower>(move.Owner, 1, move.Owner);
                 return true;
             case ("OwlMagistrate", "VERDICT"):
-                Debuff<VulnerablePower>(combat, player, 4, move.Owner);
-                combat.SetAmount<SoarPower>(move.Owner, 0);
+                if (applyTargetPortion)
+                    Debuff<VulnerablePower>(combat, player, 4, move.Owner);
+                if (applyOwnerPortion)
+                    combat.SetAmount<SoarPower>(move.Owner, 0);
                 return true;
             case ("CeremonialBeast", "STAMP_MOVE"):
                 combat.Apply<PlowPower>(
@@ -807,24 +830,30 @@ internal static partial class MonsterMoveEffects
                 GainBlock(simulator, move.Owner, combat.GetMonsterStaticInt(move.Owner, "EbbBlock"));
                 return true;
             case ("Aeonglass", "INCREASING_INTENSITY_MOVE"):
-                SimPlayerCombatState playerState = simulator.State.GetPlayerCombatState(
-                    player.Player ?? throw new InvalidOperationException("永世沙漏的目标不是玩家。"));
-                foreach (PredictedCard card in playerState.AllCards)
+                if (applyTargetPortion)
                 {
-                    if (card.Preview is Wither)
-                        ((Wither)card.MutablePreview).FakeUpgrade();
+                    SimPlayerCombatState playerState = simulator.State.GetPlayerCombatState(
+                        player.Player ?? throw new InvalidOperationException("永世沙漏的目标不是玩家。"));
+                    foreach (PredictedCard card in playerState.AllCards)
+                    {
+                        if (card.Preview is Wither)
+                            ((Wither)card.MutablePreview).FakeUpgrade();
+                    }
+                    simulator.CreateAndAddGeneratedCardsToCombat<Wither>(
+                        player.Player,
+                        PileType.Discard,
+                        combat.GetMonsterStaticInt(move.Owner, "WitherAmount"),
+                        null);
                 }
-                combat.AdvanceAeonglassWitherUpgrade(move.Owner);
-                simulator.CreateAndAddGeneratedCardsToCombat<Wither>(
-                    player.Player,
-                    PileType.Discard,
-                    combat.GetMonsterStaticInt(move.Owner, "WitherAmount"),
-                    null);
-                combat.Apply<StrengthPower>(
-                    move.Owner,
-                    combat.GetMonsterStaticInt(move.Owner, "IncreasingIntensityBaseStrength")
-                        + combat.AdvanceAeonglassAdditionalStrength(move.Owner),
-                    move.Owner);
+                if (applyOwnerPortion)
+                {
+                    combat.AdvanceAeonglassWitherUpgrade(move.Owner);
+                    combat.Apply<StrengthPower>(
+                        move.Owner,
+                        combat.GetMonsterStaticInt(move.Owner, "IncreasingIntensityBaseStrength")
+                            + combat.AdvanceAeonglassAdditionalStrength(move.Owner),
+                        move.Owner);
+                }
                 return true;
             case ("AxeRubyRaider", "SWING_1"):
             case ("AxeRubyRaider", "SWING_2"):
@@ -875,8 +904,10 @@ internal static partial class MonsterMoveEffects
                 combat.Apply<SteamEruptionPower>(move.Owner, combat.GetMonsterStaticInt(move.Owner, "PressurizeAmount"), move.Owner);
                 return true;
             case ("WaterfallGiant", "STOMP_MOVE"):
-                Debuff<WeakPower>(combat, player, 1, move.Owner);
-                combat.Apply<SteamEruptionPower>(move.Owner, 3, move.Owner);
+                if (applyTargetPortion)
+                    Debuff<WeakPower>(combat, player, 1, move.Owner);
+                if (applyOwnerPortion)
+                    combat.Apply<SteamEruptionPower>(move.Owner, 3, move.Owner);
                 return true;
             case ("WaterfallGiant", "RAM_MOVE"):
             case ("WaterfallGiant", "PRESSURE_UP_MOVE"):
@@ -922,8 +953,10 @@ internal static partial class MonsterMoveEffects
             case ("DecimillipedeSegmentMiddle", "REATTACH_MOVE"):
                 return true;
             case ("GremlinMerc", "DOUBLE_SMASH_MOVE"):
-                combat.RecordThievery(simulator, move.Owner);
-                Debuff<WeakPower>(combat, player, 2, move.Owner);
+                if (applyOwnerPortion)
+                    combat.RecordThievery(simulator, move.Owner);
+                if (applyTargetPortion)
+                    Debuff<WeakPower>(combat, player, 2, move.Owner);
                 return true;
             case ("GremlinMerc", "GIMME_MOVE"):
                 combat.RecordThievery(simulator, move.Owner);

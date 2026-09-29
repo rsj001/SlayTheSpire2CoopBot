@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线联合敌方效果作用域完成（2026-09-29）
+
+联合敌方侧不重写怪物 AI 或单人结算，而是在既有 `MonsterMoveEffects` 外集中登记多人调用作用域：纯 owner 效果只执行一次，纯 target 效果按稳定 Actor 顺序执行，混合效果把 target 与 owner 段分别复用。全部当前已支持特殊行动已归类，未知效果仍显式停止。Soul Siphon 代表验证两名 Actor 各受 `-2 Strength/-2 Dexterity`，敌人只获得一次 `+2 Strength`；`COOP-MULTI-ACTOR-ROOT` 的 `runId=60708c6fb8f147f280bf40fca07745de` Passed，实例已删除，Windows 结构门禁通过。F7 至此关闭。
+
 ## 离线联合搜索自动跨轮（2026-09-29）
 
 联合 BFS、DFS oracle、Beam 与 BFWS 不再把全员屏障当作最终搜索边界：共用稳定屏障归一化，完整执行玩家尾、Actor 子集额外回合或敌方侧、下一玩家侧，并把途中挂起选择附回最后一个 EndTurn 后从父屏障重试。只提供两名 Actor 的 EndTurn 固定前缀时，四种搜索均自动枚举下一轮第三动作且最优分数、动作序与状态键一致；BFS/Beam 首次证据 `runId=5efdea6df01d432585243ecb80ddf463`，补齐 BFWS 后最终 `runId=a7a3e70a570a47f682d48af93f195d09` Passed，实例均已删除。F3 至此关闭；生产单人候选/结果哨兵归最终 F12。

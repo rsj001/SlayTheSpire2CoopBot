@@ -35,6 +35,7 @@ internal sealed partial class UnattendedTestRunner
         AssertThirdPartySubscriberBoundary();
         AssertTargetOnlyEnemyMove(source);
         AssertMixedEnemyMove(source);
+        AssertSplitMixedEnemyMove(source);
         AssertOwnerRemovalEnemyMove(source);
         AssertPreAttackSummonEnemyMove(source);
         AssertEnemyRevive(source);
@@ -754,6 +755,40 @@ internal sealed partial class UnattendedTestRunner
                 $"联合 pre-attack summon 行动重复或漏结算：" +
                 $"bombs={bombsBefore}->{bombsAfter} expected={expectedSpawnCount} " +
                 $"hp={string.Join(',', hpBefore)}->{string.Join(',', hpAfter)}。");
+        }
+    }
+
+    private static void AssertSplitMixedEnemyMove(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            2,
+            enemyModel: ModelDb.Monster<LagavulinMatriarch>());
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Creature enemy = combat.Enemies.Single();
+        combat.ForceMonsterMove(enemy, "SOUL_SIPHON_MOVE");
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+        int[] strength = simulator.State.Players
+            .Select(player => combat.GetAmount<StrengthPower>(player.Creature))
+            .ToArray();
+        int[] dexterity = simulator.State.Players
+            .Select(player => combat.GetAmount<DexterityPower>(player.Creature))
+            .ToArray();
+        int enemyStrength = combat.GetAmount<StrengthPower>(enemy);
+        if (!strength.SequenceEqual([-2, -2])
+            || !dexterity.SequenceEqual([-2, -2])
+            || enemyStrength != 2)
+        {
+            throw new InvalidOperationException(
+                $"联合混合敌方效果未按目标部分逐 Actor、owner 部分一次结算：" +
+                $"strength={string.Join(',', strength)} dexterity={string.Join(',', dexterity)} " +
+                $"enemyStrength={enemyStrength}。");
         }
     }
 

@@ -2264,18 +2264,18 @@ if (-not (Select-String -LiteralPath $jointTransitionPath `
 $monsterMoveSemanticsPath = Join-Path $repositoryRoot 'src/Prediction/MonsterMoveSemantics.cs'
 $jointRoundTransitionPath = Join-Path $repositoryRoot 'src/Search/Coop/JointRoundTransition.cs'
 foreach ($text in @(
-    'IsJointOwnerOnlyMove(',
-    '("FuzzyWurmCrawler", "INHALE")',
-    '("Parafright", "REVIVE_MOVE")',
-    '("FatGremlin", "FLEE_MOVE")',
-    '("ToughEgg", "HATCH_MOVE")',
-    'IsJointTargetOnlyMove(',
+    'JointMoveEffectScope',
+    'JointEffectScope(',
+    'JointMoveEffectScope.OwnerOnly',
+    'JointMoveEffectScope.TargetOnly',
     '("SludgeSpinner", "OIL_SPRAY_MOVE")',
-    'IsJointPostAttackMixedMove(',
-    '("SludgeSpinner", "RAGE_MOVE")',
-    '("GasBomb", "EXPLODE_MOVE")',
-    'IsJointPreAttackMixedMove(',
+    '("ThievingHopper", "THIEVERY_MOVE")',
+    'JointMoveEffectScope.PostAttackMixed',
+    '("LagavulinMatriarch", "SOUL_SIPHON_MOVE")',
+    'JointMoveEffectScope.PreAttackMixed',
     '("LivingFog", "BLOAT_MOVE")',
+    'applyTargetPortion: true',
+    'applyOwnerPortion: false',
     'applyBeforeAttack: false',
     'applyMoveEffect: false'
 )) {

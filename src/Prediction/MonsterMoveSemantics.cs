@@ -11,6 +11,15 @@ namespace CombatSolver;
 
 internal static class MonsterMoveSemantics
 {
+    private enum JointMoveEffectScope
+    {
+        None,
+        OwnerOnly,
+        TargetOnly,
+        PostAttackMixed,
+        PreAttackMixed,
+    }
+
     internal static void ApplyBasicForecastMoveToPlayers(
         CombatPredictionSimulator simulator,
         SimulatedCombatState combat,
@@ -20,7 +29,8 @@ internal static class MonsterMoveSemantics
     {
         MonsterModel monster = move.Owner.Monster
             ?? throw new InvalidOperationException("预测行动所有者不是怪物。");
-        if (IsJointOwnerOnlyMove(monster, move.Move.Id))
+        JointMoveEffectScope scope = JointEffectScope(monster, move.Move.Id);
+        if (scope == JointMoveEffectScope.OwnerOnly && move.AttackHits.Count == 0)
         {
             Creature? representative = players.FirstOrDefault(player =>
                 simulator.State.GetCreature(player).IsAlive);
@@ -33,7 +43,8 @@ internal static class MonsterMoveSemantics
                     processedEnemyDeaths);
             return;
         }
-        if (IsJointPostAttackMixedMove(monster, move.Move.Id))
+        if (scope == JointMoveEffectScope.PostAttackMixed
+            || scope == JointMoveEffectScope.OwnerOnly && move.AttackHits.Count > 0)
         {
             Creature? representative = null;
             foreach (Creature player in players)
@@ -49,6 +60,18 @@ internal static class MonsterMoveSemantics
                     processedEnemyDeaths,
                     plannedChoices: null,
                     applyMoveEffect: false);
+                if (scope == JointMoveEffectScope.PostAttackMixed)
+                {
+                    ApplyForecastMoveEffect(
+                        simulator,
+                        combat,
+                        move,
+                        player,
+                        processedEnemyDeaths,
+                        plannedChoices: null,
+                        applyTargetPortion: true,
+                        applyOwnerPortion: false);
+                }
                 if (simulator.HasPendingChoice || simulator.State.GetCreature(move.Owner).IsDead)
                     return;
             }
@@ -62,7 +85,7 @@ internal static class MonsterMoveSemantics
                     plannedChoices: null);
             return;
         }
-        if (IsJointPreAttackMixedMove(monster, move.Move.Id))
+        if (scope == JointMoveEffectScope.PreAttackMixed)
         {
             Creature? representative = players.FirstOrDefault(player =>
                 simulator.State.GetCreature(player).IsAlive);
@@ -91,10 +114,12 @@ internal static class MonsterMoveSemantics
                 move,
                 representative,
                 processedEnemyDeaths,
-                plannedChoices: null);
+                plannedChoices: null,
+                applyTargetPortion: false,
+                applyOwnerPortion: true);
             return;
         }
-        bool targetOnly = IsJointTargetOnlyMove(monster, move.Move.Id);
+        bool targetOnly = scope == JointMoveEffectScope.TargetOnly;
         if (move.AttackHits.Count == 0 && !targetOnly
             || MonsterMoveEffects.Supports(monster, move.Move.Id) && !targetOnly)
         {
@@ -110,23 +135,83 @@ internal static class MonsterMoveSemantics
         }
     }
 
-    private static bool IsJointOwnerOnlyMove(MonsterModel monster, string moveId)
-        => (monster.GetType().Name, moveId) is
-            ("FuzzyWurmCrawler", "INHALE") or
-            ("Parafright", "REVIVE_MOVE") or
-            ("FatGremlin", "FLEE_MOVE") or
-            ("ToughEgg", "HATCH_MOVE");
-
-    private static bool IsJointTargetOnlyMove(MonsterModel monster, string moveId)
-        => (monster.GetType().Name, moveId) is ("SludgeSpinner", "OIL_SPRAY_MOVE");
-
-    private static bool IsJointPostAttackMixedMove(MonsterModel monster, string moveId)
-        => (monster.GetType().Name, moveId) is
-            ("SludgeSpinner", "RAGE_MOVE") or
-            ("GasBomb", "EXPLODE_MOVE");
-
-    private static bool IsJointPreAttackMixedMove(MonsterModel monster, string moveId)
-        => (monster.GetType().Name, moveId) is ("LivingFog", "BLOAT_MOVE");
+    private static JointMoveEffectScope JointEffectScope(MonsterModel monster, string moveId)
+    {
+        (string Type, string Move) key = (monster.GetType().Name, moveId);
+        if (!MonsterMoveEffects.Supports(monster, moveId))
+            return JointMoveEffectScope.None;
+        return key switch
+        {
+            ("LivingFog", "BLOAT_MOVE") => JointMoveEffectScope.PreAttackMixed,
+            ("TestSubject", "BURNING_GROWL_MOVE") or
+            ("LagavulinMatriarch", "SOUL_SIPHON_MOVE") or
+            ("Wriggler", "WRIGGLE_MOVE") or
+            ("TheLost", "DEBILITATING_SMOG") or
+            ("SlimedBerserker", "LEECHING_HUG_MOVE") or
+            ("TheForgotten", "MIASMA") or
+            ("OwlMagistrate", "VERDICT") or
+            ("Aeonglass", "INCREASING_INTENSITY_MOVE") or
+            ("WaterfallGiant", "STOMP_MOVE") or
+            ("GremlinMerc", "DOUBLE_SMASH_MOVE")
+                => JointMoveEffectScope.PostAttackMixed,
+            ("MagiKnight", "DAMPEN_MOVE") or
+            ("KnowledgeDemon", "CURSE_OF_KNOWLEDGE_MOVE") or
+            ("TestSubject", "SKULL_BASH_MOVE") or
+            ("SludgeSpinner", "OIL_SPRAY_MOVE") or
+            ("Flyconid", "VULNERABLE_SPORES_MOVE") or
+            ("Flyconid", "FRAIL_SPORES_MOVE") or
+            ("FrogKnight", "TONGUE_LASH") or
+            ("GlobeHead", "SHOCKING_SLAP") or
+            ("BowlbugSilk", "TOXIC_SPIT_MOVE") or
+            ("HauntedShip", "HAUNT_MOVE") or
+            ("HunterKiller", "TENDERIZING_GOOP_MOVE") or
+            ("KinPriest", "ORB_OF_FRAILTY_MOVE") or
+            ("KinPriest", "ORB_OF_WEAKNESS_MOVE") or
+            ("LeafSlimeM", "STICKY_SHOT") or
+            ("LeafSlimeS", "GOOP_MOVE") or
+            ("Mawler", "ROAR_MOVE") or
+            ("Myte", "TOXIC_MOVE") or
+            ("Chomper", "SCREECH_MOVE") or
+            ("MechaKnight", "FLAMETHROWER_MOVE") or
+            ("PunchConstruct", "FAST_PUNCH_MOVE") or
+            ("CorpseSlug", "GOOP_MOVE") or
+            ("SoulFysh", "SCREAM_MOVE") or
+            ("EyeWithTeeth", "DISTRACT_MOVE") or
+            ("Ovicopter", "TENDERIZER_MOVE") or
+            ("Stabbot", "STAB_MOVE") or
+            ("ShrinkerBeetle", "SHRINKER_MOVE") or
+            ("VineShambler", "GRASPING_VINES_MOVE") or
+            ("SlitheringStrangler", "CONSTRICT") or
+            ("SpectralKnight", "HEX") or
+            ("SoulNexus", "DRAIN_LIFE_MOVE") or
+            ("SlimedBerserker", "VOMIT_ICHOR_MOVE") or
+            ("TerrorEel", "TERROR_MOVE") or
+            ("TwigSlimeM", "STICKY_SHOT_MOVE") or
+            ("PhrogParasite", "INFECT_MOVE") or
+            ("Vantom", "DISMEMBER_MOVE") or
+            ("CeremonialBeast", "BEAST_CRY_MOVE") or
+            ("Queen", "PUPPET_STRINGS_MOVE") or
+            ("Queen", "YOU_ARE_MINE_MOVE") or
+            ("LouseProgenitor", "WEB_CANNON_MOVE") or
+            ("Crusher", "BUG_STING_MOVE") or
+            ("TrackerRubyRaider", "TRACK_MOVE") or
+            ("Noisebot", "NOISE_MOVE") or
+            ("SoulFysh", "BECKON_MOVE") or
+            ("SoulFysh", "GAZE_MOVE") or
+            ("Axebot", "HAMMER_UPPERCUT_MOVE") or
+            ("FakeMerchantMonster", "THROW_RELIC_MOVE") or
+            ("FossilStalker", "TACKLE_MOVE") or
+            ("DecimillipedeSegmentBack", "CONSTRICT_MOVE") or
+            ("DecimillipedeSegmentFront", "CONSTRICT_MOVE") or
+            ("DecimillipedeSegmentMiddle", "CONSTRICT_MOVE") or
+            ("LivingFog", "ADVANCED_GAS_MOVE") or
+            ("TheInsatiable", "LIQUIFY_GROUND_MOVE") or
+            ("ThievingHopper", "THIEVERY_MOVE") or
+            ("TwoTailedRat", "SCREECH_MOVE")
+                => JointMoveEffectScope.TargetOnly,
+            _ => JointMoveEffectScope.OwnerOnly,
+        };
+    }
 
     public static bool ApplyForecastMove(
         CombatPredictionSimulator simulator,
@@ -236,6 +321,25 @@ internal static class MonsterMoveSemantics
         Creature player,
         ISet<uint> processedEnemyDeaths,
         IReadOnlyList<PlanCardChoice>? plannedChoices)
+        => ApplyForecastMoveEffect(
+            simulator,
+            combat,
+            move,
+            player,
+            processedEnemyDeaths,
+            plannedChoices,
+            applyTargetPortion: true,
+            applyOwnerPortion: true);
+
+    private static void ApplyForecastMoveEffect(
+        CombatPredictionSimulator simulator,
+        SimulatedCombatState combat,
+        ForecastMove move,
+        Creature player,
+        ISet<uint> processedEnemyDeaths,
+        IReadOnlyList<PlanCardChoice>? plannedChoices,
+        bool applyTargetPortion,
+        bool applyOwnerPortion)
     {
         MonsterMoveEffects.Apply(
             simulator,
@@ -243,7 +347,9 @@ internal static class MonsterMoveSemantics
             move,
             player,
             out bool killedOwner,
-            plannedChoices);
+            plannedChoices,
+            applyTargetPortion,
+            applyOwnerPortion);
         if (simulator.HasPendingChoice)
             return;
         if (killedOwner

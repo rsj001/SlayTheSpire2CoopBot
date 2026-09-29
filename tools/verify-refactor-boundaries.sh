@@ -1766,30 +1766,30 @@ require_fixed "$joint_transition" 'JointPendingChoicePlacement.Primary' \
     'joint transition no longer classifies authoritative pending primary choices:'
 monster_move_semantics="$repository_root/src/Prediction/MonsterMoveSemantics.cs"
 joint_round_transition="$repository_root/src/Search/Coop/JointRoundTransition.cs"
-require_fixed "$monster_move_semantics" 'IsJointOwnerOnlyMove(' \
+require_fixed "$monster_move_semantics" 'JointMoveEffectScope' \
     'joint owner-only monster move boundary missing:'
-require_fixed "$monster_move_semantics" '("FuzzyWurmCrawler", "INHALE")' \
+require_fixed "$monster_move_semantics" 'JointEffectScope(' \
+    'joint monster move scope registry missing:'
+require_fixed "$monster_move_semantics" 'JointMoveEffectScope.OwnerOnly' \
     'joint owner-only monster move boundary missing:'
-require_fixed "$monster_move_semantics" '("Parafright", "REVIVE_MOVE")' \
-    'joint revive monster move boundary missing:'
-require_fixed "$monster_move_semantics" '("FatGremlin", "FLEE_MOVE")' \
-    'joint escape monster move boundary missing:'
-require_fixed "$monster_move_semantics" '("ToughEgg", "HATCH_MOVE")' \
-    'joint owner-only RNG monster move boundary missing:'
-require_fixed "$monster_move_semantics" 'IsJointTargetOnlyMove(' \
+require_fixed "$monster_move_semantics" 'JointMoveEffectScope.TargetOnly' \
     'joint target-only monster move boundary missing:'
 require_fixed "$monster_move_semantics" '("SludgeSpinner", "OIL_SPRAY_MOVE")' \
     'joint target-only monster move boundary missing:'
-require_fixed "$monster_move_semantics" 'IsJointPostAttackMixedMove(' \
+require_fixed "$monster_move_semantics" '("ThievingHopper", "THIEVERY_MOVE")' \
+    'joint pre-attack target-only monster move boundary missing:'
+require_fixed "$monster_move_semantics" 'JointMoveEffectScope.PostAttackMixed' \
     'joint post-attack mixed monster move boundary missing:'
-require_fixed "$monster_move_semantics" '("SludgeSpinner", "RAGE_MOVE")' \
+require_fixed "$monster_move_semantics" '("LagavulinMatriarch", "SOUL_SIPHON_MOVE")' \
     'joint mixed monster move boundary missing:'
-require_fixed "$monster_move_semantics" '("GasBomb", "EXPLODE_MOVE")' \
-    'joint owner-removal monster move boundary missing:'
-require_fixed "$monster_move_semantics" 'IsJointPreAttackMixedMove(' \
+require_fixed "$monster_move_semantics" 'JointMoveEffectScope.PreAttackMixed' \
     'joint pre-attack mixed monster move boundary missing:'
 require_fixed "$monster_move_semantics" '("LivingFog", "BLOAT_MOVE")' \
     'joint summon monster move boundary missing:'
+require_fixed "$monster_move_semantics" 'applyTargetPortion: true' \
+    'joint target effect split missing:'
+require_fixed "$monster_move_semantics" 'applyOwnerPortion: false' \
+    'joint owner effect split missing:'
 require_fixed "$monster_move_semantics" 'applyBeforeAttack: false' \
     'joint mixed monster move pre-attack split missing:'
 require_fixed "$monster_move_semantics" 'applyMoveEffect: false' \

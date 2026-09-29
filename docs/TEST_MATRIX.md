@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 联合敌方效果作用域注册（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：Lagavulin Matriarch 强制 Soul Siphon 后，两名 Actor 各有 `-2 Strength/-2 Dexterity`，怪物 Strength 精确为 `+2`，证明 target 段逐 Actor、owner 段只一次；`runId=60708c6fb8f147f280bf40fca07745de`，Passed，实例已删除。
+- Windows 结构门禁检查集中 `JointMoveEffectScope` 注册、target/owner 两段式调用和 pre/post attack 边界并通过。首次无人启动仅因脚本默认 `D:\Steam` 不存在而在进入游戏前停止，改用已确认 `D:\SteamLibrary` 后通过；Linux/WSL 与可见 Steam 未运行。
+
 ## 联合搜索自动跨轮（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：固定前缀仅含 Actor0/1 的 EndTurn，BFS、Beam、BFWS 与不去重 DFS oracle 自行完成屏障生命周期并枚举下一轮第三动作；四者最优分数、完整动作序和状态键一致，第三动作 Turn 为根 Turn `+1`；最终 `runId=a7a3e70a570a47f682d48af93f195d09`，Passed，实例已删除。此前 BFS/Beam 子集 `runId=5efdea6df01d432585243ecb80ddf463` Passed。

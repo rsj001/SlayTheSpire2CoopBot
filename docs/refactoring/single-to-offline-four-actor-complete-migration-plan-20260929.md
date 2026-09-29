@@ -1,6 +1,6 @@
 # 从单人 CombatSolver 到离线四 Actor 完整自动规划开发计划
 
-> 状态：执行中；前置联合模型 P0-P12、F0-F6、F8-F9 已完成，F7 进行中，F10-F12 待完成
+> 状态：执行中；前置联合模型 P0-P12、F0-F9 已完成，F10-F12 待完成
 > 日期：2026-09-29  
 > 基线提交：`f14acea6`  
 > 目标：在不改变单人 CombatSolver 语义的前提下，建立一个可以控制最多四名 Actor、完整覆盖单人战斗机制的离线联合自动规划器。  
@@ -13,11 +13,11 @@
 | F0 单人全功能清单与基线 | 已完成 | [功能迁移库存](offline-four-actor-feature-inventory-20260929.md)；Windows 结构门禁通过；复用同源码五项动态基线 |
 | F1 统一联合单步转移 | 已完成 | `JointActionTransition` 统一卡牌/选择/药水/EndTurn；`COOP-JOINT-REPLAY` 通过 |
 | F2 Actor 状态/Fork/快照/续用 | 已完成 | 2/4 Actor 远端字段扰动与 Fork 隔离通过；修复多人敌人格挡缩放 mirror |
-| F3 完整卡牌与目标 | 进行中 | F3a/F3b 已接入目标/实例身份、基础及动态嵌套选择；F3c fixed-prefix 与 F3d cross-turn 前缀已通过；opening/cycle 和单人候选序仍待完成 |
+| F3 完整卡牌与目标 | 已完成 | F3a/F3b 目标/实例身份与动态嵌套选择；F3c fixed-prefix；F3d 自动跨轮 BFS/DFS/Beam/BFWS 均通过；单人候选序归 F12 哨兵 |
 | F4 完整药水 | 已完成 | F4a/F4b 独立槽位/九类选择/生成、F4c 硬政策与完整 Smart 反事实、F4d 跨回合均通过 |
 | F5 Power/遗物/球/宠物/角色资源 | 已完成 | F5a-F5e：根元数据、Power/全队/Hook、遗物触发/消耗、五角色资源、真实召唤所有权及第三方拒绝边界均有动态证据 |
 | F6 选择与嵌套 continuation | 已完成 | F6a frame、F6b 回合开始/结束 Power/遗物与自动重复出牌、F6c 多 Actor 原序队列、F6d 前缀相对同名实例回放均通过 |
-| F7 联合回合与敌方生命周期 | 进行中 | F7a、F7b 已完成；F7c 代表分类与 F7d 跨轮已通过，剩余特殊行动清单待审计 |
+| F7 联合回合与敌方生命周期 | 已完成 | F7a/F7b 生命周期、F7c 全部既有特殊行动作用域、F7d 下一轮与选择恢复均通过 |
 | F8 联合终局目标 | 已完成 | 终局边界、存活、战损向量、药水/保命资源、成长、偷窃、回合、动作及稳定动作序通过；单人排序未改 |
 | F9 联合 Beam/BFWS | 已完成 | F9a Beam/转置、F9b 保路、F9c 固定 lane、F9d 有界 BFWS 与 2/4 Actor oracle 全部通过 |
 | F10 strict replay 与差分 | 未开始 | - |
@@ -284,8 +284,8 @@
 
 - F7a（已完成）：`JointRoundTransition.CompletePlayerSide` 只接受已到达屏障的状态，在任何 PhaseOne 前冻结全体 Actor 的虚无牌总数，再按 Actor 固定顺序运行 PhaseOne/手牌清理，最后对全部存活参与者运行一次共享 PhaseTwo；单 Actor EndTurn 不提前改变 live phase，基础屏障 `runId=92d774c3b3f341c8a11472a246c717ec` Passed。共享 PhaseTwo 的选择按请求 owner 归属并消费 `PlayerTurnEnd` 前缀，Power 代表见 `runId=9bc79f5cdc9548db8f287189f993d54f`，Joss Paper 遗物代表见 `runId=7d629eea37754cdfb240a1d6580bf041`。
 - F7b（已完成）：远端 Actor 强制死亡后不再产生候选、不阻塞屏障，玩家侧只处理存活参与者且死者保持死亡，`runId=672c2a82f07e41d2a73c5538e5f3fd1d` Passed。Parafright 的 owner-only 复活动作恢复满血并撤销已处理死亡标记；Fat Gremlin 逃跑后离开活动 roster，`runId=43e62fb1701d44fb9257fcbd4e5a3db9` Passed。额外回合按原版 `PlayersTakingExtraTurn` 子集推进：Actor1 Ambergris 路径只恢复 Actor1 行动并增加其 TurnNumber，不增加共享 RoundNumber、不执行敌方侧并消费来源，`runId=544bf8bc1d4248ff952622314b289b94` Passed。
-- F7c（进行中）：F7c1 已按冻结敌方行动名单执行敌方侧开始、纯攻击行动、侧结束、毒与下一行动准备；Fuzzy Wurm Crawler 的纯攻击对两个 Actor 同序结算，`runId=3f9a5c67effa42c5b10791292be1309b` Passed。F7c2 已建立 owner-only、target-only 与 mixed 分类：Inhale、Oil Spray、Rage 分别通过一次性 owner、逐 Actor target 与混合后效代表。F7c3 将 mixed 拆成一次性前置、逐 Actor 攻击和一次性后置：Gas Bomb 自移除与 Living Fog 召唤 `runId=c717de439cfa43d5bad9a88032f80b41` Passed；Tough Egg Hatch 只消费一次 Niche RNG 并恢复合法 HP，`runId=e65b79f63f514e7195d4a046157e8d4f` Passed。其余已支持特殊行动的完整分类清单待补，未分类行动继续明确拒绝。
-- F7d（进行中）：F7d1 按原版多人顺序对全体存活 Actor 只触发一次共享 side hook，并逐 Actor 重置资源、抽牌、执行玩家开始 hook、球与自动阶段；两 Actor 的轮数/能量/手牌和共享 round 推进通过，`runId=9ad70ea00a2d493ead5c090991c9d263` Passed。F7d2 已让 Actor1 的 `ToolsOfTheTradePower` 在回合开始挂起后从稳定父状态按前缀恢复，`runId=2cf1ac4368ab4ad58ac2c056708b6842` Passed；其他开始阶段选择来源随 F6b 继续补齐。
+- F7c（已完成）：F7c1 已按冻结敌方行动名单执行敌方侧开始、纯攻击行动、侧结束、毒与下一行动准备；Fuzzy Wurm Crawler 的纯攻击对两个 Actor 同序结算，`runId=3f9a5c67effa42c5b10791292be1309b` Passed。F7c2/F7c3 将全部既有 `MonsterMoveEffects.Supports` 语义归入 owner-only、target-only、attack 后 mixed 或 attack 前 mixed；未登记效果仍沿用既有显式 unsupported 边界。Rage、Gas Bomb、Living Fog 与 Tough Egg 分别覆盖攻击加一次性 owner、自移除、前置召唤和一次性 RNG。真正同时修改 target/owner 的 Soul Siphon 进一步验证两名 Actor 各 `-2 Strength/-2 Dexterity`、敌人只 `+2 Strength` 一次，`runId=60708c6fb8f147f280bf40fca07745de` Passed；Windows 结构门禁同步改为检查集中作用域注册和两段式效果入口。
+- F7d（已完成）：F7d1 按原版多人顺序对全体存活 Actor 只触发一次共享 side hook，并逐 Actor 重置资源、抽牌、执行玩家开始 hook、球与自动阶段；两 Actor的轮数/能量/手牌和共享 round 推进通过，`runId=9ad70ea00a2d493ead5c090991c9d263` Passed。F7d2 已让 Actor1 的 `ToolsOfTheTradePower` 在回合开始挂起后从稳定父状态按前缀恢复，`runId=2cf1ac4368ab4ad58ac2c056708b6842` Passed；EndTurn Power、遗物及重复自动出牌来源已由 F6b 代表覆盖。F7 至此关闭。
 
 ### F8：联合终局目标和政策
 
