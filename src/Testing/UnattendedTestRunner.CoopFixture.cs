@@ -657,6 +657,30 @@ internal sealed partial class UnattendedTestRunner
         }
     }
 
+    private static async Task<string> AssertCoopBotHostLocalActionAsync(CombatState source)
+    {
+        Assembly coopBot = AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault(assembly =>
+                string.Equals(assembly.GetName().Name, "CoopBot", StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("COOP-BOT-HOST-LOCAL-ACTION requires the CoopBot assembly.");
+        Type probe = coopBot.GetType("CoopBot.Diagnostics.CoopBotHeadlessProbe", throwOnError: true)
+            ?? throw new InvalidOperationException("CoopBot headless probe type is missing.");
+        MethodInfo method = probe.GetMethod(
+                "ExecuteLocalCardAndEndTurnAsync",
+                BindingFlags.Public | BindingFlags.Static,
+                [typeof(CombatState)])
+            ?? throw new MissingMethodException(probe.FullName, "ExecuteLocalCardAndEndTurnAsync");
+        try
+        {
+            Task<string> task = method.Invoke(null, [source]) as Task<string>
+                ?? throw new InvalidOperationException("CoopBot local action probe returned no task.");
+            return await task;
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            throw new InvalidOperationException("CoopBot Host local action execution failed.", exception.InnerException);
+        }
+    }
+
     private static void AssertAllActorsDeadTerminal(CombatState source)
     {
         OfflineJointCombat offline = CreateOfflineJointCombat(

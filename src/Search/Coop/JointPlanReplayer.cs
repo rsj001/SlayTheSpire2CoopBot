@@ -1,12 +1,22 @@
 using CombatSolver.Engine.InCombat.Simulation;
+using CombatSolver.Engine.Common;
+using MegaCrit.Sts2.Core.Entities.Players;
 
 namespace CombatSolver;
 
 internal sealed record JointReplayResult(
     JointCombatSnapshot Snapshot,
     IReadOnlyList<PlanAction> AppliedActions,
+    IReadOnlyList<JointActionExpectation> ActionExpectations,
     IReadOnlyList<JointCombatSnapshot> ActionSnapshots,
     IReadOnlyList<JointStrictCheckpoint> Checkpoints);
+
+internal sealed record JointActionExpectation(
+    CombatActorId Actor,
+    int Turn,
+    JointActorTurnPhase Phase,
+    int EnergyCost,
+    int StarCost);
 
 internal static class JointPlanReplayer
 {
@@ -18,6 +28,7 @@ internal static class JointPlanReplayer
             JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
         JointTurnState turnState = JointTurnState.Start(root.Actors.Count, root.StartTurnNumber);
         List<PlanAction> applied = [];
+        List<JointActionExpectation> expectations = [];
         List<JointCombatSnapshot> actionSnapshots = [];
         List<JointStrictCheckpoint> checkpoints = [];
         foreach (PlanAction action in plan.Actions)
@@ -61,6 +72,27 @@ internal static class JointPlanReplayer
             }
             if (action.Turn < turnState.Turn)
                 throw new InvalidOperationException($"联合回放回合倒退：{action.Turn} < {turnState.Turn}。");
+            Player expectationPlayer = simulator.State.Players[action.Actor.Index];
+            SimPlayerCombatState expectationPlayerState =
+                simulator.State.GetPlayerCombatState(expectationPlayer);
+            int energyCost = 0;
+            int starCost = 0;
+            if (action.Kind == PlanActionKind.PlayCard)
+            {
+                PredictedCard card = CombatBeamSolver.FindCardForReplay(
+                        expectationPlayerState.Hand.Cards,
+                        action)
+                    ?? throw new InvalidOperationException(
+                        $"联合回放无法为动作期待值找到 Actor {action.Actor} 的卡牌 {action.CardId}。");
+                energyCost = card.GetEnergyCostWithModifiers(simulator, expectationPlayerState);
+                starCost = card.GetStarCostWithModifiers(simulator, expectationPlayerState);
+            }
+            expectations.Add(new JointActionExpectation(
+                action.Actor,
+                action.Turn,
+                turnState.Phases[action.Actor.Index],
+                energyCost,
+                starCost));
             turnState = JointActionTransition.Apply(
                 simulator, turnState, action, processedEnemyDeaths);
             applied.Add(action);
@@ -79,6 +111,7 @@ internal static class JointPlanReplayer
         return new JointReplayResult(
             snapshot,
             applied.AsReadOnly(),
+            expectations.AsReadOnly(),
             actionSnapshots.AsReadOnly(),
             checkpoints.AsReadOnly());
     }

@@ -2,6 +2,7 @@ using CoopBot.Capture;
 using CoopBot.Host;
 using CoopBot.Protocol;
 using CoopBot.UI;
+using CoopBot.NativeAdapter;
 using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Localization;
@@ -15,6 +16,8 @@ internal sealed class CoopBotRuntime
     private HostCombatRecorder? _hostRecorder;
     private HostSearchCoordinator? _hostSearch;
     private HostSearchResult? _lastPlan;
+    private LocalActorAgent? _localAgent;
+    private HostDeploymentCoordinator? _hostDeployment;
 
     internal event Action<CoopUiSnapshot>? UiSnapshotChanged;
     internal event Action? UiCleared;
@@ -26,9 +29,18 @@ internal sealed class CoopBotRuntime
             return;
         string combatIdentity = CombatManager.Instance.CurrentCombatId?.ToString()
             ?? throw new InvalidOperationException("Multiplayer combat has no CombatId.");
-        _hostRecorder = new HostCombatRecorder(combat, combatIdentity, () => false);
+        _localAgent = new LocalActorAgent();
+        _hostRecorder = new HostCombatRecorder(
+            combat,
+            combatIdentity,
+            () => _localAgent?.BlocksRootCapture == true);
         _hostSearch = new HostSearchCoordinator(_hostRecorder);
         _hostSearch.PlanPublished += OnPlanPublished;
+        _hostDeployment = new HostDeploymentCoordinator(
+            combat,
+            _hostRecorder,
+            _hostSearch,
+            _localAgent);
     }
 
     internal void Poll()
@@ -39,15 +51,24 @@ internal sealed class CoopBotRuntime
 
     internal void StopCombat(string reason)
     {
+        _hostDeployment?.Dispose();
+        _hostDeployment = null;
         if (_hostSearch is not null)
             _hostSearch.PlanPublished -= OnPlanPublished;
         _hostSearch?.Dispose();
         _hostSearch = null;
         _lastPlan = null;
+        _localAgent = null;
         _hostRecorder?.Dispose(reason);
         _hostRecorder = null;
         UiCleared?.Invoke();
     }
+
+    internal void ExecuteNext()
+        => _hostDeployment?.ExecuteNext();
+
+    internal void CancelSearch()
+        => _hostSearch?.Cancel("ui_cancel");
 
     internal void RefreshUi()
     {
@@ -85,6 +106,8 @@ internal partial class CoopBotRuntimeNode : Node
         AddChild(_overlay);
         _runtime.UiSnapshotChanged += _overlay.Render;
         _runtime.UiCleared += _overlay.HideOverlay;
+        _overlay.ExecuteNextRequested += _runtime.ExecuteNext;
+        _overlay.CancelSearchRequested += _runtime.CancelSearch;
         LocManager.Instance.SubscribeToLocaleChange(OnLocaleChanged);
     }
 
@@ -98,6 +121,8 @@ internal partial class CoopBotRuntimeNode : Node
         {
             _runtime.UiSnapshotChanged -= _overlay.Render;
             _runtime.UiCleared -= _overlay.HideOverlay;
+            _overlay.ExecuteNextRequested -= _runtime.ExecuteNext;
+            _overlay.CancelSearchRequested -= _runtime.CancelSearch;
         }
         _runtime.StopCombat("runtime_exit");
     }

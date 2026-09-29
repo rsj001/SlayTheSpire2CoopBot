@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## Co-op Bot C5 Host 本地执行（2026-09-29）
+
+- `COOP-BOT-HOST-LOCAL-ACTION` / `737579cf05734538a36d2536ba09f27c`：Passed；30 HP 敌人上，Host 本地普通攻击包含目标，经原版动作队列完成并对齐动作 predicted checkpoint；EndTurn 经原版队列完成，跨敌方侧到第 2 回合并对齐 strict replay barrier。证据为 `card_ack=Finished;end_ack=Finished;turn=1->2;strict=card,barrier`，1 CPU / 1536 MiB，实例已删除。
+- 失败基线 `f8ec28e890ee4928a1b9e35c364f20d2` 仅说明默认 1 HP 输入会让首击终局；改为 30 HP。失败基线 `b5d92abf6aca46e181fd52fbce3cd7c2` 定位无星能牌的 live `-1` 哨兵与预测实际支出 `0` 的口径差异，归一化实际支出后通过。
+- CombatSolver 与 CoopBot Release 构建 0 warning / 0 error。未测试远端 owner、药水或选择；它们分别属于 C6/C7。
+
 ## Co-op Bot C4 四端只读 UI（2026-09-29）
 
 - `COOP-BOT-UI` / `badd049e2a914f16b7224d3c8d0044c1`：Passed；同一 PlanId/路线投影到 4 个端点，Host 控件 1 份、Client 控件 3 份，zhs/eng 的模式、状态、路线和按钮文案通过。1 CPU / 1536 MiB，实例已删除。

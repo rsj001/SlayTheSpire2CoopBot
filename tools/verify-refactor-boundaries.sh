@@ -1949,6 +1949,8 @@ coop_host_search="$repository_root/coopbot/Host/HostSearchCoordinator.cs"
 coop_plan_snapshot="$repository_root/coopbot/Protocol/CoopPlanSnapshot.cs"
 coop_ui_snapshot="$repository_root/coopbot/UI/CoopUiSnapshot.cs"
 coop_ui_renderer="$repository_root/coopbot/UI/CoopBotOverlayRenderer.cs"
+coop_local_agent="$repository_root/coopbot/NativeAdapter/LocalActorAgent.cs"
+coop_host_deployment="$repository_root/coopbot/Host/HostDeploymentCoordinator.cs"
 require_fixed "$repository_root/CombatSolver.csproj" '<InternalsVisibleTo Include="CoopBot" />' \
     'CombatSolver missing narrow CoopBot internal bridge:'
 require_fixed "$coopbot_project" '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' \
@@ -1968,6 +1970,9 @@ require_fixed "$coop_host_search" 'JointStrictReplayVerifier.Verify(recorded.Roo
 require_fixed "$coop_plan_snapshot" 'public sealed record PlanPublishedPayload(' 'CoopBot detached plan payload missing:'
 require_fixed "$coop_ui_snapshot" 'internal sealed record CoopUiSnapshot(' 'CoopBot UI snapshot missing:'
 require_fixed "$coop_ui_renderer" 'internal void Render(CoopUiSnapshot snapshot)' 'CoopBot snapshot renderer missing:'
+require_fixed "$coop_local_agent" 'prepared.Card.TryManualPlay(prepared.Target)' 'CoopBot local card entry missing:'
+require_fixed "$coop_local_agent" 'RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(' 'CoopBot local EndTurn entry missing:'
+require_fixed "$coop_host_deployment" 'awaiting.Expected.Continuation.DescribeFirstDifference(actual.Root.ContinuationStamp)' 'CoopBot actual/sim verification missing:'
 require_fixed "$repository_root/tools/run-unattended-test.ps1" '[switch]$IncludeCoopBot' \
     'Windows unattended launcher missing optional CoopBot snapshot:'
 require_fixed "$repository_root/tools/run-unattended-test.sh" 'add_option include-coop-bot 0 switch none' \
@@ -1981,6 +1986,16 @@ for forbidden in \
     'PowerCmd.' \
     'CardPileCmd.'; do
     forbid_fixed "$coop_recorder" "$forbidden" 'read-only CoopBot recorder mutates live combat:'
+done
+for forbidden in \
+    'SetCurrentHpInternal(' \
+    '.Energy =' \
+    '.Stars =' \
+    'AddInternal(' \
+    'RemoveInternal(' \
+    'PowerCmd.' \
+    'CardPileCmd.'; do
+    forbid_fixed "$coop_local_agent" "$forbidden" 'CoopBot LocalActorAgent bypasses original action entry:'
 done
 for forbidden in CoopBot.Protocol CombatSolver PlanAction ModelDb CombatState RunManager; do
     forbid_fixed "$coop_ui_renderer" "$forbidden" 'CoopBot renderer bypasses read-only snapshot:'

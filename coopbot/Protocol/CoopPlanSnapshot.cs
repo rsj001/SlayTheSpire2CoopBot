@@ -171,7 +171,7 @@ internal static class CoopPlanSnapshotFactory
             Array.AsReadOnly(checkpoints));
     }
 
-    private static CoopPlanActionSnapshot CaptureAction(PlanAction action, int index)
+    internal static CoopPlanActionSnapshot CaptureAction(PlanAction action, int index)
         => new(
             index,
             action.Actor.Index,

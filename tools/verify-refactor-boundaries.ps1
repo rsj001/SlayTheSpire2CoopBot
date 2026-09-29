@@ -2479,6 +2479,8 @@ $coopHostSearchPath = Join-Path $repositoryRoot 'coopbot/Host/HostSearchCoordina
 $coopPlanSnapshotPath = Join-Path $repositoryRoot 'coopbot/Protocol/CoopPlanSnapshot.cs'
 $coopUiSnapshotPath = Join-Path $repositoryRoot 'coopbot/UI/CoopUiSnapshot.cs'
 $coopUiRendererPath = Join-Path $repositoryRoot 'coopbot/UI/CoopBotOverlayRenderer.cs'
+$coopLocalAgentPath = Join-Path $repositoryRoot 'coopbot/NativeAdapter/LocalActorAgent.cs'
+$coopHostDeploymentPath = Join-Path $repositoryRoot 'coopbot/Host/HostDeploymentCoordinator.cs'
 foreach ($check in @(
     @{ Path = $combatSolverProjectPath; Text = '<InternalsVisibleTo Include="CoopBot" />' },
     @{ Path = $coopBotProjectPath; Text = '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' },
@@ -2494,10 +2496,25 @@ foreach ($check in @(
     @{ Path = $coopPlanSnapshotPath; Text = 'public sealed record PlanPublishedPayload(' },
     @{ Path = $coopUiSnapshotPath; Text = 'internal sealed record CoopUiSnapshot(' },
     @{ Path = $coopUiRendererPath; Text = 'internal void Render(CoopUiSnapshot snapshot)' },
+    @{ Path = $coopLocalAgentPath; Text = 'prepared.Card.TryManualPlay(prepared.Target)' },
+    @{ Path = $coopLocalAgentPath; Text = 'RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(' },
+    @{ Path = $coopHostDeploymentPath; Text = 'awaiting.Expected.Continuation.DescribeFirstDifference(actual.Root.ContinuationStamp)' },
     @{ Path = (Join-Path $repositoryRoot 'tools/run-unattended-test.ps1'); Text = '[switch]$IncludeCoopBot' },
     @{ Path = (Join-Path $repositoryRoot 'tools/run-unattended-test.sh'); Text = 'add_option include-coop-bot 0 switch none' })) {
     if (-not (Select-String -LiteralPath $check.Path -SimpleMatch $check.Text -Quiet)) {
         $violations.Add("$($check.Path): missing CoopBot C2 boundary '$($check.Text)'")
+    }
+}
+foreach ($forbiddenNativeMutation in @(
+    'SetCurrentHpInternal(',
+    '.Energy =',
+    '.Stars =',
+    'AddInternal(',
+    'RemoveInternal(',
+    'PowerCmd.',
+    'CardPileCmd.')) {
+    if (Select-String -LiteralPath $coopLocalAgentPath -SimpleMatch $forbiddenNativeMutation -Quiet) {
+        $violations.Add("${coopLocalAgentPath}: LocalActorAgent bypasses original action entry via '$forbiddenNativeMutation'")
     }
 }
 foreach ($forbiddenRendererDependency in @(

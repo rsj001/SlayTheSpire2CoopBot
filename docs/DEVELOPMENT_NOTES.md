@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## Co-op Bot C5 Host 本地执行（开发中，2026-09-29）
+
+新增本地 Actor Agent 的 `Idle→Validating→Prepared→Executing→WaitingNativeCompletion→Reporting→Idle` 状态机。Prepare 校验本地 Actor、完整根指纹、回合/阶段、逐实例卡牌状态、目标以及离线回放捕获的能量/星能费用；Commit 只通过原版 `TryManualPlay` 或 `RequestEnqueue(EndPlayerTurnAction)`，等待对应 GameAction 完成后 ACK。Host 部署协调器当前只授权路线第一步且必须属于 Host；ACK 后等待 Recorder 新稳定根，以完整 continuation 对 predicted checkpoint，首差异会停止该动作链。Agent 未直接写 HP、能量、牌堆、Power 或 readiness。
+
+`COOP-BOT-HOST-LOCAL-ACTION` 最终 `737579cf05734538a36d2536ba09f27c` Passed：原版 Host 本地 `STRIKE_IRONCLAD` 经 Prepare/Commit/ACK 命中 CombatId 1，动作后 actual/simulated 全 continuation 一致；随后原版 EndTurn 完成、跨敌方侧进入第 2 回合，并与 strict replay 的 barrier checkpoint 一致。失败基线 `f8ec28e890ee4928a1b9e35c364f20d2` 是夹具默认 1 HP 敌人导致首击终局，改用 30 HP 输入；`b5d92abf6aca46e181fd52fbce3cd7c2` 暴露无星能费用的原版显示值为 -1，而模拟合同是实际支出 0，Prepare 现按实际支出口径归一化。最终实例已删除。
+
 ## Co-op Bot C4 四端只读 UI（开发中，2026-09-29）
 
 独立 Mod 新增联合计划 UI 投影和轻量 overlay。四端 snapshot 共享 PlanId、RootRevision 和完整动作身份；Host 显示重规划、取消搜索、执行下一步与暂停入口，Client 显示允许本次、拒绝转人工与暂停入口。路线、当前 owner、逐 Actor HP/战损、总战损 workaround、药水和停止原因均在投影层生成。renderer 只读取 `CoopUiSnapshot`，不读取协议 DTO、Search、ModelDb 或 live 战斗；新增文案由内嵌目录同时提供中文与英文，语言变化重投影最近计划但不重搜。

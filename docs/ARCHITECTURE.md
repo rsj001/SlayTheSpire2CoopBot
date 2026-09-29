@@ -301,6 +301,8 @@ F5a 将原先只有根级本地玩家视图的可搜索药水、Throwing Axe 可
 
 `CoopUiSnapshot.Capture` 是协议计划到玩家显示值的主线程投影边界；它按端点角色生成共同路线、逐 Actor 摘要、当前动作及 Host/Client 控件状态，并在投影时完成中英文模板选择。`CoopBotOverlayRenderer` 只接收 `CoopUiSnapshot`，不引用协议 DTO、Search、ModelDb 或 live 战斗。Host 当前在本地搜索完成后发布该 snapshot；Client 接收同一 `PlanPublished` 后的接线归远端 transport 阶段。语言变化只重投影最近一次纯计划，不触发搜索。
 
+`LocalActorAgent` 独占本地 Prepare→Commit→ACK 状态机。Prepare 逐项核对 Actor、完整根指纹、回合/阶段、卡牌实例状态、目标和预测费用；C5 只接受无选择普通牌与 EndTurn。Commit 分别调用原版 `CardModel.TryManualPlay` 与 `ActionQueueSynchronizer.RequestEnqueue(EndPlayerTurnAction)`，并等待捕获到的原版 `GameAction.CompletionTask`，不直接修改 live 字段。`JointPlanReplayer` 在每个动作执行前保存预测能量/星能费用，成为命令合同来源。`HostDeploymentCoordinator` 只为 Host 本地 Actor 发出当前单动作；ACK 后允许 Recorder 建立新根，并用该动作的完整 predicted continuation 与 actual 根报告首差异，一致后才让 Agent 回到 Idle。
+
 策略重构回归语料由 `tools/StrategyCorpus` 编排：玩家包使用 Testing 的严格 `combat_start` 无头恢复，仓库生成场景使用 `OfflineSearchHarness`。Search 在请求完成后提供只读质量和根戳记证据；Testing Writer 与离线宿主把它们写入独立证据文件，不参与候选裁决。原始玩家包与完整输出只留在 `.local`。对照器先核对根、政策和固定预算，再比较完整动作、续用、结果及非时序工作量；时间、分配和 GC 单列观察。
 
 本地策略迭代通过 `tools/CheckpointTool/StrategySessionRunner.cs` 持有 `start/run/status/stop` 会话和脚本单独编译。所有策略会话使用一个固定私有游戏副本；`start` 提交不建战斗的 `SessionStart` 就绪请求，`run` 直接复用其进程，`stop` 只结束进程和监控。Windows 启动器缓存稳定游戏文件的哈希，仅重算 Mod；停机后按差异替换私有副本。`run-unattended-test.ps1/.sh` 的复用入口跳过快照扫描，仍核对 PID、出生时间与可执行文件。`UnattendedTestRunner.ProtocolHost` 在每次请求开始加载冻结的脚本程序集和参数，`DevelopmentStrategyLoader` 持有可卸载加载上下文，在请求收尾释放。Search 只接收 `SearchPolicySnapshot.DevelopmentStrategy` 中的不可变策略引用和只读分支特征，不读取脚本文件或 live 设置。无脚本时保留既有候选顺序、Beam 评分和组合列表。脚本只接管中途优先级、评分、一个有界保路代表和既有组合成员编排；最终路线质量、预算、状态等价与战斗结算仍属原所有者。

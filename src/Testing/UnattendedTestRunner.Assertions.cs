@@ -68,6 +68,12 @@ internal sealed partial class UnattendedTestRunner
                 string evidence = AssertCoopBotUi(scenario.CombatState);
                 runner._completedChecks.Add("CoopBotUi:FourEndpoints:SamePlan:RoleControls:Bilingual:" + evidence);
             }
+            if (request.ScenarioId == "COOP-BOT-HOST-LOCAL-ACTION")
+            {
+                runner.SetStage("coop_bot_host_local_action");
+                string evidence = await AssertCoopBotHostLocalActionAsync(scenario.CombatState);
+                runner._completedChecks.Add("CoopBotHostLocalAction:PrepareCommitAck:CardTarget:EndTurn:Strict:" + evidence);
+            }
             if (request.ScenarioId == "COOP-MULTIPLAYER-NATIVE-DIFF")
             {
                 runner.SetStage("coop_multiplayer_native_diff");
