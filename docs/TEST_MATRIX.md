@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 联合敌方复活与逃跑（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：Parafright 强制进入复活阶段后执行 `REVIVE_MOVE`，HP 恢复到最大值且 CombatId 不再留在已处理死亡集合；Fat Gremlin 执行 `FLEE_MOVE` 后进入逃跑集合并离开活动敌人 roster；`runId=43e62fb1701d44fb9257fcbd4e5a3db9`，Passed，实例已删除。
+- 该证据不覆盖额外回合、其余复活/逃跑模型、Linux 或可见 Steam。
+
 ## 联合敌方自移除与前置召唤（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：Gas Bomb 的 Explode 对两名 Actor 分别造成同额伤害，owner 最终死亡；Living Fog 的 Bloat 在原版多槽遭遇中新增数量恰等于 `BloatAmount`，没有按 Actor 倍增，并对两人造成同额伤害；`runId=c717de439cfa43d5bad9a88032f80b41`，Passed，实例已删除。

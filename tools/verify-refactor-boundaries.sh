@@ -1765,10 +1765,15 @@ forbid_fixed "$joint_expander" 'CardChoiceSupport.GetSpec(simulator, card)' \
 require_fixed "$joint_transition" 'JointPendingChoicePlacement.Primary' \
     'joint transition no longer classifies authoritative pending primary choices:'
 monster_move_semantics="$repository_root/src/Prediction/MonsterMoveSemantics.cs"
+joint_round_transition="$repository_root/src/Search/Coop/JointRoundTransition.cs"
 require_fixed "$monster_move_semantics" 'IsJointOwnerOnlyMove(' \
     'joint owner-only monster move boundary missing:'
 require_fixed "$monster_move_semantics" '("FuzzyWurmCrawler", "INHALE")' \
     'joint owner-only monster move boundary missing:'
+require_fixed "$monster_move_semantics" '("Parafright", "REVIVE_MOVE")' \
+    'joint revive monster move boundary missing:'
+require_fixed "$monster_move_semantics" '("FatGremlin", "FLEE_MOVE")' \
+    'joint escape monster move boundary missing:'
 require_fixed "$monster_move_semantics" 'IsJointTargetOnlyMove(' \
     'joint target-only monster move boundary missing:'
 require_fixed "$monster_move_semantics" '("SludgeSpinner", "OIL_SPRAY_MOVE")' \
@@ -1787,6 +1792,8 @@ require_fixed "$monster_move_semantics" 'applyBeforeAttack: false' \
     'joint mixed monster move pre-attack split missing:'
 require_fixed "$monster_move_semantics" 'applyMoveEffect: false' \
     'joint mixed monster move split missing:'
+require_fixed "$joint_round_transition" 'processedEnemyDeaths.Remove(revivedCombatId)' \
+    'joint enemy revive no longer restores death-processing eligibility:'
 joint_offline_search="$repository_root/src/Search/Coop/JointOfflineSearch.cs"
 for token in \
     'internal sealed record JointOfflineSearchRequest(' \

@@ -2262,9 +2262,12 @@ if (-not (Select-String -LiteralPath $jointTransitionPath `
     $violations.Add('Joint transition no longer classifies authoritative pending primary choices.')
 }
 $monsterMoveSemanticsPath = Join-Path $repositoryRoot 'src/Prediction/MonsterMoveSemantics.cs'
+$jointRoundTransitionPath = Join-Path $repositoryRoot 'src/Search/Coop/JointRoundTransition.cs'
 foreach ($text in @(
     'IsJointOwnerOnlyMove(',
     '("FuzzyWurmCrawler", "INHALE")',
+    '("Parafright", "REVIVE_MOVE")',
+    '("FatGremlin", "FLEE_MOVE")',
     'IsJointTargetOnlyMove(',
     '("SludgeSpinner", "OIL_SPRAY_MOVE")',
     'IsJointPostAttackMixedMove(',
@@ -2278,6 +2281,10 @@ foreach ($text in @(
     if (-not (Select-String -LiteralPath $monsterMoveSemanticsPath -SimpleMatch $text -Quiet)) {
         $violations.Add("Joint owner-only monster move boundary missing: $text")
     }
+}
+if (-not (Select-String -LiteralPath $jointRoundTransitionPath `
+        -SimpleMatch 'processedEnemyDeaths.Remove(revivedCombatId)' -Quiet)) {
+    $violations.Add('Joint enemy revive no longer restores death-processing eligibility.')
 }
 $jointOfflineSearchPath = Join-Path $repositoryRoot 'src/Search/Coop/JointOfflineSearch.cs'
 foreach ($text in @(

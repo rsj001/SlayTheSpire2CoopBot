@@ -204,6 +204,11 @@ internal static class JointRoundTransition
                 players,
                 processedEnemyDeaths);
             performedMoves[enemy] = move.Move;
+            if (enemy.CombatId is uint revivedCombatId
+                && simulator.State.GetCreature(enemy).IsAlive)
+            {
+                processedEnemyDeaths.Remove(revivedCombatId);
+            }
             if (combat.HasPendingChoice)
                 throw PendingEnemyChoice(combat);
             if (simulator.CheckWinCondition(combat.GetPlayerTurnNumber(simulator.State.Players[0])))

@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线联合敌方复活与逃跑（2026-09-29）
+
+联合敌方 owner-only 分类新增 Parafright 复活与 Fat Gremlin 逃跑；复活完成后同步撤销已处理死亡 CombatId，使后续再次死亡仍能执行死亡尾部，逃跑保持独立 roster 语义。两 Actor 夹具验证复活恢复满血并重新获得死亡处理资格、逃跑从活动 roster 移入逃跑集合；`COOP-MULTI-ACTOR-ROOT` 的 `runId=43e62fb1701d44fb9257fcbd4e5a3db9` Passed，实例已删除。额外回合仍待 F7b 后续。
+
 ## 离线联合敌方移除与召唤（2026-09-29）
 
 联合敌方 mixed 分派扩展为一次性前置、逐 Actor 攻击、一次性后置三个阶段：Gas Bomb 的爆炸对两名 Actor 分别造成同额伤害，owner 只自杀一次；Living Fog 的 Bloat 在原版 Living Fog 遭遇槽位中只召唤一批炸弹，再分别攻击两名 Actor。前两次夹具因无 Encounter 和对 mutable Encounter 重复克隆而失败，`runId=e9b8f48f148445c68fe6f981949b3a10`、`a9bc1c0d8af74f5b8cb334938d693688`；复制当前单槽遭遇仍无法提供 bomb 槽，`runId=d02e2fd3507f4d55abcc7d4ed56327ef`。改用 canonical `LivingFogNormal` 后 `COOP-MULTI-ACTOR-ROOT` 的 `runId=c717de439cfa43d5bad9a88032f80b41` Passed，全部实例已删除。

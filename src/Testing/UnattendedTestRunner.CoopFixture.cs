@@ -37,6 +37,8 @@ internal sealed partial class UnattendedTestRunner
         AssertMixedEnemyMove(source);
         AssertOwnerRemovalEnemyMove(source);
         AssertPreAttackSummonEnemyMove(source);
+        AssertEnemyRevive(source);
+        AssertEnemyEscape(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -720,6 +722,55 @@ internal sealed partial class UnattendedTestRunner
                 $"bombs={bombsBefore}->{bombsAfter} expected={expectedSpawnCount} " +
                 $"hp={string.Join(',', hpBefore)}->{string.Join(',', hpAfter)}。");
         }
+    }
+
+    private static void AssertEnemyRevive(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            2,
+            enemyModel: ModelDb.Monster<Parafright>());
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Creature enemy = combat.Enemies.Single();
+        SimCreatureState enemyState = simulator.State.GetCreature(enemy);
+        combat.BeginIllusionRevive(enemy);
+        enemyState.CurrentHp = 0;
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        if (enemy.CombatId is not uint combatId)
+            throw new InvalidOperationException("联合复活夹具的敌人缺少 CombatId。");
+        deaths.Add(combatId);
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+        if (!enemyState.IsAlive || enemyState.CurrentHp != enemyState.MaxHp || deaths.Contains(combatId))
+        {
+            throw new InvalidOperationException(
+                $"联合敌方复活未恢复 HP 或死亡处理资格：" +
+                $"hp={enemyState.CurrentHp}/{enemyState.MaxHp} processed={deaths.Contains(combatId)}。");
+        }
+    }
+
+    private static void AssertEnemyEscape(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            2,
+            enemyModel: ModelDb.Monster<FatGremlin>());
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Creature enemy = combat.Enemies.Single();
+        combat.ForceMonsterMove(enemy, "FLEE_MOVE");
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+        if (!combat.EscapedCreatures.Contains(enemy) || combat.Enemies.Contains(enemy))
+            throw new InvalidOperationException("联合敌方逃跑没有从活动 roster 移入逃跑集合。");
     }
 
     private static void AssertBasicNextPlayerSide(CombatRootSnapshot root)
