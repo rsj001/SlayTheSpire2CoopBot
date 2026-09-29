@@ -229,6 +229,8 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M1：建立原生多人 actual/simulated 差分底座
 
+> 进度：进行中。已完成 2/3/4 Actor 原生建局对象保留、同根双 prediction Fork、逐 Actor 完整根投影对账、远端状态键与根隔离，证据为 `COOP-MULTIPLAYER-NATIVE-DIFF` / `6baf957036cb4e7da22ef768b5d2841a`。待完成原版公开 `GameAction` 执行器、同动作 `JointActionTransition`、完整差异集合，以及一个通过动作和三个稳定预期缺口。
+
 目标：把原版多人执行结果变成语义真值，而不是继续用模拟器自证。
 
 工作：

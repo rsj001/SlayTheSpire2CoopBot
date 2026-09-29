@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## 原版多人语义 M1 原生根差分底座（进行中，2026-09-29）
+
+离线联合建局现在除预测根外还保留 2/3/4 Actor 的原生 `CombatState`、稳定玩家顺序和敌人实例。新增的独立无人 fixture 从同一原生根捕获预测根并建立两个 prediction Fork，逐 Actor 对账 HP/格挡/资源、牌堆与卡牌状态、Power 与私有状态、药水、球、Osty、敌人/AI、九条 RNG 和完整 continuation；同时证明远端 Actor 状态进入联合状态键且兄弟 Fork 不污染原生根。`COOP-MULTIPLAYER-NATIVE-DIFF` 的 `runId=6baf957036cb4e7da22ef768b5d2841a` Passed，实例已删除。
+
+这只是 M1 的根与观察器底座：尚未把原版 `GameAction` 与 `JointActionTransition` 从同根分别执行，也尚未建立 `BelieveInYou`、`Knockdown`、`TheBall` 的预期失败，因此 M1 仍为进行中，不能称为原版多人动作差分完成。
+
 ## 原版多人语义 M0 目录与失败边界（2026-09-29）
 
 新增绑定游戏 0.111.0 的多人语义目录：37 张 `MultiplayerOnly` 卡牌逐项记录 `Unsupported / UnderTest / Verified`、OnPlay 覆盖形态和计划阶段；CoverageCatalog 从当前程序集核对目录、精确 OnPlay mirror、13 个 Power 多人缩放相关类型和 51 个跨玩家药水目标，输出 `coverage/multiplayer-semantics.json`。多人牌在 OnPlay 结算前先经过目录门禁：目录外类型、21 张明确缺入口的类型，以及试图走普通推断器但尚无原生多人证据的类型都会抛出带卡牌类型和计划阶段的 `PredictionUnsupportedException`；已有 5 个精确 mirror 保留给 M1 原生多人差分。该变化只影响离线多人语义入口，生产单人卡牌不经过此门禁。

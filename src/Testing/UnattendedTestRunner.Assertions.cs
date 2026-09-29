@@ -50,6 +50,13 @@ internal sealed partial class UnattendedTestRunner
                 runner._completedChecks.Add(_coopWorkloadEvidence);
                 runner._completedChecks.Add("JointLifetime:Complete:Cancel:Fault:WeakReferencesReleased");
             }
+            if (request.ScenarioId == "COOP-MULTIPLAYER-NATIVE-DIFF")
+            {
+                runner.SetStage("coop_multiplayer_native_diff");
+                runner.AssertMultiplayerNativeDifferentialSubstrate(scenario.CombatState);
+                runner._completedChecks.Add(
+                    "MultiplayerNativeDiff:ActorCount2:ActorCount3:ActorCount4:AllActorRootProjection:IndependentForks:RootIsolation");
+            }
             if (request.ScenarioId == "COOP-JOINT-OBJECTIVE")
             {
                 runner.SetStage("coop_joint_objective");

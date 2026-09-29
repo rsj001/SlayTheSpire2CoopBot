@@ -25,6 +25,11 @@ internal sealed partial class UnattendedTestRunner
 {
     private static string _coopWorkloadEvidence = "JointWorkload:NotRun";
 
+    private sealed record OfflineJointCombat(
+        CombatState State,
+        IReadOnlyList<Player> Players,
+        Creature Enemy);
+
     private static void AssertCoopMultiActorRoots(CombatState source)
     {
         AssertActorCount(2);
@@ -2069,6 +2074,33 @@ internal sealed partial class UnattendedTestRunner
         MonsterModel? enemyModel = null,
         EncounterModel? encounterModel = null,
         int? enemyCurrentHp = null)
+        => CombatRootSnapshot.Capture(CreateOfflineJointCombat(
+            source,
+            actorCount,
+            remotePotion,
+            includeRemoteRelicTriggerFixture,
+            includeRemoteTeamPowerFixture,
+            includeRelicConsumptionFixture,
+            includeCharacterMechanismFixture,
+            characterRoster,
+            localPotion,
+            enemyModel,
+            encounterModel,
+            enemyCurrentHp).State);
+
+    private static OfflineJointCombat CreateOfflineJointCombat(
+        CombatState source,
+        int actorCount,
+        PotionModel? remotePotion = null,
+        bool includeRemoteRelicTriggerFixture = false,
+        bool includeRemoteTeamPowerFixture = false,
+        bool includeRelicConsumptionFixture = false,
+        bool includeCharacterMechanismFixture = false,
+        IReadOnlyList<CharacterModel>? characterRoster = null,
+        PotionModel? localPotion = null,
+        MonsterModel? enemyModel = null,
+        EncounterModel? encounterModel = null,
+        int? enemyCurrentHp = null)
     {
         if (actorCount is < 1 or > 4)
             throw new ArgumentOutOfRangeException(nameof(actorCount));
@@ -2163,6 +2195,6 @@ internal sealed partial class UnattendedTestRunner
         if (enemyCurrentHp is int hp)
             enemy.SetCurrentHpInternal(Math.Clamp(hp, 1, enemy.MaxHp));
         monster.RollMove(players.Select(static player => player.Creature));
-        return CombatRootSnapshot.Capture(state);
+        return new OfflineJointCombat(state, Array.AsReadOnly(players), enemy);
     }
 }

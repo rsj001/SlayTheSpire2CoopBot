@@ -136,7 +136,8 @@ internal sealed partial class UnattendedTestRunner
         CombatPredictionSimulator simulator,
         SimulatedCombatState combat,
         Player player,
-        Creature enemy)
+        Creature enemy,
+        Player? continuationPlayer = null)
     {
         SimCreatureState simulatedPlayer = simulator.State.GetCreature(player.Creature);
         SimCreatureState simulatedEnemy = simulator.State.GetCreature(enemy);
@@ -145,9 +146,9 @@ internal sealed partial class UnattendedTestRunner
             .Where(power => ReferenceEquals(power.Owner, enemy));
         int turn = combat.GetPlayerTurnNumber(player);
         string exactContinuationState = ContinuationStamp.CapturePredicted(
-            player,
+            continuationPlayer ?? player,
             simulator,
-            turn,
+            combat.GetPlayerTurnNumber(continuationPlayer ?? player),
             new IntentForecast
             {
                 Rounds = [],

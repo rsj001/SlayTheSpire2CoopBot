@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 原版多人语义 M1 原生根差分底座（进行中，2026-09-29）
+
+- `COOP-MULTIPLAYER-NATIVE-DIFF`：分别建立 2/3/4 Actor 原生 `CombatState`，从同根捕获两个独立 prediction Fork；逐 Actor 对账完整 `MoveStateSnapshot`，远端 Actor 增加 1 能量后联合状态键变化，原生 continuation 不变。`runId=6baf957036cb4e7da22ef768b5d2841a` Passed，fixture 阶段 334 ms，实例已删除。
+- Windows Release 构建 0 警告/0 错误。首次显式 build-dir 启动因该目录不含 manifest/MemoryCleaner 在游戏前停止；第二次 2 GiB 主机准入因可用内存不足在游戏前超时并清理；降至 1.5 GiB 后通过。尚未执行原版卡牌/药水/EndTurn 动作差分，也未运行可见 Steam 或 Linux/WSL。
+
 ## 原版多人语义 M0 目录与失败边界（2026-09-29）
 
 - `dotnet run --project tools/CoverageCatalog/CoverageCatalog.csproj -c Release --no-build -- . --verify-multiplayer-semantics`：从当前 0.111.0 程序集发现 37 张多人专属牌，与版本化目录逐项一致；发现 13 个 Power 多人缩放相关类型、51 个跨玩家药水目标，目录缺失/陈旧/精确 mirror 分类差异均为 0。
