@@ -442,6 +442,16 @@ internal sealed partial class UnattendedTestRunner
             foreach (bool upgraded in new[] { false, true })
                 await AssertMultiplayerDirectCardAsync(source, cardType, upgraded, actorCount: 2, deadActor: false);
         }
+        foreach (bool upgraded in new[] { false, true })
+            await AssertMultiplayerDirectCardAsync(source, typeof(Tutor), upgraded, actorCount: 2, deadActor: false);
+
+        // M10 independent representative roots: odd actor count plus every four-actor
+        // semantic family whose result depends on roster membership or another actor.
+        await AssertMultiplayerDirectCardAsync(
+            source, typeof(OneForAll), upgraded: true, actorCount: 3, deadActor: false);
+        await AssertMultiplayerDirectCardAsync(
+            source, typeof(Tutor), upgraded: true, actorCount: 4, deadActor: true,
+            targetActorIndex: 3);
 
         Type[] resourceCardTypes = [typeof(LegionOfBone), typeof(Hibernate), typeof(Ignition)];
         foreach (Type cardType in resourceCardTypes)
@@ -528,17 +538,46 @@ internal sealed partial class UnattendedTestRunner
             TargetType.AnyAlly => recipient.Creature,
             _ => null,
         };
-        await ExecuteSyntheticNativeCardAsync(card, target);
         PlanAction action = new(
             PlanActionKind.PlayCard,
             root.StartTurnNumber,
             CardId: card.Id.Entry,
             TargetCombatId: target?.CombatId,
                 Actor: new CombatActorId(sourceActorIndex));
+        PlanCardChoice? choice = null;
+        IDisposable? nativeSelector = null;
+        if (card is Tutor)
+        {
+            CombatPredictionSimulator probe = root.ForkSimulator();
+            JointPendingChoiceFrame frame;
+            try
+            {
+                _ = JointActionTransition.Apply(
+                    probe,
+                    JointTurnState.Start(actorCount, root.StartTurnNumber),
+                    action,
+                    JointActionTransition.CaptureProcessedEnemyDeaths(root, probe));
+                throw new InvalidOperationException("Tutor did not suspend for its target player's choice.");
+            }
+            catch (JointPendingActionChoiceException pending)
+            {
+                frame = pending.Frame;
+            }
+            string selectedCardId = frame.Spec.Options.First().Preview.Id.Entry;
+            choice = CardChoiceSupport.BuildRequestedChoice(frame.Spec, [selectedCardId]) with
+            {
+                Actor = frame.DecisionActor,
+                SourceId = frame.SourceId,
+                ContextId = frame.ContextId,
+            };
+            nativeSelector = CardSelectCmd.PushSelector(new UnattendedCardSelector([selectedCardId]));
+        }
+        using (nativeSelector)
+            await ExecuteSyntheticNativeCardAsync(card, target);
         _ = JointActionTransition.Apply(
             predicted,
             JointTurnState.Start(actorCount, root.StartTurnNumber),
-            action,
+            action with { Choice = choice },
             JointActionTransition.CaptureProcessedEnemyDeaths(root, predicted));
 
         for (int actorIndex = 0; actorIndex < actorCount; actorIndex++)

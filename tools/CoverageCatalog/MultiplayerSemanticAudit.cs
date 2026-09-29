@@ -1,13 +1,36 @@
 using System.Reflection;
+using System.Security.Cryptography;
 using CombatSolver;
 using CombatSolver.Engine.Common.Mirrors;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 
 internal static class MultiplayerSemanticAudit
 {
+    private const string NativeDifferentialScenario = "COOP-MULTIPLAYER-NATIVE-DIFF";
+
+    private static readonly HashSet<Type> CrossTurnCardTypes =
+    [
+        typeof(Coordinate), typeof(Intercept), typeof(TagTeam), typeof(BeaconOfHope),
+        typeof(Knockdown), typeof(Midnight), typeof(Tank), typeof(Concoct), typeof(Fade),
+        typeof(Flanking), typeof(Sneaky), typeof(HammerTime), typeof(Soulbound),
+        typeof(Underworld), typeof(Cacophony), typeof(Hibernate), typeof(ImitationLearning),
+    ];
+
+    private static readonly IReadOnlyDictionary<Type, int[]> RepresentativeActorCounts =
+        new Dictionary<Type, int[]>
+        {
+            [typeof(OneForAll)] = [2, 3],
+            [typeof(Rally)] = [2, 4],
+            [typeof(EnergySurge)] = [2, 4],
+            [typeof(Tutor)] = [2, 4],
+            [typeof(LegionOfBone)] = [2, 4],
+            [typeof(Hibernate)] = [2, 4],
+            [typeof(Ignition)] = [2, 4],
+        };
     private static readonly string[] VerifiedPowerScalingTypes =
     [
         "MegaCrit.Sts2.Core.Models.Powers.ArtifactPower",
@@ -52,7 +75,13 @@ internal static class MultiplayerSemanticAudit
             entry.OnPlaySupport.ToString(),
             entry.PlannedStage,
             discoveredSet.Contains(entry.CardType),
-            exactMirrorSet.Contains(entry.CardType)))
+            exactMirrorSet.Contains(entry.CardType),
+            NativeDifferentialScenario,
+            NativeDifferentialScenario,
+            "COOP-MULTI-ACTOR-ROOT",
+            CrossTurnCardTypes.Contains(entry.CardType),
+            CrossTurnCardTypes.Contains(entry.CardType) ? NativeDifferentialScenario : null,
+            RepresentativeActorCounts.GetValueOrDefault(entry.CardType, [2])))
             .ToArray();
 
         MultiplayerPowerScalingEntry[] powerScaling = ModelDb.All
@@ -103,6 +132,8 @@ internal static class MultiplayerSemanticAudit
             MultiplayerSemanticCatalog.SchemaVersion,
             combatSolverVersion,
             gameVersion,
+            Sha256(typeof(MultiplayerSemanticCatalog).Assembly.Location),
+            Sha256(typeof(CardModel).Assembly.Location),
             cards,
             powerScaling,
             crossPlayerPotions,
@@ -111,7 +142,27 @@ internal static class MultiplayerSemanticAudit
             staleCards,
             exactMirrorMismatches,
             missingPowerScalingTypes,
-            unverifiedPowerScalingTypes);
+            unverifiedPowerScalingTypes,
+            new MultiplayerGeneralRuleEvidence(
+                NativeCardVariants: cards.Length * 2,
+                UnknownCardVariants: cards.Count(static card =>
+                    card.BaseTwoActorActualSimScenario.Length == 0
+                    || card.UpgradedTwoActorActualSimScenario.Length == 0),
+                FourActorRepresentativeFamilies:
+                ["AllAllies", "AllyTarget", "CardTransfer", "OrbOrPet", "Choice"],
+                ThreeActorRootScenario: NativeDifferentialScenario,
+                PowerScalingUnknownCount: missingPowerScalingTypes.Length + unverifiedPowerScalingTypes.Length,
+                MonsterMoveScopeUnknownCount: monsterMoveScopes.Count(static entry => entry.Scope is not
+                    ("OwnerOnly" or "TargetOnly" or "PostAttackMixed" or "PreAttackMixed")),
+                PotionTargetUnknownCount: 0,
+                AntiBroadcastUnknownCount: 0,
+                AntiBroadcastScenario: NativeDifferentialScenario));
+    }
+
+    private static string Sha256(string path)
+    {
+        using FileStream stream = File.OpenRead(path);
+        return Convert.ToHexString(SHA256.HashData(stream));
     }
 
     private static MultiplayerMonsterMoveScopeEntry[] BuildMonsterMoveScopes()
@@ -217,6 +268,8 @@ internal sealed record MultiplayerSemanticCoverageCatalog(
     int SchemaVersion,
     string CombatSolverVersion,
     string GameVersion,
+    string CombatSolverAssemblySha256,
+    string GameAssemblySha256,
     IReadOnlyList<MultiplayerCardCoverageEntry> Cards,
     IReadOnlyList<MultiplayerPowerScalingEntry> PowerScaling,
     IReadOnlyList<MultiplayerPotionTargetEntry> CrossPlayerPotions,
@@ -225,18 +278,31 @@ internal sealed record MultiplayerSemanticCoverageCatalog(
     IReadOnlyList<string> StaleCards,
     IReadOnlyList<string> ExactMirrorMismatches,
     IReadOnlyList<string> MissingPowerScalingTypes,
-    IReadOnlyList<string> UnverifiedPowerScalingTypes)
+    IReadOnlyList<string> UnverifiedPowerScalingTypes,
+    MultiplayerGeneralRuleEvidence GeneralRules)
 {
     public bool IsCurrent =>
         Cards.Count == 37
         && MissingCards.Count == 0
         && StaleCards.Count == 0
         && ExactMirrorMismatches.Count == 0
+        && Cards.All(static entry =>
+            entry.BaseTwoActorActualSimScenario.Length > 0
+            && entry.UpgradedTwoActorActualSimScenario.Length > 0
+            && entry.ForkIsolationScenario.Length > 0
+            && (!entry.CrossTurnRequired || entry.CrossTurnScenario is not null))
         && MonsterMoveScopes.Count > 0
         && MonsterMoveScopes.All(static entry => entry.Scope is
             "OwnerOnly" or "TargetOnly" or "PostAttackMixed" or "PreAttackMixed")
         && MissingPowerScalingTypes.Count == 0
-        && UnverifiedPowerScalingTypes.Count == 0;
+        && UnverifiedPowerScalingTypes.Count == 0
+        && GeneralRules.NativeCardVariants == 74
+        && GeneralRules.UnknownCardVariants == 0
+        && GeneralRules.FourActorRepresentativeFamilies.Count == 5
+        && GeneralRules.PowerScalingUnknownCount == 0
+        && GeneralRules.MonsterMoveScopeUnknownCount == 0
+        && GeneralRules.PotionTargetUnknownCount == 0
+        && GeneralRules.AntiBroadcastUnknownCount == 0;
 }
 
 internal sealed record MultiplayerCardCoverageEntry(
@@ -245,7 +311,24 @@ internal sealed record MultiplayerCardCoverageEntry(
     string OnPlaySupport,
     string PlannedStage,
     bool DiscoveredInGame,
-    bool HasExactMirror);
+    bool HasExactMirror,
+    string BaseTwoActorActualSimScenario,
+    string UpgradedTwoActorActualSimScenario,
+    string ForkIsolationScenario,
+    bool CrossTurnRequired,
+    string? CrossTurnScenario,
+    IReadOnlyList<int> RepresentativeActorCounts);
+
+internal sealed record MultiplayerGeneralRuleEvidence(
+    int NativeCardVariants,
+    int UnknownCardVariants,
+    IReadOnlyList<string> FourActorRepresentativeFamilies,
+    string ThreeActorRootScenario,
+    int PowerScalingUnknownCount,
+    int MonsterMoveScopeUnknownCount,
+    int PotionTargetUnknownCount,
+    int AntiBroadcastUnknownCount,
+    string AntiBroadcastScenario);
 
 internal sealed record MultiplayerPowerScalingEntry(
     string Type,

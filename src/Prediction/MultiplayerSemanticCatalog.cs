@@ -34,7 +34,7 @@ public sealed record MultiplayerCardSemanticDescriptor(
 /// </remarks>
 public static class MultiplayerSemanticCatalog
 {
-    public const int SchemaVersion = 1;
+    public const int SchemaVersion = 2;
     public const string GameVersion = "0.111.0";
 
     private static readonly MultiplayerCardSemanticDescriptor[] CardEntries =
