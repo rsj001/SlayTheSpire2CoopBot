@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 多人语义补全 M10（已完成，2026-09-29）
+
+- `COOP-MULTIPLAYER-NATIVE-DIFF` / `9d1d2016daae43199d2e85fcfdd40fbd`：Passed；37 张多人专属牌均覆盖普通/升级版两 Actor 原版/预测逐 Actor 全状态差分。`Tutor`（“指导”）由目标 Actor 的抽牌堆选择并进入其手牌；三 Actor `OneForAll` 与四 Actor `Tutor` 补齐独立人数代表。运行程序集 SHA-256 为 `4A5DC5B94C8FA8E49A36B236A0E6956D29125DED28C44F5C32AC888283E3CE61`，实例已删除。
+- `CoverageCatalog --verify-multiplayer-semantics`：Passed；schema 2 目录绑定游戏 `0.111.0`、游戏程序集 SHA-256 `0861BFA1DF347538D932F22D580E75420F08082792EB914E53B4882764ACDBE9` 和当前目录生成程序集身份。74 个卡牌版本、跨回合/Fork 证据、五类四 Actor 代表、三 Actor 根、Power、敌人行动、药水与自用反广播的未知项均为 0。
+- Release 构建：0 warning / 0 error。M10 只收束既有语义门禁；未启动可见 Steam，未执行 M11 搜索质量验收。
+
 ## 多人语义补全 M9（已完成，2026-09-29）
 
 - `CoverageCatalog --verify-multiplayer-semantics`：通过；发现 37 张多人牌、13 类多人缩放 Power、51 个跨玩家目标药水及 174 个求解器已支持的特殊敌方行动，所有行动均具有明确多人作用域，卡牌/Power/作用域未知项为 0。本项是目录门禁，不宣称原版多人完整回合差分已经通过。
@@ -21,7 +27,7 @@
 ## 原版多人语义 M6 选择、转移与复制（已完成，2026-09-29）
 
 - `COOP-MULTIPLAYER-NATIVE-DIFF`：HuddleUp、TheBall、Outrage、BladeSymphony、Largesse、Plot、GlimpseBeyond、ImitationLearning 普通/升级版分别在两 Actor 原生根执行，与预测逐 Actor 做完整快照差分，覆盖卡牌 Owner/牌堆、随机移交、生成 RNG、动态伤害和 PlayerTarget。最终 `runId=eaf4c2c85834405997b1b07a4e69e2fe` Passed，目标差分段 22278ms，实例已删除。
-- `COOP-MULTIPLAYER-IDENTITY`：Tutor 由 Actor0 出牌、Actor1 决策；无选择时产生带 SourceActor=0/DecisionActor=1 的稳定挂起帧，候选来自 Actor1 抽牌堆；带计划选择重放后牌进入 Actor1 手牌而非 Actor0。`runId=ec8b1d83ac2c414f8bdb4162b3536aab` Passed，目标阶段349ms，实例已删除。
+- `COOP-MULTIPLAYER-IDENTITY`：Tutor（“指导”）由 Actor0 出牌、Actor1 决策；无选择时产生带 SourceActor=0/DecisionActor=1 的稳定挂起帧，候选来自 Actor1 抽牌堆；带计划选择重放后牌进入 Actor1 手牌而非 Actor0。`runId=ec8b1d83ac2c414f8bdb4162b3536aab` Passed，目标阶段349ms，实例已删除。M10 又由原版 selector 补做普通/升级版完整差分。
 - ImitationLearning 后续生命周期改用原版公开 `CardCmd.AutoPlay`，只跳过合成非本地玩家缺失的牌堆视觉和 Power 飞行动画；Before/AfterCardPlayed、Power 消费、复制与自动打出仍完整执行。差分先发现预测 Power 数量未同步，修复后 `runId=2d8abe21720a4bbd92ab24b16996a14b` Passed，实例已删除。
 
 ## 原版多人语义 M5 Power 生命周期（2026-09-29）

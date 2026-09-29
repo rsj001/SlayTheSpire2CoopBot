@@ -113,6 +113,8 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ## 5. 37 张多人专属牌初始覆盖清单
 
+> M10 更新：下表保留实施前的“初始覆盖”用于解释分阶段原因；当前 37 张均为 `Verified/ExactMirror`，普通/升级版两 Actor actual/simulated 已全覆盖。`Tutor` 的官方中文名为“指导”；机器可读最终状态和逐项证据以 `coverage/multiplayer-semantics.json` schema 2 为准。
+
 下表是规划基线，不是完成声明。状态只描述当前静态入口：
 
 - **专用入口**：已有明确 OnPlay mirror，但仍缺原生多人差分；
@@ -446,6 +448,8 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M10：37 张牌和通用规则的完整覆盖门禁
 
+> 进度：已完成。37 张牌的普通/升级版共 74 个两 Actor 原版/预测差分均由 `COOP-MULTIPLAYER-NATIVE-DIFF` 覆盖；最后补齐 `Tutor`（“指导”）的原生目标玩家选牌，并新增三 Actor `OneForAll`、四 Actor `Tutor` 代表。最终 runId `9d1d2016daae43199d2e85fcfdd40fbd` Passed。`coverage/multiplayer-semantics.json` schema 2 绑定游戏 0.111.0 与两份程序集 SHA-256，逐卡记录基础/升级、Fork、跨回合及人数证据；74 个版本、五类四人代表、三人根、Power、敌人 move scope、药水和反广播未知项均为 0。Release 构建及 CoverageCatalog 门禁通过；M11 搜索质量尚未开始。
+
 目标：把分散 fixture 收束成可重复的版本化验收，而不是再做新语义。
 
 门禁矩阵：
@@ -555,7 +559,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 | M7 球/宠物/角色资源 | M2、M4-M6 | 已完成 | 两 Actor 入口 `69d21e089dd2494bad39fe7c07585655`；四 Actor 混合资源与 Hibernate 生命周期 `94100373a0f04ddebd6465b1971fe156` |
 | M8 药水/遗物/反广播/第三方 | M2-M7 | 已完成 | BlockPotion 2/4 Actor `e750f21354d94bd6866a4fa8df1fb20f`；取消、远端 Shuriken、自用牌 `78a22003c4284ccbb635bb451cee62d8`；九类选择药水与第三方拒绝由 COOP 根门禁覆盖 |
 | M9 回合/敌人/死亡/并发选择 | M3-M8 | 已完成 | 作用域目录 174/0 未知；屏障 `a5230c1d49324e5f90e8e81f94b4c315`；原生跨侧/单员死亡 `86de689bcf08494dad9735710d0ba25a`；全员终止 `cfe89fb1039c4243a6e0d475f942e08a` |
-| M10 完整内容门禁 | M3-M9 | 未开始 | — |
+| M10 完整内容门禁 | M3-M9 | 已完成 | 37×基础/升级差分 `9d1d2016daae43199d2e85fcfdd40fbd`；schema 2 机器目录 74/0 未知；3/4 Actor 代表与程序集身份已记录 |
 | M11 联合搜索质量 | M10 | 未开始 | — |
 | M12 Co-op Bot Runtime | M11；另需项目边界授权 | 未开始 | — |
 

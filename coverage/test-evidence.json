@@ -1,4 +1,20 @@
 {
+  "MULTIPLAYER-SEMANTIC-M10-COVERAGE-GATE-20260929": {
+    "status": "Passed",
+    "level": "VersionedNativeMultiplayerSemanticCoverageGate",
+    "procedure": "37张多人牌普通/升级两Actor actual/simulated；3 Actor全队牌；4 Actor全队、队友目标、转移、球/宠物、选择代表；CoverageCatalog schema 2",
+    "expected": "74个卡牌版本和通用多人目录零未知项，证据绑定游戏版本和程序集身份",
+    "observed": "COOP-MULTIPLAYER-NATIVE-DIFF runId=9d1d2016daae43199d2e85fcfdd40fbd Passed，运行程序集SHA256=4A5DC5B94C8FA8E49A36B236A0E6956D29125DED28C44F5C32AC888283E3CE61；实例删除。CoverageCatalog发现37牌、13 Power、51药水目标、174行动作用域且门禁通过；游戏程序集SHA256=0861BFA1DF347538D932F22D580E75420F08082792EB914E53B4882764ACDBE9。",
+    "evidence": "coverage/multiplayer-semantics.json; src/Testing/UnattendedTestRunner.MultiplayerNativeDifferential.cs; docs/TEST_MATRIX.md"
+  },
+  "MULTIPLAYER-SEMANTIC-M9-ROUND-DEATH-20260929": {
+    "status": "Passed",
+    "level": "HeadlessNativeMultiplayerRoundDeathDifferential",
+    "procedure": "2/4 Actor完整跨侧；EndTurn撤销屏障；单员死亡继续；全员死亡离线终止；174项敌人行动作用域目录",
+    "expected": "原版/预测逐Actor状态、回合、AI与continuation一致；死亡后效和终止时点明确",
+    "observed": "屏障a5230c1d49324e5f90e8e81f94b4c315、原生跨侧/单员死亡86de689bcf08494dad9735710d0ba25a、全员离线终止cfe89fb1039c4243a6e0d475f942e08a均Passed，实例删除；作用域未知项0。",
+    "evidence": "src/Testing/UnattendedTestRunner.MultiplayerRoundDifferential.cs; coverage/multiplayer-semantics.json; docs/TEST_MATRIX.md"
+  },
   "MULTIPLAYER-SEMANTIC-M8-POTION-TARGET-20260929": {
     "status": "Passed",
     "level": "HeadlessNativeMultiplayerPotionDifferential",

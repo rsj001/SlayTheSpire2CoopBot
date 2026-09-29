@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## 原版多人语义 M10 完整覆盖门禁（已完成，2026-09-29）
+
+37 张多人专属牌现均以普通/升级版在独立两 Actor 根走原版动作与预测动作的逐 Actor 全状态差分；最后补齐的是 `Tutor`（官方中文名“指导”）的原生跨玩家选牌。另以三 Actor `OneForAll` 和四 Actor 的全队、队友目标、卡牌转移、球/宠物、选择代表覆盖人数奇偶与死亡成员。最终 `COOP-MULTIPLAYER-NATIVE-DIFF` / `9d1d2016daae43199d2e85fcfdd40fbd` Passed，实例已删除。
+
+`coverage/multiplayer-semantics.json` 升级到 schema 2，记录游戏版本、CombatSolver 与游戏程序集 SHA-256、每张牌的基础/升级差分、Fork、跨回合和代表 Actor 数证据；通用门禁当前为 74 个卡牌版本、5 类四人代表、3 人根、13 类 Power 缩放、174 个敌人行动作用域、51 个跨玩家药水目标和自用反广播，未知项均为 0。CoverageCatalog 门禁通过。该目录是版本绑定的验收清单，不表示未来游戏版本可免于重新生成和验证。
+
 ## 原版多人语义 M9 回合、死亡和终止（已完成，2026-09-29）
 
 联合 EndTurn readiness 现在可在全员屏障前不可变撤销，屏障一旦到达便明确拒绝撤销，避免回滚已经可能开始的玩家尾 Hook；`COOP-JOINT-TURN-BARRIER` / `a5230c1d49324e5f90e8e81f94b4c315` Passed。Oil Spray 的死亡差分进一步发现原版是先攻击全部原始目标，队伍仍存活时再对全部原始目标施加 Weak；因此动作中死亡的目标仍得到后效，而全员在攻击段死亡时整个行动终止、无人得到 Weak。联合 target-only 分派已按此两段顺序修正，敌方尾持续时间也不再推进死亡 owner。最终一名 Actor 死亡并返回下一玩家侧的原生/预测全状态差分 `86de689bcf08494dad9735710d0ba25a` Passed；全员死亡纯离线终止 `cfe89fb1039c4243a6e0d475f942e08a` Passed。合成原版全员死亡会触发宿主真实 CombatManager 的全局 PendingLoss，故没有把污染真实战斗的尝试当作证据，保留为纯离线终止门禁。
