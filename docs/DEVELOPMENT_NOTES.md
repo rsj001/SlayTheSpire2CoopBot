@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线联合敌方 mixed 行动（2026-09-29）
+
+联合敌方侧新增首个 mixed 分类：Sludge Spinner 的 Rage 按稳定 Actor 顺序执行各自攻击段，再只执行一次怪物自身 Strength 后效。两 Actor 夹具得到同额 HP 损失，怪物 Strength 精确增加 3；`COOP-MULTI-ACTOR-ROOT` 的 `runId=3fc13dbaf76143998c1dd7905d4af88a` Passed，实例已删除。死亡/召唤和其余未分类特殊行动仍保持明确拒绝。
+
 ## 离线联合敌方 target-only 行动（2026-09-29）
 
 联合敌方侧新增首个 target-only 分类：Sludge Spinner 的 Oil Spray 按稳定 Actor 顺序分别执行攻击和 Weak 后效。两 Actor 夹具得到同额 HP 损失且每人精确增加 1 Weak，`COOP-MULTI-ACTOR-ROOT` 的 `runId=db2f7a0869974ed491f7495775d4331d` Passed，实例已删除。混合 owner+target 行动仍不进入该白名单。

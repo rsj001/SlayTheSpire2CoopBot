@@ -1773,6 +1773,12 @@ require_fixed "$monster_move_semantics" 'IsJointTargetOnlyMove(' \
     'joint target-only monster move boundary missing:'
 require_fixed "$monster_move_semantics" '("SludgeSpinner", "OIL_SPRAY_MOVE")' \
     'joint target-only monster move boundary missing:'
+require_fixed "$monster_move_semantics" 'IsJointMixedMove(' \
+    'joint mixed monster move boundary missing:'
+require_fixed "$monster_move_semantics" '("SludgeSpinner", "RAGE_MOVE")' \
+    'joint mixed monster move boundary missing:'
+require_fixed "$monster_move_semantics" 'applyMoveEffect: false' \
+    'joint mixed monster move split missing:'
 joint_offline_search="$repository_root/src/Search/Coop/JointOfflineSearch.cs"
 for token in \
     'internal sealed record JointOfflineSearchRequest(' \

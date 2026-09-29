@@ -2266,7 +2266,10 @@ foreach ($text in @(
     'IsJointOwnerOnlyMove(',
     '("FuzzyWurmCrawler", "INHALE")',
     'IsJointTargetOnlyMove(',
-    '("SludgeSpinner", "OIL_SPRAY_MOVE")'
+    '("SludgeSpinner", "OIL_SPRAY_MOVE")',
+    'IsJointMixedMove(',
+    '("SludgeSpinner", "RAGE_MOVE")',
+    'applyMoveEffect: false'
 )) {
     if (-not (Select-String -LiteralPath $monsterMoveSemanticsPath -SimpleMatch $text -Quiet)) {
         $violations.Add("Joint owner-only monster move boundary missing: $text")

@@ -33,6 +33,35 @@ internal static class MonsterMoveSemantics
                     processedEnemyDeaths);
             return;
         }
+        if (IsJointMixedMove(monster, move.Move.Id))
+        {
+            Creature? representative = null;
+            foreach (Creature player in players)
+            {
+                if (!simulator.State.GetCreature(player).IsAlive)
+                    continue;
+                representative ??= player;
+                _ = ApplyForecastMove(
+                    simulator,
+                    combat,
+                    move,
+                    player,
+                    processedEnemyDeaths,
+                    plannedChoices: null,
+                    applyMoveEffect: false);
+                if (simulator.HasPendingChoice || simulator.State.GetCreature(move.Owner).IsDead)
+                    return;
+            }
+            if (representative != null)
+                ApplyForecastMoveEffect(
+                    simulator,
+                    combat,
+                    move,
+                    representative,
+                    processedEnemyDeaths,
+                    plannedChoices: null);
+            return;
+        }
         bool targetOnly = IsJointTargetOnlyMove(monster, move.Move.Id);
         if (move.AttackHits.Count == 0 && !targetOnly
             || MonsterMoveEffects.Supports(monster, move.Move.Id) && !targetOnly)
@@ -55,13 +84,17 @@ internal static class MonsterMoveSemantics
     private static bool IsJointTargetOnlyMove(MonsterModel monster, string moveId)
         => (monster.GetType().Name, moveId) is ("SludgeSpinner", "OIL_SPRAY_MOVE");
 
+    private static bool IsJointMixedMove(MonsterModel monster, string moveId)
+        => (monster.GetType().Name, moveId) is ("SludgeSpinner", "RAGE_MOVE");
+
     public static bool ApplyForecastMove(
         CombatPredictionSimulator simulator,
         SimulatedCombatState combat,
         ForecastMove move,
         Creature player,
         ISet<uint> processedEnemyDeaths,
-        IReadOnlyList<PlanCardChoice>? plannedChoices = null)
+        IReadOnlyList<PlanCardChoice>? plannedChoices = null,
+        bool applyMoveEffect = true)
     {
         SimCreatureState simulatedPlayer = simulator.State.GetCreature(player);
         MonsterMoveEffects.ApplyBeforeAttack(simulator, combat, move, player);
@@ -133,6 +166,34 @@ internal static class MonsterMoveSemantics
                 combat.ForceStunnedMove(move.Owner, "HEADBUTT_MOVE");
             combat.StunNextMove(move.Owner);
         }
+        if (applyMoveEffect)
+        {
+            ApplyForecastMoveEffect(
+                simulator,
+                combat,
+                move,
+                player,
+                processedEnemyDeaths,
+                plannedChoices);
+        }
+        else
+        {
+            simulator.SynchronizePowerAmountPredictionStates();
+            PowerLifecycleSupport.ResolvePowerAmountChanges(simulator, combat);
+            combat.NormalizeAeonglassWithers(simulator);
+            combat.NormalizeCardAfflictions(simulator);
+        }
+        return simulatedPlayer.IsDead;
+    }
+
+    private static void ApplyForecastMoveEffect(
+        CombatPredictionSimulator simulator,
+        SimulatedCombatState combat,
+        ForecastMove move,
+        Creature player,
+        ISet<uint> processedEnemyDeaths,
+        IReadOnlyList<PlanCardChoice>? plannedChoices)
+    {
         MonsterMoveEffects.Apply(
             simulator,
             combat,
@@ -141,7 +202,7 @@ internal static class MonsterMoveSemantics
             out bool killedOwner,
             plannedChoices);
         if (simulator.HasPendingChoice)
-            return simulatedPlayer.IsDead;
+            return;
         if (killedOwner
             && move.Owner.CombatId is uint moveOwnerCombatId
             && !processedEnemyDeaths.Contains(moveOwnerCombatId))
@@ -152,13 +213,12 @@ internal static class MonsterMoveSemantics
                 combat.KnownEnemies,
                 processedEnemyDeaths);
             if (simulator.HasPendingChoice)
-                return simulatedPlayer.IsDead;
+                return;
         }
         simulator.SynchronizePowerAmountPredictionStates();
         PowerLifecycleSupport.ResolvePowerAmountChanges(simulator, combat);
         combat.NormalizeAeonglassWithers(simulator);
         combat.NormalizeCardAfflictions(simulator);
-        return simulatedPlayer.IsDead;
     }
 
     public static IReadOnlyList<DamageResult> DamagePlayer(

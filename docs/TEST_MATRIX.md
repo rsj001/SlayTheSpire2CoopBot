@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 联合敌方 mixed Rage（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：两 Actor Sludge Spinner 根强制 Rage，攻击段按稳定 Actor 顺序分别结算且 HP 损失相同，怪物自身 Strength 后效只执行一次并精确增加 3；`runId=3fc13dbaf76143998c1dd7905d4af88a`，Passed，实例已删除。
+- 该证据不覆盖死亡/召唤、其余未分类特殊行动、Linux 或可见 Steam。
+
 ## 联合敌方 target-only Oil Spray（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：两 Actor Sludge Spinner 根强制 Oil Spray，两名 Actor 受到相同 HP 损失并各增加 1 Weak；`runId=db2f7a0869974ed491f7495775d4331d`，Passed，实例已删除。

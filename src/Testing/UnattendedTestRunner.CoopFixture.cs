@@ -33,6 +33,7 @@ internal sealed partial class UnattendedTestRunner
         AssertCharacterOwnedGeneratedState(source);
         AssertThirdPartySubscriberBoundary();
         AssertTargetOnlyEnemyMove(source);
+        AssertMixedEnemyMove(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -609,6 +610,41 @@ internal sealed partial class UnattendedTestRunner
             throw new InvalidOperationException(
                 $"联合 target-only 敌方行动未逐 Actor 精确结算：" +
                 $"weak={string.Join(',', weakBefore)}->{string.Join(',', weakAfter)} " +
+                $"hp={string.Join(',', hpBefore)}->{string.Join(',', hpAfter)}。");
+        }
+    }
+
+    private static void AssertMixedEnemyMove(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            2,
+            enemyModel: ModelDb.Monster<SludgeSpinner>());
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Creature enemy = combat.Enemies.Single();
+        combat.ForceMonsterMove(enemy, "RAGE_MOVE");
+        int strengthBefore = combat.GetAmount<StrengthPower>(enemy);
+        int[] hpBefore = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+        int[] hpAfter = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        int strengthAfter = combat.GetAmount<StrengthPower>(enemy);
+        if (strengthAfter - strengthBefore != 3
+            || hpAfter.Where((hp, index) => hp >= hpBefore[index]).Any()
+            || hpBefore[0] - hpAfter[0] != hpBefore[1] - hpAfter[1])
+        {
+            throw new InvalidOperationException(
+                $"联合 mixed 敌方行动未拆分逐 Actor 攻击与一次性后效：" +
+                $"strength={strengthBefore}->{strengthAfter} " +
                 $"hp={string.Join(',', hpBefore)}->{string.Join(',', hpAfter)}。");
         }
     }
