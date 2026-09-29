@@ -1,6 +1,6 @@
 # 离线四 Actor 单人功能迁移库存
 
-> 状态：F0 基线  
+> 状态：F10-F12 完成审计中  
 > 冻结提交：`00a4193f`  
 > 维护规则：后续 F 阶段只能把本表中的 `待迁移` 关闭为 `已迁移`，或用实际原版证据改为 `明确不支持`；不得只凭编译或静态阅读改变状态。
 
@@ -22,8 +22,8 @@
 | 每 Actor HP、格挡、能量、Stars、金币 | `Search/SimulatedCombatState.cs` | `JointCombatSnapshot.cs`、Actor continuation | 已迁移 | 2/4 Actor 远端格挡/能量/Stars/金币扰动与 Fork 隔离 |
 | 每 Actor 五个牌堆与卡牌实例状态 | `Search/SimulatedCombatState*.cs` | `ContinuationStamp`、`JointCombatSnapshot` | 已迁移 | 五牌堆进入 Actor continuation；远端升级实例扰动通过 |
 | 每 Actor Power、遗物、药水、球、宠物、角色资源 | `Search/SimulatedCombatState*.cs`、`Prediction/*` | F5a-F5d 已覆盖根元数据、动态机制、五角色代表与真实召唤所有权；F4c2d 补齐逐 Actor 药水奖励展望 | 已迁移 | Power/遗物/药水元数据/Orb/Stars/Shiv/Osty 与 Fork/兄弟隔离均通过 |
-| 敌人 roster、AI、行动和隐藏状态 | `Prediction/Monster*`、`SimulatedCombatState*.cs` | 复用模拟器，联合快照未完整投影 | 待迁移 | 敌方跨回合 strict diff 与 RNG 计数 |
-| 九条战斗 RNG、Hook 历史和战斗历史 | `Engine/InCombat/Simulation/*`、`PredictionStateStore` | 复用模拟器，联合审计未完成 | 待迁移 | 兄弟 Fork 隔离与跨回合 strict diff |
+| 敌人 roster、AI、行动和隐藏状态 | `Prediction/Monster*`、`SimulatedCombatState*.cs` | 复用模拟器；完整 continuation 保存 roster、行动、AI 与隐藏状态 | 待迁移 | 已有特殊行动/RNG 代表；仍需跨回合完整路线逐步 strict diff |
+| 九条战斗 RNG、Hook 历史和战斗历史 | `Engine/InCombat/Simulation/*`、`PredictionStateStore` | 九条 RNG 与逐 Actor 历史已进入完整 continuation | 待迁移 | 已有 Niche 单次消费；仍需兄弟 Fork 与跨回合完整路线逐步 strict diff |
 | 续用戳 | `Runtime/ContinuationStamp.cs` | Actor 分段字段 | 已迁移 | 单人文本兼容；2/4 Actor 代表字段扰动通过，机制字段由 F4/F5继续验证 |
 | 完整状态键 | `CombatBeamSolver.StateEvaluation.cs` | 联合屏障 + 完整 continuation 文本 | 已迁移 | Actor 代表字段及屏障扰动改变键；机制专项由 F4-F7补证据 |
 
@@ -39,7 +39,7 @@
 | 药水使用、目标、槽位、生成、复制和替换 | `CombatBeamSolver.*Potion*.cs`、`Prediction/Potion*` | F4a/F4b 按 Actor 枚举槽位/目标、九类主选择和 Entropic Brew 生成；F4d 跨回合槽位/消耗完成 | 已迁移 | 2/4 Actor 独立候选、九类选择、生成及第二轮药水严格回放通过 |
 | 主动遗物动作 | 原版无战斗内独立提交入口；遗物由 Hook 触发 | 不新增伪造动作；`PlanRelicEffect` 仍是路线注释 | 明确不支持 | F1 反编译检索无 `UseRelic`/`ActivateRelic` 战斗动作；遗物触发归 F5 |
 | 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | F6a-d 已覆盖 owner/source、主/嵌套 placement、多 Actor 原序、回合边界和重复出牌 | 已迁移 | 动态嵌套、双 Actor 药水帧、Tools of the Trade、Hellraiser/Joss Paper 与 Decisions 重复链通过 |
-| opening、fixed-prefix、cycle、cross-turn、plan continuation | `CombatSearchCoordinator.*`、`FrontierContinuationScheduler` | F3c 已接入同回合 fixed-prefix 请求并由 BFS/DFS 对照；opening/cycle/cross-turn 尚未接入 | 待迁移 | 单人候选序哨兵与 2/4 Actor 联合成员；跨回合待 F7 |
+| opening、fixed-prefix、cycle、cross-turn、plan continuation | `CombatSearchCoordinator.*`、`FrontierContinuationScheduler` | fixed-prefix 与普通 BFS/DFS/Beam/BFWS 已自动跨轮；联合模型复用同一节点转移，不复制单人 opening/cycle 政策 | 已迁移 | 2/4 Actor 跨轮搜索与选择恢复通过；单人候选序仍归最终门禁 |
 
 ## 结算机制
 
@@ -59,15 +59,15 @@
 | Actor 独立结束与全员屏障 | 单人 `EndTurn` 尾部 | `JointTurnState` | 已迁移 | 任意顺序、死亡 Actor、提前跨回合拒绝 |
 | 玩家回合尾 Hook、敌方回合、下一回合开始/抽牌 | `CombatBeamSolver.Terminal.cs`、simulation commands | 联合 `ExpandBarrier` 共用 F7 玩家尾、额外回合/敌方侧和下一玩家侧，挂起选择回到稳定屏障节点展开 | 已迁移 | 固定前缀与普通 BFS/DFS/Beam 自动跨轮、Tools/Power/遗物/重复出牌选择通过 |
 | 额外回合、死亡、复活、逃跑和失去资格 | `Prediction/*`、`SimulatedCombatState*.cs` | F7b 完成死亡资格、Parafright 复活、Fat Gremlin 逃跑及远端 Actor Ambergris 额外回合子集 | 已迁移 | 死亡/复活/逃跑及额外回合 Actor 子集、TurnNumber/RoundNumber、敌方跳过和来源消费通过 |
-| 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | F7c1 支持纯攻击；F7c2-c3 分类 owner-only、target-only、前置/后置 mixed | 部分迁移 | Inhale、Oil Spray、Rage、Gas Bomb、Living Fog 与 Tough Egg 单次 RNG 通过；其余已支持特殊行动待完整分类 |
+| 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | 全部当前 `MonsterMoveEffects.Supports` 已集中分类 owner/target/pre/post mixed；未知语义继续显式拒绝 | 已迁移 | Inhale、Oil Spray、Rage、Soul Siphon、Gas Bomb、Living Fog、复活/逃跑与 Tough Egg 单次 RNG 通过 |
 | 单人终局政策 | `FinalPlanOrdering`、`RouteQualityPolicy` | 联合比较器独立位于 `Search/Coop`，单人入口未改 | 已保留 | 结构门禁 + 最终 F12 单人等价哨兵 |
 | 团队目标 | 无单人对应 | `JointObjective` 完整字典序；总战损仍为 workaround | 已迁移 | 终局边界、存活、分布、资源、成长、偷窃和稳定决胜通过 |
 | 药水政策、战略成本、成长、偷窃和强制目标 | `PotionUsePolicy`、`FinalPlanOrdering` | F4c 完成硬政策、共享预算 Smart 反事实、精确药量层、逐 Actor 奖励/Ambergris/Boss relief；F8 终局完成 | 已迁移 | 无收益拒绝、用药层、奖励抵扣及专门阈值通过 |
 | BFS/DFS 有限 oracle | 无生产对应 | `JointOfflineSearch` | 已迁移 | 2 Actor 同值/同动作/同键 |
 | 生产规模 Beam/BFWS、Pareto、保路、多样性 | `CombatBeamSolver.*` | 有界联合 Beam/BFWS、共享预算/转置、Actor/药水/Pareto 保路与固定 lane | 已迁移 | 2 Actor 两动作、4 Actor 一动作 oracle 及串并行等价通过 |
 | 串行/固定 lane 并行、预算、取消 | `AdmittedJobScheduler`、`SearchBudgetLedger` | F9 已实现联合固定 lane、共享预算和取消边界 | 已迁移 | DOP1/DOP4 同动作/同键/同展开数，预算与预取消通过 |
-| 内存压力与快照所有权 | `AdmittedJobScheduler`、`SearchMemoryPressureSignal` | 联合搜索尚无完整压力/泄漏审计 | 待迁移 | F11 固定工作量下无快照泄漏、峰值和停止原因可解释 |
-| 严格回放 | `ReplayAction`、无人测试差分 | 仅同一模拟根基础动作 | 待迁移 | 2/4 Actor 完整 actual/simulated 逐步对照 |
+| 内存压力与快照所有权 | `AdmittedJobScheduler`、`SearchMemoryPressureSignal` | 联合搜索使用有界 frontier/OPEN 和共享状态预算；固定工作量已记录 | 待迁移 | 仍需取消/异常后的快照可回收证据和可解释停止原因 |
+| 严格回放 | `ReplayAction`、无人测试差分 | 同根一步搜索终态与重放终态、首差异诊断已通过 | 待迁移 | 仍需 2/4 Actor 跨回合完整路线逐动作/屏障对照 |
 
 ## F0 冻结基线
 
