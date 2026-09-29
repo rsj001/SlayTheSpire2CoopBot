@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## Co-op Bot C1 协议与会话（开发中，2026-09-29）
+
+新增独立 `CoopBot.dll` 工程和 gameplay Mod manifest，不把联机控制加入 CombatSolver 生产 Runtime。C1 以单一原版 `INetMessage` envelope 承载版本化 payload，固定战斗会话、真实 transport sender、逐 sender 严格序号、ActorAssignment、心跳和 ActionId 幂等合同；四端从同一稳定 roster 派生一致 Actor 顺序，只把各自 `NetId` 映射为本地 Actor。协议/会话核心不引用 Godot、live 原版对象或 CombatSolver，原版序列化仅存在于 envelope 适配器。
+
+纯合同程序覆盖四实例映射、DTO 往返与未知字段、重复/乱序、版本/Host/sender 冲突、幂等动作、非法状态迁移以及停止/失败清理，共 32 项通过。独立 Mod 针对游戏 0.111.0 与 RitsuLib 0.6.2 编译通过；尚未注册 live 消息处理器、捕获多人根或控制游戏，情况 A 留到 C2 动态验证。
+
 ## 离线联合搜索 M11 质量验收（已完成，2026-09-29）
 
 新增按语义族划分的有限联合搜索 oracle：直接全队效果、状态 Power、卡牌转移、跨玩家选择、球、宠物、药水和跨回合各从同一冻结根由 BFS、Beam、BFWS 与不去重 DFS 对照；四 Actor 另以 `OneForAll` 验证一轮内联合搜索。每个结果核对终局排序、逐 Actor HP 损失向量、完整状态键、动作序和严格原根回放，Beam 的 DOP1/DOP4 还要求展开数一致。`COOP-MULTI-ACTOR-ROOT` / `8f48eaa6e34a4d97b7ec917852d891af` Passed。

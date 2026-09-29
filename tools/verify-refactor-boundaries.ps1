@@ -2426,6 +2426,52 @@ foreach ($text in @(
     }
 }
 
+# CoopBot remains a distinct Mod assembly. Its protocol/session core is pure and the
+# offline joint search never reaches back into transport, live runtime, or UI.
+$combatSolverProjectPath = Join-Path $repositoryRoot 'CombatSolver.csproj'
+$coopBotProjectPath = Join-Path $repositoryRoot 'coopbot/CoopBot.csproj'
+$coopBotManifestPath = Join-Path $repositoryRoot 'coopbot/CoopBot.json'
+$coopProtocolPath = Join-Path $repositoryRoot 'coopbot/Protocol/CoopProtocol.cs'
+$coopEnvelopePath = Join-Path $repositoryRoot 'coopbot/Protocol/CoopBotEnvelopeMessage.cs'
+$coopContractProjectPath = Join-Path $repositoryRoot 'tools/CoopBot.ContractChecks/CoopBot.ContractChecks.csproj'
+foreach ($requiredPath in @(
+    $coopBotProjectPath,
+    $coopBotManifestPath,
+    $coopProtocolPath,
+    $coopEnvelopePath,
+    $coopContractProjectPath)) {
+    if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
+        $violations.Add("CoopBot C1 boundary missing: $requiredPath")
+    }
+}
+foreach ($check in @(
+    @{ Path = $combatSolverProjectPath; Text = '<Compile Remove="coopbot/**/*.cs" />' },
+    @{ Path = $coopBotProjectPath; Text = '<AssemblyName>CoopBot</AssemblyName>' },
+    @{ Path = $coopBotManifestPath; Text = '"id": "CoopBot"' },
+    @{ Path = $coopProtocolPath; Text = 'public const int Version = 1;' },
+    @{ Path = $coopEnvelopePath; Text = 'public record struct CoopBotEnvelopeMessage : INetMessage' },
+    @{ Path = $coopContractProjectPath; Text = '../../coopbot/Session/CoopSession.cs' })) {
+    if (-not (Select-String -LiteralPath $check.Path -SimpleMatch $check.Text -Quiet)) {
+        $violations.Add("$($check.Path): missing CoopBot C1 boundary '$($check.Text)'")
+    }
+}
+foreach ($pureFile in @(
+    $coopProtocolPath
+) + @(Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'coopbot/Session') -Filter '*.cs')) {
+    foreach ($forbidden in @('using Godot', 'MegaCrit.Sts2', 'CombatSolver.')) {
+        if (Select-String -LiteralPath $pureFile -SimpleMatch $forbidden -Quiet) {
+            $violations.Add("${pureFile}: CoopBot protocol/session core owns runtime dependency '$forbidden'")
+        }
+    }
+}
+foreach ($jointFile in Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'src/Search/Coop') -Filter '*.cs') {
+    foreach ($forbidden in @('CoopBot', 'INetGameService', 'RunManager', 'Godot', 'SolverOverlay')) {
+        if (Select-String -LiteralPath $jointFile.FullName -SimpleMatch $forbidden -Quiet) {
+            $violations.Add("$($jointFile.FullName): offline joint search references live CoopBot boundary '$forbidden'")
+        }
+    }
+}
+
 if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Error $_ }
     throw "Refactor boundary verification failed with $($violations.Count) violation(s)."

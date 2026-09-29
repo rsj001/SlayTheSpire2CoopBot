@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## Co-op Bot C1 协议与会话（2026-09-29）
+
+- `dotnet run --project tools/CoopBot.ContractChecks/CoopBot.ContractChecks.csproj -c Release`：Passed；32 项覆盖四个协议实例的 Actor 映射一致性、每端本地 Actor 派生、DTO/未知字段、重复与乱序、版本/Host/sender 冲突、ActionId 幂等、非法状态迁移、停止和失败清理。
+- `dotnet build coopbot/CoopBot.csproj -c Release ...`：通过，生成独立 `CoopBot.dll`；只证明 0.111.0 / RitsuLib 0.6.2 编译合同，不代表原版 transport 实际四客户端收发。
+- C1 没有启动 Steam、没有部署 CoopBot、没有捕获 live 多人状态。C2 才验证情况 A 和稳定根；真实四客户端留给 C10 实机门禁。
+
 ## 离线联合搜索 M11（已完成，2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：直接全队效果、状态 Power、卡牌转移、`Tutor`（“指导”）跨玩家选择、球、宠物、药水和跨回合共八类两 Actor 小空间，由 BFS/Beam/BFWS 与不去重 DFS 对齐分数、逐 Actor HP 损失、状态键与动作序，并从原根严格回放；四 Actor `OneForAll` 同样对齐。Beam DOP1/DOP4 动作、状态和展开数一致。最终 `runId=8f48eaa6e34a4d97b7ec917852d891af` Passed，程序集 SHA-256 `6F69DAC1863BB14897FE8530CB00D424C41D3585A12E25FBCAB9A3334928260B`，实例已删除。

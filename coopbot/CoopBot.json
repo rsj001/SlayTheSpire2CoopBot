@@ -1,0 +1,21 @@
+{
+  "id": "CoopBot",
+  "name": "Co-op Bot",
+  "author": "Torch",
+  "description": "Host-coordinated cooperative combat planning and owner-local action execution.",
+  "version": "0.1.0",
+  "has_pck": false,
+  "has_dll": true,
+  "affects_gameplay": true,
+  "min_game_version": "0.111.0",
+  "dependencies": [
+    {
+      "id": "STS2-RitsuLib",
+      "min_version": "0.6.2"
+    },
+    {
+      "id": "CombatSolver",
+      "min_version": "0.47.2"
+    }
+  ]
+}

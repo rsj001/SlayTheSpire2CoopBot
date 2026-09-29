@@ -47,6 +47,7 @@
 
   <ItemGroup>
     <Compile Remove="tools/**/*.cs" />
+    <Compile Remove="coopbot/**/*.cs" />
     <Compile Remove="outputs/**/*.cs" />
     <EmbeddedResource Include="src/UI/English.json" LogicalName="CombatSolver.UI.English.json" />
     <PackageReference Include="Krafs.Publicizer" Version="2.3.0" PrivateAssets="all" />

@@ -1899,6 +1899,49 @@ for token in \
     require_fixed "$combat_root" "$token" 'combat Actor root missing F5a relic ownership:'
 done
 
+# CoopBot remains a distinct Mod assembly. Its protocol/session core is pure and the
+# offline joint search never reaches back into transport, live runtime, or UI.
+coopbot_project="$repository_root/coopbot/CoopBot.csproj"
+coopbot_manifest="$repository_root/coopbot/CoopBot.json"
+coopbot_protocol="$repository_root/coopbot/Protocol/CoopProtocol.cs"
+coopbot_envelope="$repository_root/coopbot/Protocol/CoopBotEnvelopeMessage.cs"
+coopbot_contract_project="$repository_root/tools/CoopBot.ContractChecks/CoopBot.ContractChecks.csproj"
+for file in \
+    "$coopbot_project" \
+    "$coopbot_manifest" \
+    "$coopbot_protocol" \
+    "$coopbot_envelope" \
+    "$coopbot_contract_project"; do
+    if [[ ! -f "$file" ]]; then
+        add_violation "CoopBot C1 boundary missing: $file"
+    fi
+done
+require_fixed "$repository_root/CombatSolver.csproj" '<Compile Remove="coopbot/**/*.cs" />' \
+    'CombatSolver must exclude the distinct CoopBot assembly:'
+require_fixed "$coopbot_project" '<AssemblyName>CoopBot</AssemblyName>' \
+    'CoopBot assembly identity missing:'
+require_fixed "$coopbot_manifest" '"id": "CoopBot"' \
+    'CoopBot manifest identity missing:'
+require_fixed "$coopbot_protocol" 'public const int Version = 1;' \
+    'CoopBot protocol version missing:'
+require_fixed "$coopbot_envelope" 'public record struct CoopBotEnvelopeMessage : INetMessage' \
+    'CoopBot native envelope missing:'
+require_fixed "$coopbot_contract_project" '../../coopbot/Session/CoopSession.cs' \
+    'CoopBot contract checks no longer compile the session source:'
+while IFS= read -r -d '' file; do
+    for forbidden in 'using Godot' 'MegaCrit.Sts2' 'CombatSolver.'; do
+        forbid_fixed "$file" "$forbidden" 'CoopBot protocol/session core owns runtime dependency:'
+    done
+done < <(find "$repository_root/coopbot/Session" -maxdepth 1 -type f -name '*.cs' -print0)
+for forbidden in 'using Godot' 'MegaCrit.Sts2' 'CombatSolver.'; do
+    forbid_fixed "$coopbot_protocol" "$forbidden" 'CoopBot protocol core owns runtime dependency:'
+done
+while IFS= read -r -d '' file; do
+    for forbidden in CoopBot INetGameService RunManager Godot SolverOverlay; do
+        forbid_fixed "$file" "$forbidden" 'offline joint search references live CoopBot boundary:'
+    done
+done < <(find "$repository_root/src/Search/Coop" -maxdepth 1 -type f -name '*.cs' -print0)
+
 if ((${#violations[@]} > 0)); then
     printf '%s\n' "${violations[@]}" >&2
     printf 'Refactor boundary verification failed with %d violation(s).\n' "${#violations[@]}" >&2

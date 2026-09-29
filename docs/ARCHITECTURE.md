@@ -285,6 +285,14 @@ F4c1 的 `JointPotionSearchPolicy` 以 Actor、槽位和药水 ID 作为指令�
 
 F5a 将原先只有根级本地玩家视图的可搜索药水、Throwing Axe 可用性、Petrified Toad 可再生药水语义和战后遗物回血同时捕获到每个 `CombatActorRoot`；F4c2d 进一步迁入药水奖励展望。生产单人字段和调用链不变，并要求与 `LocalActorId` 对应 Actor 的新字段逐值相等；联合药水成本与奖励替换额度必须按动作 Actor 读取，不能用本地玩家遗物或奖励预测替代队友所有权。
 
+#### Co-op Bot 独立 Mod 边界
+
+`coopbot/CoopBot.csproj` 构建独立 `CoopBot.dll`；根 `CombatSolver.csproj` 显式排除 `coopbot/**/*.cs`。CombatSolver 的生产 `SolverController`、单人部署器和 UI 不因该 Mod 增加多人分支。
+
+`coopbot/Protocol/CoopProtocol.cs` 与 `coopbot/Session/*` 是不引用 Godot、原版 live 类型或 CombatSolver 的纯合同层，拥有协议版本、消息 envelope、ActorAssignment、sender/sequence 门禁、会话状态和 ActionId 幂等。只有 `CoopBotEnvelopeMessage` 适配原版 `INetMessage` 序列化。原版 transport 提供的 sender ID 是身份权威；DTO 自报身份只用于一致性检查。
+
+后续 Host/Capture/NativeAdapter/UI 只能依赖此合同层。Host 将主线程稳定 live 根显式转换成 `CombatRootSnapshot` 后才能调用 `src/Search/Coop`；离线联合 Search 反向引用 CoopBot、网络、RunManager、Godot 或 UI 均由双平台结构门禁拒绝。远端动作必须由 owner Client 的 LocalActorAgent 经原版 `ActionQueueSynchronizer.RequestEnqueue` 提交，Host 不替远端 owner 直接入队。
+
 策略重构回归语料由 `tools/StrategyCorpus` 编排：玩家包使用 Testing 的严格 `combat_start` 无头恢复，仓库生成场景使用 `OfflineSearchHarness`。Search 在请求完成后提供只读质量和根戳记证据；Testing Writer 与离线宿主把它们写入独立证据文件，不参与候选裁决。原始玩家包与完整输出只留在 `.local`。对照器先核对根、政策和固定预算，再比较完整动作、续用、结果及非时序工作量；时间、分配和 GC 单列观察。
 
 本地策略迭代通过 `tools/CheckpointTool/StrategySessionRunner.cs` 持有 `start/run/status/stop` 会话和脚本单独编译。所有策略会话使用一个固定私有游戏副本；`start` 提交不建战斗的 `SessionStart` 就绪请求，`run` 直接复用其进程，`stop` 只结束进程和监控。Windows 启动器缓存稳定游戏文件的哈希，仅重算 Mod；停机后按差异替换私有副本。`run-unattended-test.ps1/.sh` 的复用入口跳过快照扫描，仍核对 PID、出生时间与可执行文件。`UnattendedTestRunner.ProtocolHost` 在每次请求开始加载冻结的脚本程序集和参数，`DevelopmentStrategyLoader` 持有可卸载加载上下文，在请求收尾释放。Search 只接收 `SearchPolicySnapshot.DevelopmentStrategy` 中的不可变策略引用和只读分支特征，不读取脚本文件或 live 设置。无脚本时保留既有候选顺序、Beam 评分和组合列表。脚本只接管中途优先级、评分、一个有界保路代表和既有组合成员编排；最终路线质量、预算、状态等价与战斗结算仍属原所有者。
