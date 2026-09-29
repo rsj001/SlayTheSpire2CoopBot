@@ -9,11 +9,15 @@ using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
+using HarmonyLib;
 
 namespace CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 
 internal static class BespokeCardMirrors
 {
+    private static readonly AccessTools.FieldRef<TheBall, decimal> TheBallExtraDamageFromPlays =
+        AccessTools.FieldRefAccess<TheBall, decimal>("_extraDamageFromPlays");
+
     public static void BelieveInYouOnPlay(BelieveInYou card, CardOnPlayMirrorContext context)
         => context.Simulator.GainEnergy(context.TargetPlayer, card.DynamicVars.Energy.IntValue);
 
@@ -150,6 +154,87 @@ internal static class BespokeCardMirrors
                 amount,
                 card.Owner.Creature);
         }
+    }
+
+    public static void TheBallOnPlay(TheBall card, CardOnPlayMirrorContext context)
+    {
+        context.AttackSingle();
+        if (context.Simulator.HasPendingChoice)
+            return;
+        decimal increase = card.DynamicVars["Increase"].BaseValue;
+        card.DynamicVars.Damage.BaseValue += increase;
+        TheBallExtraDamageFromPlays(card) += increase;
+    }
+
+    public static void OutrageOnPlay(Outrage card, CardOnPlayMirrorContext context)
+    {
+        context.AttackSingle();
+        if (context.Simulator.HasPendingChoice)
+            return;
+        foreach (Creature teammate in context.CombatState.GetTeammatesOf(card.Owner.Creature)
+                     .Where(creature => creature.IsPlayer && context.State.GetCreature(creature).IsAlive))
+        {
+            context.Simulator.AddGeneratedCardToCombat(
+                context.Card.CreateCloneForPlayer(teammate.Player!),
+                PileType.Discard,
+                card.Owner,
+                resultKind: CardGenerationResultKind.Fixed);
+        }
+    }
+
+    public static void BladeSymphonyOnPlay(BladeSymphony card, CardOnPlayMirrorContext context)
+    {
+        foreach (Creature teammate in context.CombatState.GetTeammatesOf(card.Owner.Creature)
+                     .Where(creature => creature.IsPlayer && context.State.GetCreature(creature).IsAlive))
+        {
+            context.Simulator.CreateAndAddGeneratedCardsToCombat<Shiv>(
+                teammate.Player!, PileType.Hand, card.DynamicVars.Cards.IntValue, card.Owner);
+        }
+    }
+
+    public static void PlotOnPlay(Plot card, CardOnPlayMirrorContext context)
+    {
+        SimulatedCombatState combat = RequireCombat(context);
+        foreach (Creature teammate in context.CombatState.GetTeammatesOf(card.Owner.Creature)
+                     .Where(creature => creature.IsPlayer && context.State.GetCreature(creature).IsAlive))
+        {
+            combat.ApplyPowerFromSource(
+                typeof(DrawCardsNextTurnPower), teammate, card.DynamicVars.Cards.IntValue,
+                card.Owner.Creature, card);
+        }
+    }
+
+    public static void GlimpseBeyondOnPlay(GlimpseBeyond card, CardOnPlayMirrorContext context)
+    {
+        foreach (Creature teammate in context.CombatState.GetTeammatesOf(card.Owner.Creature)
+                     .Where(creature => creature.IsPlayer && context.State.GetCreature(creature).IsAlive))
+        {
+            context.Simulator.CreateAndAddGeneratedCardsToCombat<Soul>(
+                teammate.Player!, PileType.Draw, card.DynamicVars.Cards.IntValue, card.Owner,
+                CardPilePosition.Random);
+        }
+    }
+
+    public static void ImitationLearningOnPlay(ImitationLearning card, CardOnPlayMirrorContext context)
+    {
+        SimulatedCombatState combat = RequireCombat(context);
+        ImitationLearningPower? existing = combat.EffectivePowers()
+            .OfType<ImitationLearningPower>()
+            .FirstOrDefault(power =>
+                ReferenceEquals(power.Owner, card.Owner.Creature)
+                && ReferenceEquals(power.PlayerTarget, context.TargetPlayer));
+        if (existing is not null)
+        {
+            combat.SetPowerAmount(existing, existing.Amount + card.DynamicVars["ImitationLearningPower"].IntValue);
+            return;
+        }
+
+        ImitationLearningPower created = combat.AddPowerInstance<ImitationLearningPower>(
+            card.Owner.Creature,
+            card.DynamicVars["ImitationLearningPower"].IntValue,
+            card.Owner.Creature);
+        created._target = null;
+        created.PlayerTarget = context.TargetPlayer;
     }
 
     private static SimulatedCombatState RequireCombat(CardOnPlayMirrorContext context)

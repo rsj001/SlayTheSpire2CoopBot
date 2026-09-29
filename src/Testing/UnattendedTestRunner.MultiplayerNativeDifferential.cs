@@ -113,7 +113,6 @@ internal sealed partial class UnattendedTestRunner
 
         await AssertMultiplayerDirectCardsAsync(source);
         await AssertMultiplayerPowerLifecycleNativeDifferentialAsync(source);
-        await AssertTheBallExpectedGapAsync(source);
     }
 
     private async Task AssertMultiplayerPowerLifecycleNativeDifferentialAsync(CombatState source)
@@ -241,6 +240,17 @@ internal sealed partial class UnattendedTestRunner
             typeof(Underworld), typeof(Cacophony),
         ];
         foreach (Type cardType in lifecycleCardTypes)
+        {
+            foreach (bool upgraded in new[] { false, true })
+                await AssertMultiplayerDirectCardAsync(source, cardType, upgraded, actorCount: 2, deadActor: false);
+        }
+
+        Type[] transferCardTypes =
+        [
+            typeof(HuddleUp), typeof(TheBall), typeof(Outrage), typeof(BladeSymphony),
+            typeof(Largesse), typeof(Plot), typeof(GlimpseBeyond), typeof(ImitationLearning),
+        ];
+        foreach (Type cardType in transferCardTypes)
         {
             foreach (bool upgraded in new[] { false, true })
                 await AssertMultiplayerDirectCardAsync(source, cardType, upgraded, actorCount: 2, deadActor: false);

@@ -1,5 +1,9 @@
 # CombatSolver 测试清单
 
+## 原版多人语义 M6 直接入口（进行中，2026-09-29）
+
+- `COOP-MULTIPLAYER-NATIVE-DIFF`：HuddleUp、TheBall、Outrage、BladeSymphony、Largesse、Plot、GlimpseBeyond、ImitationLearning 普通/升级版分别在两 Actor 原生根执行，与预测逐 Actor 做完整快照差分，覆盖卡牌 Owner/牌堆、随机移交、生成 RNG、动态伤害和 PlayerTarget。最终 `runId=eaf4c2c85834405997b1b07a4e69e2fe` Passed，目标差分段 22278ms，实例已删除。
+
 ## 原版多人语义 M5 Power 生命周期（2026-09-29）
 
 - `COOP-MULTIPLAYER-POWER-LIFECYCLE`：两 Actor 预测分支依次验证 Coordinate/Fade 回合末恢复、TagTeam 消费、Midnight 耗竭降费、Sneaky 队友攻击、Covered/Intercept/Knockdown/Flanking/Tank/Guarded 伤害倍率、Beacon 格挡传播、Concoct/Underworld 伤害后置、Cacophony 抽牌、Soulbound 生成、HammerTime Forge、施加者死亡清扫和敌方侧移除。最终 `runId=dfc42d469b7e4682bcb3c2a8a33750ae` Passed，目标阶段 430 ms，实例已删除；该 fixture 是预测生命周期合同，不冒充原生差分。

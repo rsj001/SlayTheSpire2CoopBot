@@ -46,7 +46,7 @@ public static class MultiplayerSemanticCatalog
         Verified<Intercept>("M5"),
         Verified<Lift>("M4"),
         Verified<TagTeam>("M5"),
-        Partial<TheBall>("M6"),
+        Exact<TheBall>("M6"),
         Verified<BeaconOfHope>("M5"),
         Verified<Knockdown>("M5"),
         Verified<Mimic>("M4"),
@@ -54,11 +54,11 @@ public static class MultiplayerSemanticCatalog
 
         Verified<Blaze>("M4"),
         Verified<DemonicShield>("M4"),
-        Partial<Outrage>("M6"),
+        Exact<Outrage>("M6"),
         Verified<Midnight>("M5"),
         Verified<Tank>("M5"),
 
-        Missing<BladeSymphony>("M6"),
+        Exact<BladeSymphony>("M6"),
         Verified<Concoct>("M5"),
         Verified<Fade>("M5"),
         Verified<Flanking>("M5"),
@@ -66,7 +66,7 @@ public static class MultiplayerSemanticCatalog
 
         Verified<Constellation>("M4"),
         Exact<Largesse>("M6"),
-        Missing<Plot>("M6"),
+        Exact<Plot>("M6"),
         Verified<HammerTime>("M5"),
         Missing<Tutor>("M6"),
 
@@ -74,12 +74,12 @@ public static class MultiplayerSemanticCatalog
         Verified<Soulbound>("M5"),
         Verified<Underworld>("M5"),
         Verified<Cacophony>("M5"),
-        Missing<GlimpseBeyond>("M6"),
+        Exact<GlimpseBeyond>("M6"),
 
         Verified<EnergySurge>("M4"),
         Missing<Hibernate>("M7"),
         Exact<Ignition>("M7"),
-        Missing<ImitationLearning>("M6"),
+        Exact<ImitationLearning>("M6"),
         Verified<OneForAll>("M4"),
     ];
 

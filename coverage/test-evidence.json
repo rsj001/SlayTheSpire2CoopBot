@@ -1,4 +1,12 @@
 {
+  "MULTIPLAYER-SEMANTIC-M6-DIRECT-ENTRIES-20260929": {
+    "status": "PassedWithTutorAndLifecyclePending",
+    "level": "HeadlessNativeMultiplayerCardDifferential",
+    "procedure": "COOP-MULTIPLAYER-NATIVE-DIFF；M6 八张非Tutor牌普通/升级；两 Actor 原版/预测全状态",
+    "expected": "全队抽牌/生成/Power、TheBall移交成长、Largesse目标池和ImitationLearning目标身份与原版一致",
+    "observed": "runId=eaf4c2c85834405997b1b07a4e69e2fe Passed，目标段22278ms，实例已删除；Tutor与ImitationLearning后续生命周期仍待完成。",
+    "evidence": "src/Engine/InCombat/Mirrors/Cards/OnPlay/BespokeCardMirrors.cs; src/Testing/UnattendedTestRunner.MultiplayerNativeDifferential.cs; docs/TEST_MATRIX.md"
+  },
   "MULTIPLAYER-SEMANTIC-M5-PREDICTED-LIFECYCLE-20260929": {
     "status": "Passed",
     "level": "HeadlessPredictedMultiplayerPowerLifecycle",

@@ -351,6 +351,8 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M6：跨玩家选牌、转移、复制和自动出牌
 
+> 进度：进行中。除 Tutor 外的八张牌已具有精确 OnPlay：HuddleUp/Largesse 复用既有入口；TheBall 补齐伤害成长并由结果位置 mirror 完成随机队友移交；Outrage、BladeSymphony、Plot、GlimpseBeyond 补齐逐队友生成/Power；ImitationLearning 建立按目标玩家区分的 Power。普通/升级版两 Actor 原生/预测全状态差分 `eaf4c2c85834405997b1b07a4e69e2fe` Passed，包含卡牌 Owner/牌堆、生成 RNG、动态值和 PlayerTarget。目录维持 UnderTest；Tutor 的 DecisionActor 选择 continuation，以及 ImitationLearning 后续自动出牌生命周期尚未完成。
+
 目标：处理 SourceActor 与 DecisionActor/CardOwner 不同的复杂动作。
 
 范围：
@@ -543,7 +545,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 | M3 玩家人数缩放/生成 | M1-M2 | 已完成 | `COOP-MULTIPLAYER-SCALING` / `ecb0a35c1357491fb57b252a4f856cae` |
 | M4 直接结算牌 | M2-M3 | 已完成 | `COOP-MULTIPLAYER-NATIVE-DIFF` / `79c9fbed9f974699aa5f82cedafdb24c` |
 | M5 Power/Hook 牌 | M2-M4 | 已完成 | 初始原生差分 `920231b15d1447d09379fed727dbf115`；预测生命周期 `dfc42d469b7e4682bcb3c2a8a33750ae`；原生生命周期代表 `5d9c977d6bc349be97a28f734a4ab050` |
-| M6 选择/转移/复制牌 | M2、M4-M5 | 未开始 | — |
+| M6 选择/转移/复制牌 | M2、M4-M5 | 进行中 | 八张直接入口原生差分 `eaf4c2c85834405997b1b07a4e69e2fe`；尚缺 Tutor 与 ImitationLearning 后续生命周期 |
 | M7 球/宠物/角色资源 | M2、M4-M6 | 未开始 | — |
 | M8 药水/遗物/反广播/第三方 | M2-M7 | 未开始 | — |
 | M9 回合/敌人/死亡/并发选择 | M3-M8 | 未开始 | — |

@@ -127,6 +127,12 @@ internal static partial class CardOnPlayMirrors
             BespokeCardMirrors.SimpleSelfPowerOnPlay<CacophonyPower>(
                 card, context, card.DynamicVars.Damage.IntValue));
         registry.Register<OneForAll>(BespokeCardMirrors.OneForAllOnPlay);
+        registry.Register<TheBall>(BespokeCardMirrors.TheBallOnPlay);
+        registry.Register<Outrage>(BespokeCardMirrors.OutrageOnPlay);
+        registry.Register<BladeSymphony>(BespokeCardMirrors.BladeSymphonyOnPlay);
+        registry.Register<Plot>(BespokeCardMirrors.PlotOnPlay);
+        registry.Register<GlimpseBeyond>(BespokeCardMirrors.GlimpseBeyondOnPlay);
+        registry.Register<ImitationLearning>(BespokeCardMirrors.ImitationLearningOnPlay);
         registry.Register<Maul>(BespokeCardMirrors.MaulOnPlay);
         registry.Register<Sacrifice>(BespokeCardMirrors.SacrificeOnPlay);
         registry.Register<Spite>(BespokeCardMirrors.SpiteOnPlay);
