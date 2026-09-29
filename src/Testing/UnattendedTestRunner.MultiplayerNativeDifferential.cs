@@ -119,7 +119,15 @@ internal sealed partial class UnattendedTestRunner
         await AssertImitationLearningNativeLifecycleAsync(source);
         await AssertCrossPlayerBlockPotionAsync(source, actorCount: 2);
         await AssertCrossPlayerBlockPotionAsync(source, actorCount: 4);
-        AssertDeadPlayerPotionTargetRejected(source);
+        await AssertDeadPlayerPotionTargetRejectedAsync(source);
+        await AssertRemoteShurikenNativeDifferentialAsync(source);
+        await AssertMultiplayerDirectCardAsync(
+            source,
+            typeof(DefendDefect),
+            upgraded: false,
+            actorCount: 4,
+            deadActor: false,
+            sourceActorIndex: 1);
     }
 
     private async Task AssertCrossPlayerBlockPotionAsync(CombatState source, int actorCount)
@@ -156,7 +164,7 @@ internal sealed partial class UnattendedTestRunner
         AssertMultiplayerLifecycleSnapshots(native, root, predicted, $"BlockPotion.ActorCount{actorCount}");
     }
 
-    private static void AssertDeadPlayerPotionTargetRejected(CombatState source)
+    private async Task AssertDeadPlayerPotionTargetRejectedAsync(CombatState source)
     {
         OfflineJointCombat native = CreateOfflineJointCombat(
             source,
@@ -175,6 +183,83 @@ internal sealed partial class UnattendedTestRunner
                 && action.TargetCombatId == native.Players[1].Creature.CombatId);
         if (hasDeadTarget)
             throw new InvalidOperationException("Dead player was offered as a cross-player potion target.");
+
+        PotionModel potion = native.Players[0].GetPotionAtSlotIndex(0)
+            ?? throw new InvalidOperationException("Dead-target potion fixture has no potion.");
+        UsePotionAction canceled = new(potion, native.Players[1].Creature, isCombatInProgress: true);
+        canceled.OnEnqueued(_ => { }, uint.MaxValue - 3);
+        await canceled.Execute();
+        await canceled.CompletionTask;
+        if (canceled.Exception != null)
+            throw new InvalidOperationException("Native dead-target potion action failed.", canceled.Exception);
+        if (!ReferenceEquals(native.Players[0].GetPotionAtSlotIndex(0), potion))
+            throw new InvalidOperationException("Canceled native potion action consumed its owner potion.");
+        SimulatedCombatState predictedCombat = (SimulatedCombatState)predicted.State.CombatState;
+        for (int actorIndex = 0; actorIndex < root.Actors.Count; actorIndex++)
+        {
+            AssertSnapshotEqual(
+                CaptureSimulated(
+                    predicted,
+                    predictedCombat,
+                    root.Actors[actorIndex].PlayerIdentity,
+                    native.Enemy,
+                    root.PlayerIdentity),
+                CaptureActual(native.State, native.Players[actorIndex], native.Enemy),
+                "MultiplayerPotionCancel",
+                $"DeadTarget.Actor{actorIndex}");
+        }
+    }
+
+    private async Task AssertRemoteShurikenNativeDifferentialAsync(CombatState source)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(
+            source,
+            actorCount: 2,
+            includeRemoteRelicTriggerFixture: true);
+        Player remote = native.Players[1];
+        remote.PlayerCombatState!.Energy = 99;
+        CardModel[] attacks = remote.PlayerCombatState.Hand.Cards
+            .Where(static card => card.Type == CardType.Attack)
+            .Take(3)
+            .ToArray();
+        if (attacks.Length != 3)
+            throw new InvalidOperationException("Remote Shuriken fixture requires three attack cards.");
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator predicted = root.ForkSimulator();
+        SimulatedCombatState predictedCombat = (SimulatedCombatState)predicted.State.CombatState;
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber);
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, predicted);
+
+        foreach (CardModel attack in attacks)
+        {
+            await ExecuteSyntheticNativeCardAsync(attack, native.Enemy);
+            PlanAction action = JointActionExpander.Expand(predicted, turns)
+                .Select(static candidate => candidate.Action)
+                .First(candidate => candidate.Actor.Index == 1
+                    && candidate.Kind == PlanActionKind.PlayCard
+                    && candidate.CardId == attack.Id.Entry
+                    && candidate.TargetCombatId == native.Enemy.CombatId);
+            turns = JointActionTransition.Apply(predicted, turns, action, deaths);
+        }
+
+        for (int actorIndex = 0; actorIndex < root.Actors.Count; actorIndex++)
+        {
+            AssertSnapshotEqual(
+                CaptureSimulated(
+                    predicted,
+                    predictedCombat,
+                    root.Actors[actorIndex].PlayerIdentity,
+                    native.Enemy,
+                    root.PlayerIdentity),
+                CaptureActual(native.State, native.Players[actorIndex], native.Enemy),
+                "MultiplayerRelicOwner",
+                $"Shuriken.Actor{actorIndex}");
+        }
+        if (predictedCombat.GetAmount<StrengthPower>(predicted.State.Players[0].Creature) != 0
+            || predictedCombat.GetAmount<StrengthPower>(predicted.State.Players[1].Creature) <= 0)
+        {
+            throw new InvalidOperationException("Remote Shuriken modified the wrong relic owner.");
+        }
     }
 
     private async Task AssertImitationLearningNativeLifecycleAsync(CombatState source)

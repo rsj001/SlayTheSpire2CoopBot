@@ -1,8 +1,8 @@
 # CombatSolver 开发笔记与未来构想
 
-## 原版多人语义 M8 外围机制（进行中，2026-09-29）
+## 原版多人语义 M8 外围机制（已完成，2026-09-29）
 
-多人药水目录当前发现 51 个 AnyPlayer 目标。BlockPotion 已在 2/4 Actor 原生根上由原版 UsePotionAction 与联合预测逐 Actor 全状态差分，验证 Owner 与目标不同、目标格挡、药水消耗和 continuation；死亡玩家不会被列为合法目标。`COOP-MULTIPLAYER-NATIVE-DIFF` / `e750f21354d94bd6866a4fa8df1fb20f` Passed，实例已删除。选择取消、同型遗物原生代表与自用牌反广播原生哨兵仍待补。
+多人药水目录当前发现 51 个 AnyPlayer 目标。BlockPotion 已在 2/4 Actor 原生根上由原版 UsePotionAction 与联合预测逐 Actor 全状态差分，验证 Owner 与目标不同、目标格挡、药水消耗和 continuation；死亡玩家不会被列为合法目标，原版拒绝该动作后药水与状态保持。远端 Actor 连续三次攻击时，Shuriken 计数和力量只属于其 Owner；四 Actor 根由远端 Defect 打出自用 Defend 时不广播给队友。`COOP-MULTIPLAYER-NATIVE-DIFF` / `78a22003c4284ccbb635bb451cee62d8` Passed，实例已删除。结合既有九类选择药水严格回放、同型遗物父/兄弟 Fork 隔离和未知 gameplay subscriber 类型/scope 拒绝，M8 完成。
 
 ## 原版多人语义 M7 资源牌（已完成，2026-09-29）
 

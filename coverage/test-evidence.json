@@ -1,10 +1,10 @@
 {
   "MULTIPLAYER-SEMANTIC-M8-POTION-TARGET-20260929": {
-    "status": "Pending",
+    "status": "Passed",
     "level": "HeadlessNativeMultiplayerPotionDifferential",
-    "procedure": "COOP-MULTIPLAYER-NATIVE-DIFF；BlockPotion 2/4 Actor跨Owner目标；死亡目标合法性",
+    "procedure": "COOP-MULTIPLAYER-NATIVE-DIFF；BlockPotion 2/4 Actor跨Owner目标与取消；远端Shuriken；四Actor自用Defend；COOP根九类选择药水与第三方拒绝",
     "expected": "药水只修改指定存活Actor并从Owner槽消耗；死亡玩家不是合法目标",
-    "observed": "runId=e750f21354d94bd6866a4fa8df1fb20f Passed，实例已删除；M8其余选择取消、遗物actual和反广播仍待补。",
+    "observed": "目标差分runId=e750f21354d94bd6866a4fa8df1fb20f Passed；取消/遗物/反广播runId=78a22003c4284ccbb635bb451cee62d8 Passed；实例均删除，M8完成。",
     "evidence": "src/Testing/UnattendedTestRunner.MultiplayerNativeDifferential.cs; docs/TEST_MATRIX.md"
   },
   "MULTIPLAYER-SEMANTIC-M7-RESOURCE-CARDS-20260929": {

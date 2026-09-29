@@ -405,7 +405,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M8：药水、遗物、既有单人牌反广播和第三方边界
 
-> 进度：进行中。51 个 AnyPlayer 药水目标已由版本化目录发现；BlockPotion 在 2/4 Actor 根上由原版 UsePotionAction 与联合预测逐 Actor 全状态差分通过，死亡玩家不会进入预测合法目标，证据 `e750f21354d94bd6866a4fa8df1fb20f`。既有九类选择药水、远端同型遗物隔离和未知 gameplay subscriber 类型/scope 拒绝已有模拟/Fork 门禁；尚缺原生选择取消、同型遗物 actual 代表和四 Actor 自用牌反广播 actual 哨兵。
+> 进度：已完成。51 个 AnyPlayer 药水目标由版本化目录发现；BlockPotion 在 2/4 Actor 根上由原版 UsePotionAction 与联合预测逐 Actor 全状态差分通过，死亡玩家不进入预测合法目标且原版拒绝后不消耗药水，证据 `e750f21354d94bd6866a4fa8df1fb20f`、`78a22003c4284ccbb635bb451cee62d8`。九类选择药水的 Actor 所有权和严格回放、远端同型遗物 Fork 隔离、远端 Shuriken 原生三次攻击、自用 Defend 四 Actor 反广播，以及未知 gameplay subscriber 类型/scope 稳定拒绝均通过。
 
 目标：补齐不是 37 张牌本身、但会使多人实际战斗偏离的外围机制。
 
@@ -551,7 +551,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 | M5 Power/Hook 牌 | M2-M4 | 已完成 | 初始原生差分 `920231b15d1447d09379fed727dbf115`；预测生命周期 `dfc42d469b7e4682bcb3c2a8a33750ae`；原生生命周期代表 `5d9c977d6bc349be97a28f734a4ab050` |
 | M6 选择/转移/复制牌 | M2、M4-M5 | 已完成 | 八张直接入口原生差分 `eaf4c2c85834405997b1b07a4e69e2fe`；Tutor 身份/结算 `ec8b1d83ac2c414f8bdb4162b3536aab`；ImitationLearning AutoPlay 生命周期 `2d8abe21720a4bbd92ab24b16996a14b` |
 | M7 球/宠物/角色资源 | M2、M4-M6 | 已完成 | 两 Actor 入口 `69d21e089dd2494bad39fe7c07585655`；四 Actor 混合资源与 Hibernate 生命周期 `94100373a0f04ddebd6465b1971fe156` |
-| M8 药水/遗物/反广播/第三方 | M2-M7 | 进行中 | BlockPotion 2/4 Actor actual/simulated 与死亡目标 `e750f21354d94bd6866a4fa8df1fb20f`；其余代表待补 |
+| M8 药水/遗物/反广播/第三方 | M2-M7 | 已完成 | BlockPotion 2/4 Actor `e750f21354d94bd6866a4fa8df1fb20f`；取消、远端 Shuriken、自用牌 `78a22003c4284ccbb635bb451cee62d8`；九类选择药水与第三方拒绝由 COOP 根门禁覆盖 |
 | M9 回合/敌人/死亡/并发选择 | M3-M8 | 未开始 | — |
 | M10 完整内容门禁 | M3-M9 | 未开始 | — |
 | M11 联合搜索质量 | M10 | 未开始 | — |

@@ -1,8 +1,9 @@
 # CombatSolver 测试清单
 
-## 原版多人语义 M8 外围机制（进行中，2026-09-29）
+## 原版多人语义 M8 外围机制（已完成，2026-09-29）
 
 - `COOP-MULTIPLAYER-NATIVE-DIFF`：BlockPotion 分别在 2 Actor 和 4 Actor 根由 Actor0 对最后一名队友使用，原版 UsePotionAction 与预测逐 Actor 全状态一致；另建死亡队友根断言扩展器不生成该目标。`runId=e750f21354d94bd6866a4fa8df1fb20f` Passed，实例已删除。
+- 同一 fixture 增加死亡目标原版拒绝且药水不消耗、远端 Actor 三次攻击触发 Shuriken 只修改 Owner、四 Actor 远端 Defend 只修改自身的 actual/simulated 全状态哨兵；`runId=78a22003c4284ccbb635bb451cee62d8` Passed，实例已删除。`COOP-P2-MULTI-ROOT` 既有门禁继续覆盖九类选择药水 Actor/严格回放、同型遗物父子 Fork 隔离和未知 subscriber 类型/scope 拒绝。
 
 ## 原版多人语义 M7 资源牌（已完成，2026-09-29）
 
