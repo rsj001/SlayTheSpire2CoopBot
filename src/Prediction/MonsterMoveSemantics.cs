@@ -82,7 +82,9 @@ internal static class MonsterMoveSemantics
                     move,
                     representative,
                     processedEnemyDeaths,
-                    plannedChoices: null);
+                    plannedChoices: null,
+                    applyTargetPortion: false,
+                    applyOwnerPortion: true);
             return;
         }
         if (scope == JointMoveEffectScope.PreAttackMixed)

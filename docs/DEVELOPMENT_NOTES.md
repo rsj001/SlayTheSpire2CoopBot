@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线联合 strict replay（2026-09-29）
+
+联合计划回放不再在跨轮时只增加 turn，而是从冻结根完整执行玩家尾、敌方侧和下一玩家侧，并保存逐动作快照。新的 strict verifier 将搜索增量终态与根级重放终态按联合阶段、逐 Actor 投影、完整 continuation 和状态键比较，失败报告动作与首字段并停止。2/4 Actor 的一步完整致死路线及故意 Actor0 Block 扰动最终通过，`runId=bb8330ee794148e2b59319b970fc65a9`。首轮 `6d28c4399b714e368778ae67ee370be9` 暴露 Soul Siphon owner 收尾重复 target，次轮 `6c73ac0f888144b5b669345718f2ca4b` 暴露数组引用假差异，均已修复且实例删除。该 actual/simulated 对照属于离线权威 transition 与根级 replay，不表示真实多人客户端已部署。
+
 ## 离线联合敌方效果作用域完成（2026-09-29）
 
 联合敌方侧不重写怪物 AI 或单人结算，而是在既有 `MonsterMoveEffects` 外集中登记多人调用作用域：纯 owner 效果只执行一次，纯 target 效果按稳定 Actor 顺序执行，混合效果把 target 与 owner 段分别复用。全部当前已支持特殊行动已归类，未知效果仍显式停止。Soul Siphon 代表验证两名 Actor 各受 `-2 Strength/-2 Dexterity`，敌人只获得一次 `+2 Strength`；`COOP-MULTI-ACTOR-ROOT` 的 `runId=60708c6fb8f147f280bf40fca07745de` Passed，实例已删除，Windows 结构门禁通过。F7 至此关闭。

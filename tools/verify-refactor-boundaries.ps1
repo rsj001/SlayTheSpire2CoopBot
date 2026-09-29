@@ -2203,6 +2203,28 @@ foreach ($file in @('JointOfflineSearch.cs', 'JointPlanReplayer.cs')) {
         $violations.Add("Offline joint consumer bypasses the authoritative transition: $file")
     }
 }
+$jointStrictReplayPath = Join-Path $repositoryRoot 'src/Search/Coop/JointStrictReplayVerifier.cs'
+foreach ($text in @(
+    'JointPlanReplayer.Replay(',
+    'DescribeFirstDifference(',
+    'expected.TurnState.Phases.SequenceEqual(actual.TurnState.Phases)',
+    'expected.Continuation.DescribeFirstDifference(actual.Continuation)'
+)) {
+    if (-not (Select-String -LiteralPath $jointStrictReplayPath -SimpleMatch $text -Quiet)) {
+        $violations.Add("Joint strict replay verifier missing F10 boundary: $text")
+    }
+}
+foreach ($text in @(
+    'JointRoundTransition.CompletePlayerSide(',
+    'JointRoundTransition.CompleteBasicEnemySide(',
+    'JointRoundTransition.StartBasicPlayerSide(',
+    'actionSnapshots.Add('
+)) {
+    if (-not (Select-String -LiteralPath (Join-Path $repositoryRoot 'src/Search/Coop/JointPlanReplayer.cs') `
+            -SimpleMatch $text -Quiet)) {
+        $violations.Add("Joint plan replay missing F10 lifecycle boundary: $text")
+    }
+}
 foreach ($forbidden in @('Players.Single(', 'LocalContext.GetMe(', 'root.PlayerIdentity.PlayerCombatState')) {
     foreach ($match in Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'src/Search/Coop') -Filter '*.cs' |
         Select-String -SimpleMatch $forbidden) {

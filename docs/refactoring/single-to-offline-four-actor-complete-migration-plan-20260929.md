@@ -20,7 +20,7 @@
 | F7 联合回合与敌方生命周期 | 已完成 | F7a/F7b 生命周期、F7c 全部既有特殊行动作用域、F7d 下一轮与选择恢复均通过 |
 | F8 联合终局目标 | 已完成 | 终局边界、存活、战损向量、药水/保命资源、成长、偷窃、回合、动作及稳定动作序通过；单人排序未改 |
 | F9 联合 Beam/BFWS | 已完成 | F9a Beam/转置、F9b 保路、F9c 固定 lane、F9d 有界 BFWS 与 2/4 Actor oracle 全部通过 |
-| F10 strict replay 与差分 | 未开始 | - |
+| F10 strict replay 与差分 | 已完成 | 2/4 Actor 完整致死搜索路线从同根逐动作回放，完整联合状态 strict diff 与首差异诊断通过 |
 | F11 性能与确定性 | 未开始 | - |
 | F12 最终门禁 | 未开始 | - |
 
@@ -371,6 +371,14 @@
 - 4 Actor 完整战斗 strict diff 通过；
 - 第一处差异可定位到字段、动作和 Hook；
 - 回放失败时停止，不继续部署部分路线。
+
+完成证据：
+
+- `JointPlanReplayer` 现在从同一冻结根执行动作，并在跨轮时完整运行玩家尾、敌方侧和下一玩家侧；每个成功动作保留严格快照，失败立即抛出且不返回部分结果。
+- `JointStrictReplayVerifier` 将搜索终态与独立重放终态按联合 Turn/Phase、逐 Actor 投影、完整 `ContinuationStamp` 和状态键比较，错误包含动作索引、动作与首个字段差异。
+- 2 Actor 与 4 Actor 的 1 HP 敌人完整致死搜索均由 Beam 找到一步终局并从根严格回放；故意改变 Actor0 Block 的诊断稳定定位 `actor[0]`。最终 `COOP-MULTI-ACTOR-ROOT` `runId=bb8330ee794148e2b59319b970fc65a9` Passed，实例已删除。
+- 首次新增夹具 `runId=6d28c4399b714e368778ae67ee370be9` 暴露 Soul Siphon owner 收尾重复执行代表 Actor target 段；修正为 `target=false/owner=true`。第二次 `runId=6c73ac0f888144b5b669345718f2ca4b` 暴露 `JointTurnState` 数组的引用相等假差异；改为逐 Phase 比较。两次实例均已删除。
+- 本阶段的 “actual” 是离线搜索权威 transition 的增量终态，不声称真实四客户端原生执行；真实客户端控制仍属于 F12 后的网络 Runtime 非目标。
 
 ### F11：性能、确定性和组合爆炸控制
 

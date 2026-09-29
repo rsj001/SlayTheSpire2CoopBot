@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 联合 2/4 Actor strict replay（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：分别建立 2/4 Actor、敌人 1 HP 的完整战斗，Beam 找到一步终局；`JointPlanReplayer` 从同一根重放后，联合 Turn/Phase、逐 Actor 投影、完整 continuation、状态键与终局完全一致。故意将 Actor0 Block `+1` 后，首差异稳定定位 `actor[0]`；最终 `runId=bb8330ee794148e2b59319b970fc65a9` Passed，实例已删除。
+- 失败证据：`6d28c4399b714e368778ae67ee370be9` 找到 Soul Siphon 代表目标被重复应用；`6c73ac0f888144b5b669345718f2ca4b` 找到 `JointTurnState.Phases` 数组引用假差异。修复后只重跑同一受影响夹具。Release 构建 0 警告/0 错误；未运行 Linux/WSL 或可见 Steam。
+
 ## 联合敌方效果作用域注册（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：Lagavulin Matriarch 强制 Soul Siphon 后，两名 Actor 各有 `-2 Strength/-2 Dexterity`，怪物 Strength 精确为 `+2`，证明 target 段逐 Actor、owner 段只一次；`runId=60708c6fb8f147f280bf40fca07745de`，Passed，实例已删除。

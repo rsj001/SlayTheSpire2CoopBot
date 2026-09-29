@@ -1730,6 +1730,22 @@ for file in JointOfflineSearch.cs JointPlanReplayer.cs; do
     require_fixed "$repository_root/src/Search/Coop/$file" 'JointActionTransition.Apply(' \
         'offline joint consumer bypasses the authoritative transition:'
 done
+joint_strict_replay="$repository_root/src/Search/Coop/JointStrictReplayVerifier.cs"
+for token in \
+    'JointPlanReplayer.Replay(' \
+    'DescribeFirstDifference(' \
+    'expected.TurnState.Phases.SequenceEqual(actual.TurnState.Phases)' \
+    'expected.Continuation.DescribeFirstDifference(actual.Continuation)'; do
+    require_fixed "$joint_strict_replay" "$token" 'joint strict replay verifier missing F10 boundary:'
+done
+joint_plan_replayer="$repository_root/src/Search/Coop/JointPlanReplayer.cs"
+for token in \
+    'JointRoundTransition.CompletePlayerSide(' \
+    'JointRoundTransition.CompleteBasicEnemySide(' \
+    'JointRoundTransition.StartBasicPlayerSide(' \
+    'actionSnapshots.Add('; do
+    require_fixed "$joint_plan_replayer" "$token" 'joint plan replay missing F10 lifecycle boundary:'
+done
 while IFS= read -r -d '' file; do
     for token in 'Players.Single(' 'LocalContext.GetMe(' 'root.PlayerIdentity.PlayerCombatState'; do
         forbid_fixed "$file" "$token" 'offline joint model restored a single/local-player assumption:'

@@ -42,6 +42,8 @@ internal sealed partial class UnattendedTestRunner
         AssertEnemyEscape(source);
         AssertRemoteActorExtraTurn(source);
         AssertOwnerOnlyEnemyRng(source);
+        AssertCompleteStrictReplay(source, 2);
+        AssertCompleteStrictReplay(source, 4);
 
         void AssertActorCount(int actorCount)
         {
@@ -914,6 +916,51 @@ internal sealed partial class UnattendedTestRunner
                 $"联合 owner-only Hatch RNG 或生命结算错误：" +
                 $"niche={rngBefore}->{rngAfter} hp={state.CurrentHp}/{state.MaxHp}。");
         }
+    }
+
+    private static void AssertCompleteStrictReplay(CombatState source, int actorCount)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            actorCount,
+            enemyCurrentHp: 1);
+        JointOfflineSearchRequest request = JointOfflineSearchRequest.Default(
+            maximumActions: 1,
+            maximumStates: 10_000);
+        JointOfflineSearchResult searched = JointOfflineSearch.SolveBeam(
+            root,
+            request,
+            beamWidth: 10_000);
+        if (!searched.Snapshot.Simulator.TerminalStamp.HasValue
+            || searched.Actions.Count != 1)
+        {
+            throw new InvalidOperationException(
+                $"{actorCount} Actor strict replay 夹具没有搜索到一步完整战斗。 ");
+        }
+        JointReplayResult replay = JointStrictReplayVerifier.Verify(root, searched);
+        if (replay.ActionSnapshots.Count != 1
+            || !replay.Snapshot.Simulator.TerminalStamp.HasValue)
+        {
+            throw new InvalidOperationException(
+                $"{actorCount} Actor strict replay 未保留逐动作快照或终局。 ");
+        }
+
+        JointActorSnapshot changedActor = replay.Snapshot.Actors[0] with
+        {
+            Block = replay.Snapshot.Actors[0].Block + 1,
+        };
+        JointCombatSnapshot changed = replay.Snapshot with
+        {
+            Actors = Array.AsReadOnly(
+                replay.Snapshot.Actors
+                    .Select((actor, index) => index == 0 ? changedActor : actor)
+                    .ToArray()),
+        };
+        string? difference = JointStrictReplayVerifier.DescribeFirstDifference(
+            replay.Snapshot,
+            changed);
+        if (difference == null || !difference.StartsWith("actor[0]", StringComparison.Ordinal))
+            throw new InvalidOperationException("联合 strict diff 未定位首个 Actor 字段差异。");
     }
 
     private static void AssertBasicNextPlayerSide(CombatRootSnapshot root)
@@ -1882,7 +1929,8 @@ internal sealed partial class UnattendedTestRunner
         IReadOnlyList<CharacterModel>? characterRoster = null,
         PotionModel? localPotion = null,
         MonsterModel? enemyModel = null,
-        EncounterModel? encounterModel = null)
+        EncounterModel? encounterModel = null,
+        int? enemyCurrentHp = null)
     {
         if (actorCount is < 1 or > 4)
             throw new ArgumentOutOfRangeException(nameof(actorCount));
@@ -1974,6 +2022,8 @@ internal sealed partial class UnattendedTestRunner
         Creature enemy = state.CreateCreature(monster, CombatSide.Enemy, enemySlot);
         state.AddCreature(enemy);
         monster.SetUpForCombat();
+        if (enemyCurrentHp is int hp)
+            enemy.SetCurrentHpInternal(Math.Clamp(hp, 1, enemy.MaxHp));
         monster.RollMove(players.Select(static player => player.Creature));
         return CombatRootSnapshot.Capture(state);
     }
