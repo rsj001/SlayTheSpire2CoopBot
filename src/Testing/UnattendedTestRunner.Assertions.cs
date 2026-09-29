@@ -56,6 +56,12 @@ internal sealed partial class UnattendedTestRunner
                 string evidence = AssertCoopBotHostRecorder(scenario.CombatState);
                 runner._completedChecks.Add("CoopBotHostRecorder:StableGate:FourActorVisibility:" + evidence);
             }
+            if (request.ScenarioId == "COOP-BOT-HOST-SEARCH")
+            {
+                runner.SetStage("coop_bot_host_search");
+                string evidence = AssertCoopBotHostSearch(scenario.CombatState);
+                runner._completedChecks.Add("CoopBotHostSearch:FrozenRoot:DopDeterminism:StrictReplay:DetachedPlan:" + evidence);
+            }
             if (request.ScenarioId == "COOP-MULTIPLAYER-NATIVE-DIFF")
             {
                 runner.SetStage("coop_multiplayer_native_diff");

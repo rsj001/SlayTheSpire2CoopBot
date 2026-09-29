@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## Co-op Bot C3 Host 搜索桥（2026-09-29）
+
+- `COOP-BOT-HOST-SEARCH` / `4bdf976afd0c43c597fb9eb980b3b3e0`：Passed；四 Actor 冻结根分别以 DOP1/DOP4 完成同一路线，得到 `actions=1`、`expanded=37`、`checkpoints=1`、相同 PlanId，并分别通过 strict replay；发布 DTO 的递归类型门禁确认不含 CombatSolver/search mutable 类型。1 CPU / 1536 MiB，实例已删除。
+- CombatSolver 与独立 CoopBot Release 构建均为 0 warning / 0 error。该场景是合成四 Actor 短搜，只证明桥接、确定性、严格回放和 DTO 脱离；真实多人 Host 根的 DOP1/DOP4 仍是实机前置门禁，未启动可见 Steam。
+
 ## Co-op Bot C2 只读 Recorder（2026-09-29）
 
 - `CoopBot.ContractChecks`：Passed；累计 40 项，其中 8 项新增稳定根合同，覆盖必须连续观察、状态不变不增 revision、执行器/选择/roster 阻断和变化后递增 revision。

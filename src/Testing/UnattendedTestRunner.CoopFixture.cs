@@ -601,6 +601,35 @@ internal sealed partial class UnattendedTestRunner
         }
     }
 
+    private static string AssertCoopBotHostSearch(CombatState source)
+    {
+        CombatState synthetic = CreateOfflineJointCombat(
+            source,
+            actorCount: 4,
+            enemyCurrentHp: 1).State;
+        Assembly coopBot = AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault(assembly =>
+                string.Equals(assembly.GetName().Name, "CoopBot", StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("COOP-BOT-HOST-SEARCH requires the CoopBot assembly.");
+        Type probe = coopBot.GetType("CoopBot.Diagnostics.CoopBotHeadlessProbe", throwOnError: true)
+            ?? throw new InvalidOperationException("CoopBot headless probe type is missing.");
+        MethodInfo method = probe.GetMethod(
+                "SearchSyntheticRoot",
+                BindingFlags.Public | BindingFlags.Static,
+                [typeof(CombatState)])
+            ?? throw new MissingMethodException(probe.FullName, "SearchSyntheticRoot");
+        try
+        {
+            return method.Invoke(null, [synthetic]) as string
+                ?? throw new InvalidOperationException("CoopBot Host search probe returned no evidence.");
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            throw new InvalidOperationException(
+                "CoopBot synthetic Host search bridge failed.",
+                exception.InnerException);
+        }
+    }
+
     private static void AssertAllActorsDeadTerminal(CombatState source)
     {
         OfflineJointCombat offline = CreateOfflineJointCombat(

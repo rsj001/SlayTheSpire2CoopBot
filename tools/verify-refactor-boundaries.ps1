@@ -2475,6 +2475,8 @@ $coopRecorderPath = Join-Path $repositoryRoot 'coopbot/Capture/HostCombatRecorde
 $coopVisibilityPath = Join-Path $repositoryRoot 'coopbot/Capture/HostVisibilityAudit.cs'
 $coopStableGatePath = Join-Path $repositoryRoot 'coopbot/Capture/StableRootGate.cs'
 $coopProbePath = Join-Path $repositoryRoot 'coopbot/Diagnostics/CoopBotHeadlessProbe.cs'
+$coopHostSearchPath = Join-Path $repositoryRoot 'coopbot/Host/HostSearchCoordinator.cs'
+$coopPlanSnapshotPath = Join-Path $repositoryRoot 'coopbot/Protocol/CoopPlanSnapshot.cs'
 foreach ($check in @(
     @{ Path = $combatSolverProjectPath; Text = '<InternalsVisibleTo Include="CoopBot" />' },
     @{ Path = $coopBotProjectPath; Text = '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' },
@@ -2484,10 +2486,40 @@ foreach ($check in @(
     @{ Path = $coopVisibilityPath; Text = 'rngStreams == 9' },
     @{ Path = $coopStableGatePath; Text = 'RequiredMatchingObservations' },
     @{ Path = $coopProbePath; Text = 'AuditSyntheticRoot(CombatState combat)' },
+    @{ Path = $coopProbePath; Text = 'SearchSyntheticRoot(CombatState combat)' },
+    @{ Path = $coopHostSearchPath; Text = 'JointOfflineSearch.SolveBeam(' },
+    @{ Path = $coopHostSearchPath; Text = 'JointStrictReplayVerifier.Verify(recorded.Root, searched)' },
+    @{ Path = $coopPlanSnapshotPath; Text = 'public sealed record PlanPublishedPayload(' },
     @{ Path = (Join-Path $repositoryRoot 'tools/run-unattended-test.ps1'); Text = '[switch]$IncludeCoopBot' },
     @{ Path = (Join-Path $repositoryRoot 'tools/run-unattended-test.sh'); Text = 'add_option include-coop-bot 0 switch none' })) {
     if (-not (Select-String -LiteralPath $check.Path -SimpleMatch $check.Text -Quiet)) {
         $violations.Add("$($check.Path): missing CoopBot C2 boundary '$($check.Text)'")
+    }
+}
+foreach ($forbiddenLiveRead in @(
+    'RunManager',
+    'CombatManager',
+    'CombatState',
+    'Godot',
+    'SolverController')) {
+    if (Select-String -LiteralPath $coopHostSearchPath -SimpleMatch $forbiddenLiveRead -Quiet) {
+        $violations.Add("${coopHostSearchPath}: frozen Host search worker owns live dependency '$forbiddenLiveRead'")
+    }
+}
+$publishedPayloadText = [IO.File]::ReadAllText($coopPlanSnapshotPath)
+$publishedPayloadDeclaration = $publishedPayloadText.Substring(
+    $publishedPayloadText.IndexOf('public sealed record PlanPublishedPayload(', [StringComparison]::Ordinal),
+    $publishedPayloadText.IndexOf('internal static class CoopPlanSnapshotFactory', [StringComparison]::Ordinal) -
+        $publishedPayloadText.IndexOf('public sealed record PlanPublishedPayload(', [StringComparison]::Ordinal))
+foreach ($forbiddenPublishedType in @(
+    'CombatRootSnapshot',
+    'JointCombatSnapshot',
+    'PlanAction',
+    'Player',
+    'Creature',
+    'Simulator')) {
+    if ($publishedPayloadDeclaration -match "\b$([Regex]::Escape($forbiddenPublishedType))\b") {
+        $violations.Add("${coopPlanSnapshotPath}: PlanPublished DTO retains mutable/search type '$forbiddenPublishedType'")
     }
 }
 foreach ($forbiddenMutation in @(

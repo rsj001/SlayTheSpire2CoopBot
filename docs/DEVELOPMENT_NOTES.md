@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## Co-op Bot C3 Host 搜索桥（开发中，2026-09-29）
+
+Recorder 发布的新冻结根现在会取消旧搜索并启动有界联合 Beam；后台只持有冻结 `CombatRootSnapshot`、预算和取消令牌，搜索完成后从同一根 strict replay，过期 revision 的完成结果不会发布。结果在 Host 边界降维成 `PlanPublishedPayload`：路线、选择、逐 Actor 终态/战损、目标、药水、checkpoint 指纹和停止原因均为纯 DTO，不携带 Simulator、Player、live Model、`JointCombatSnapshot` 或 `PlanAction`。
+
+`COOP-BOT-HOST-SEARCH` / `4bdf976afd0c43c597fb9eb980b3b3e0` 在真实 Godot 无头进程加载两个 Mod，以四 Actor、1 HP 敌人的冻结根分别运行 DOP1/DOP4：两次均 strict replay，动作、终态、DTO 与展开数一致，证据为 `actions=1`、`expanded=37`、`checkpoints=1`，实例已删除。该门禁证明合成冻结根上的桥接确定性；真实联机 Host 根仍按计划作为可见四客户端 C3 前置证据，不以本次合成证据替代。
+
 ## Co-op Bot C2 只读 Recorder（开发中，2026-09-29）
 
 独立 CoopBot 新增 Host-only Recorder：保存生命周期事件提供的 `CombatState`，要求原版动作队列为空、executor idle、无原生选择、无 Bot 在途动作、roster 未变，并在连续两次完整指纹一致后才发布递增 RootRevision。发布时复用 CombatSolver 已验证的多 Actor 根捕获和 live/projected 严格对账，再逐类检查四人资源、五牌堆、Power 身份、药水/遗物/球/宠物、怪物、九条 RNG 与回合阶段。Recorder 不修改任何 live 战斗字段。

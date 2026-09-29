@@ -1,4 +1,5 @@
 using CoopBot.Capture;
+using CoopBot.Host;
 using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
@@ -9,6 +10,7 @@ namespace CoopBot.Runtime;
 internal sealed class CoopBotRuntime
 {
     private HostCombatRecorder? _hostRecorder;
+    private HostSearchCoordinator? _hostSearch;
 
     internal void BeginCombat(CombatState combat)
     {
@@ -18,13 +20,19 @@ internal sealed class CoopBotRuntime
         string combatIdentity = CombatManager.Instance.CurrentCombatId?.ToString()
             ?? throw new InvalidOperationException("Multiplayer combat has no CombatId.");
         _hostRecorder = new HostCombatRecorder(combat, combatIdentity, () => false);
+        _hostSearch = new HostSearchCoordinator(_hostRecorder);
     }
 
     internal void Poll()
-        => _hostRecorder?.Poll();
+    {
+        _hostRecorder?.Poll();
+        _hostSearch?.Poll();
+    }
 
     internal void StopCombat(string reason)
     {
+        _hostSearch?.Dispose();
+        _hostSearch = null;
         _hostRecorder?.Dispose(reason);
         _hostRecorder = null;
     }

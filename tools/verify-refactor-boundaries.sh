@@ -1945,6 +1945,8 @@ coop_recorder="$repository_root/coopbot/Capture/HostCombatRecorder.cs"
 coop_visibility="$repository_root/coopbot/Capture/HostVisibilityAudit.cs"
 coop_stable_gate="$repository_root/coopbot/Capture/StableRootGate.cs"
 coop_probe="$repository_root/coopbot/Diagnostics/CoopBotHeadlessProbe.cs"
+coop_host_search="$repository_root/coopbot/Host/HostSearchCoordinator.cs"
+coop_plan_snapshot="$repository_root/coopbot/Protocol/CoopPlanSnapshot.cs"
 require_fixed "$repository_root/CombatSolver.csproj" '<InternalsVisibleTo Include="CoopBot" />' \
     'CombatSolver missing narrow CoopBot internal bridge:'
 require_fixed "$coopbot_project" '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' \
@@ -1958,6 +1960,10 @@ done
 require_fixed "$coop_visibility" 'rngStreams == 9' 'CoopBot visibility audit no longer checks nine RNG streams:'
 require_fixed "$coop_stable_gate" 'RequiredMatchingObservations' 'CoopBot stable root gate missing repeated observation contract:'
 require_fixed "$coop_probe" 'AuditSyntheticRoot(CombatState combat)' 'CoopBot headless visibility probe missing:'
+require_fixed "$coop_probe" 'SearchSyntheticRoot(CombatState combat)' 'CoopBot headless search probe missing:'
+require_fixed "$coop_host_search" 'JointOfflineSearch.SolveBeam(' 'CoopBot Host search bridge missing:'
+require_fixed "$coop_host_search" 'JointStrictReplayVerifier.Verify(recorded.Root, searched)' 'CoopBot Host strict replay missing:'
+require_fixed "$coop_plan_snapshot" 'public sealed record PlanPublishedPayload(' 'CoopBot detached plan payload missing:'
 require_fixed "$repository_root/tools/run-unattended-test.ps1" '[switch]$IncludeCoopBot' \
     'Windows unattended launcher missing optional CoopBot snapshot:'
 require_fixed "$repository_root/tools/run-unattended-test.sh" 'add_option include-coop-bot 0 switch none' \
@@ -1971,6 +1977,15 @@ for forbidden in \
     'PowerCmd.' \
     'CardPileCmd.'; do
     forbid_fixed "$coop_recorder" "$forbidden" 'read-only CoopBot recorder mutates live combat:'
+done
+for forbidden in RunManager CombatManager CombatState Godot SolverController; do
+    forbid_fixed "$coop_host_search" "$forbidden" 'frozen CoopBot Host search worker owns live dependency:'
+done
+published_payload_declaration="$(sed -n '/public sealed record PlanPublishedPayload(/,/internal static class CoopPlanSnapshotFactory/p' "$coop_plan_snapshot")"
+for forbidden in CombatRootSnapshot JointCombatSnapshot PlanAction Player Creature Simulator; do
+    if grep -Eq "\\b${forbidden}\\b" <<<"$published_payload_declaration"; then
+        add_violation "$coop_plan_snapshot: PlanPublished DTO retains mutable/search type '$forbidden'"
+    fi
 done
 
 if ((${#violations[@]} > 0)); then
