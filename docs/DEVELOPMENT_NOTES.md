@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线联合搜索自动跨轮（2026-09-29）
+
+联合 BFS、DFS oracle、Beam 与 BFWS 不再把全员屏障当作最终搜索边界：共用稳定屏障归一化，完整执行玩家尾、Actor 子集额外回合或敌方侧、下一玩家侧，并把途中挂起选择附回最后一个 EndTurn 后从父屏障重试。只提供两名 Actor 的 EndTurn 固定前缀时，四种搜索均自动枚举下一轮第三动作且最优分数、动作序与状态键一致；BFS/Beam 首次证据 `runId=5efdea6df01d432585243ecb80ddf463`，补齐 BFWS 后最终 `runId=a7a3e70a570a47f682d48af93f195d09` Passed，实例均已删除。F3 至此关闭；生产单人候选/结果哨兵归最终 F12。
+
 ## 离线联合敌方 owner-only RNG（2026-09-29）
 
 Tough Egg 的 Hatch 登记为 owner-only 联合行动，完整既有单人后效只执行一次。两 Actor 夹具验证 Niche RNG 计数精确增加 1，怪物保持存活并恢复到新的最大生命；`COOP-MULTI-ACTOR-ROOT` 的 `runId=e65b79f63f514e7195d4a046157e8d4f` Passed，实例已删除。该代表关闭 RNG 按 Actor 倍增风险，但其余已支持特殊行动仍需完成分类清单。

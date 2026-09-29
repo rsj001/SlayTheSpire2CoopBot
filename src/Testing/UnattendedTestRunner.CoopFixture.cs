@@ -246,6 +246,37 @@ internal sealed partial class UnattendedTestRunner
                     throw new InvalidOperationException(
                         "联合跨回合固定前缀没有按 F7 生命周期由 BFS/DFS 严格继续。");
                 }
+                JointOfflineSearchRequest automaticCrossTurnRequest = new(
+                    [endActor0, endActor1],
+                    MaximumActions: 3,
+                    MaximumStates: 10_000);
+                JointOfflineSearchResult automaticBfs =
+                    JointOfflineSearch.SolveBreadthFirst(root, automaticCrossTurnRequest);
+                JointOfflineSearchResult automaticOracle =
+                    JointOfflineSearch.SolveDepthFirstOracle(root, automaticCrossTurnRequest);
+                JointOfflineSearchResult automaticBeam = JointOfflineSearch.SolveBeam(
+                    root,
+                    automaticCrossTurnRequest,
+                    beamWidth: 10_000);
+                JointOfflineSearchResult automaticBfws = JointOfflineSearch.SolveBfws(
+                    root,
+                    automaticCrossTurnRequest,
+                    maximumOpen: 10_000);
+                if (automaticBfs.Actions.Count != 3
+                    || automaticBfs.Actions[2].Turn != root.StartTurnNumber + 1
+                    || JointObjectiveScore.Compare(automaticBfs.Score, automaticOracle.Score) != 0
+                    || automaticBfs.Snapshot.StateKey != automaticOracle.Snapshot.StateKey
+                    || ComparePlanActions(automaticBfs.Actions, automaticOracle.Actions) != 0
+                    || JointObjectiveScore.Compare(automaticBeam.Score, automaticOracle.Score) != 0
+                    || automaticBeam.Snapshot.StateKey != automaticOracle.Snapshot.StateKey
+                    || ComparePlanActions(automaticBeam.Actions, automaticOracle.Actions) != 0
+                    || JointObjectiveScore.Compare(automaticBfws.Score, automaticOracle.Score) != 0
+                    || automaticBfws.Snapshot.StateKey != automaticOracle.Snapshot.StateKey
+                    || ComparePlanActions(automaticBfws.Actions, automaticOracle.Actions) != 0)
+                {
+                    throw new InvalidOperationException(
+                        "联合 BFS/Beam/BFWS 没有从屏障节点自动推进下一轮并与 DFS oracle 对齐。");
+                }
                 PlanAction actor0Potion = candidates.First(candidate =>
                     candidate.Action.Actor == new CombatActorId(0)
                     && candidate.Action.Kind == PlanActionKind.UsePotion).Action;

@@ -2298,11 +2298,14 @@ foreach ($text in @(
     }
 }
 $jointOfflineSearchPath = Join-Path $repositoryRoot 'src/Search/Coop/JointOfflineSearch.cs'
+$jointBfwsPath = Join-Path $repositoryRoot 'src/Search/Coop/JointOfflineSearch.Bfws.cs'
 foreach ($text in @(
     'internal sealed record JointOfflineSearchRequest(',
     'Node seed = ReplayFixedPrefix(root, request);',
     'private static Node ReplayFixedPrefix(',
     'JointActionTransition.Apply(simulator, turns, action, deaths)',
+    'private static IReadOnlyList<Node> ExpandBarrier(Node parent)',
+    'foreach (Node advanced in ExpandBarrier(node))',
     'action.Turn != turns.Turn + 1 || !turns.IsBarrierReached',
     'IReadOnlyList<PlanCardChoice> endTurnChoices = transitionChoices',
     'JointRoundTransition.CompletePlayerSide(',
@@ -2313,6 +2316,10 @@ foreach ($text in @(
     if (-not (Select-String -LiteralPath $jointOfflineSearchPath -SimpleMatch $text -Quiet)) {
         $violations.Add("Joint fixed-prefix search missing F3c boundary: $text")
     }
+}
+if (-not (Select-String -LiteralPath $jointBfwsPath `
+        -SimpleMatch 'foreach (Node advanced in ExpandBarrier(node))' -Quiet)) {
+    $violations.Add('Joint BFWS no longer shares barrier expansion.')
 }
 foreach ($text in @(
     'combat.GetPotionAtSlot(player, slot)',

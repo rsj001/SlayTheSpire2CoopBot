@@ -89,6 +89,13 @@ internal static partial class JointOfflineSearch
                 continue;
             }
 
+            if (node.Turns.IsBarrierReached)
+            {
+                foreach (Node advanced in ExpandBarrier(node))
+                    open.Enqueue(advanced);
+                continue;
+            }
+
             foreach (JointActionCandidate candidate in JointActionExpander.Expand(node.Simulator, node.Turns))
             {
                 if (!request.EffectivePotionPolicy.Allows(candidate.Action, node.Actions))
@@ -158,6 +165,11 @@ internal static partial class JointOfflineSearch
                 {
                     if (request.EffectivePotionPolicy.IsBoundaryEligible(node.Actions))
                         best = SelectBetter(root, best, snapshot, node.Actions, expanded);
+                    continue;
+                }
+                if (node.Turns.IsBarrierReached)
+                {
+                    expandable.AddRange(ExpandBarrier(node));
                     continue;
                 }
                 expandable.Add(node);
@@ -287,6 +299,18 @@ internal static partial class JointOfflineSearch
                     best = SelectBetter(root, best, snapshot, actions, expanded);
                 return;
             }
+            if (turns.IsBarrierReached)
+            {
+                foreach (Node advanced in ExpandBarrier(node))
+                {
+                    Visit(
+                        advanced.Simulator,
+                        advanced.ProcessedEnemyDeaths,
+                        advanced.Turns,
+                        advanced.Actions);
+                }
+                return;
+            }
             foreach (JointActionCandidate candidate in JointActionExpander.Expand(simulator, turns))
             {
                 if (!request.EffectivePotionPolicy.Allows(candidate.Action, actions))
@@ -353,8 +377,94 @@ internal static partial class JointOfflineSearch
 
     private static bool IsBoundary(Node node, int maximumActions)
         => node.Simulator.TerminalStamp.HasValue
-            || node.Turns.IsBarrierReached
             || node.Actions.Count >= maximumActions;
+
+    private static IReadOnlyList<Node> ExpandBarrier(Node parent)
+    {
+        int carrierIndex = -1;
+        for (int index = parent.Actions.Count - 1; index >= 0; index--)
+        {
+            PlanAction action = parent.Actions[index];
+            if (action.Turn != parent.Turns.Turn)
+                break;
+            if (action.Kind == PlanActionKind.EndTurn)
+            {
+                carrierIndex = index;
+                break;
+            }
+        }
+        if (carrierIndex < 0)
+            throw new InvalidOperationException("联合屏障没有本轮 EndTurn 动作承载过渡选择。");
+
+        Queue<(IReadOnlyList<PlanAction> Actions, int Depth)> open = new();
+        open.Enqueue((parent.Actions, 0));
+        List<Node> results = [];
+        while (open.TryDequeue(out var item))
+        {
+            CombatPredictionSimulator simulator = parent.Simulator.Fork();
+            ForkableSet<uint> deaths = parent.ProcessedEnemyDeaths.Fork();
+            PlanAction carrier = item.Actions[carrierIndex];
+            IReadOnlyList<PlanCardChoice> transitionChoices = carrier.TurnStartChoices ?? [];
+            try
+            {
+                IReadOnlyList<CombatActorId> extraTurnActors = JointRoundTransition.CompletePlayerSide(
+                    simulator,
+                    parent.Turns,
+                    deaths,
+                    transitionChoices.Where(static choice =>
+                        choice.Timing == PlanChoiceTiming.PlayerTurnEnd).ToArray());
+                if (simulator.TerminalStamp.HasValue)
+                {
+                    results.Add(new Node(simulator, deaths, parent.Turns, item.Actions));
+                    continue;
+                }
+                if (extraTurnActors.Count == 0)
+                    JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+                if (simulator.TerminalStamp.HasValue)
+                {
+                    results.Add(new Node(simulator, deaths, parent.Turns, item.Actions));
+                    continue;
+                }
+                JointTurnState next = JointRoundTransition.StartBasicPlayerSide(
+                    simulator,
+                    parent.Turns,
+                    deaths,
+                    transitionChoices.Where(static choice =>
+                        choice.Timing != PlanChoiceTiming.PlayerTurnEnd).ToArray(),
+                    extraTurnActors);
+                results.Add(new Node(simulator, deaths, next, item.Actions));
+            }
+            catch (JointPendingActionChoiceException pending)
+            {
+                if (item.Depth >= 16)
+                    throw new InvalidOperationException("联合跨轮选择深度超过 16。", pending);
+                JointPendingChoiceFrame frame = pending.Frame;
+                IReadOnlyList<PlanCardChoice> branches = CardChoiceSupport.BuildChoices(
+                    frame.Spec,
+                    static _ => string.Empty,
+                    maxPileBranches: 32,
+                    maxHandBranches: 32);
+                if (branches.Count == 0)
+                    throw new InvalidOperationException("联合跨轮选择没有合法分支。", pending);
+                foreach (PlanCardChoice branch in branches)
+                {
+                    PlanCardChoice owned = branch with
+                    {
+                        Actor = frame.OwnerActor,
+                        SourceId = frame.SourceId,
+                        ContextId = frame.ContextId,
+                        Timing = frame.Timing,
+                    };
+                    List<PlanCardChoice> choices = [.. carrier.TurnStartChoices ?? []];
+                    choices.Add(owned);
+                    PlanAction[] actions = item.Actions.ToArray();
+                    actions[carrierIndex] = carrier with { TurnStartChoices = choices.AsReadOnly() };
+                    open.Enqueue((actions, item.Depth + 1));
+                }
+            }
+        }
+        return results;
+    }
 
     private static JointOfflineSearchResult SelectBetter(
         CombatRootSnapshot root,

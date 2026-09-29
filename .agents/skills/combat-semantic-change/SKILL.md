@@ -147,3 +147,4 @@ writeLive 和 writePredicted，复用 store 的 Fork context。状态描述按�
 - 离线联合敌方行动须把逐玩家目标效果与 owner/global 一次性前置或后置显式分类；不能为每个 Actor 重复调用同时包含两类效果的完整 move。未分类特殊行动继续拒绝；owner-only 代表只执行一次，mixed 必须保持原版前置→逐 Actor 目标→后置顺序，召唤、owner 自移除和 RNG 消耗不能按 Actor 倍增。
 - 联合敌方复活后必须像单人敌方循环一样移除已处理死亡 CombatId，否则该敌人下一次死亡的 Power/召唤尾部会被错误跳过；逃跑则从活动 roster 和已知敌人集合移除并进入逃跑集合，不伪造成死亡。
 - 多人额外回合是 Actor 子集而不是全队新回合：只对子集增加 TurnNumber、执行玩家开始生命周期和开放动作，其他存活 Actor 保持结束；共享 RoundNumber 不变并跳过敌方侧，来源在当前回合尾后按 owner 各消费一次。
+- 联合搜索的屏障归一化必须由 BFS、DFS oracle、Beam/BFWS 共用：玩家尾或下一玩家侧挂起选择时，从未修改的屏障父节点 Fork，把选择附着到本轮承载 EndTurn 后重试整段；禁止让普通搜索只在固定前缀路径跨轮，或从部分结算状态继续。

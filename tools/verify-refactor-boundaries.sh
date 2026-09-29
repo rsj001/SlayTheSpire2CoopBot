@@ -1806,11 +1806,14 @@ do
         'joint extra-turn subset boundary missing:'
 done
 joint_offline_search="$repository_root/src/Search/Coop/JointOfflineSearch.cs"
+joint_bfws="$repository_root/src/Search/Coop/JointOfflineSearch.Bfws.cs"
 for token in \
     'internal sealed record JointOfflineSearchRequest(' \
     'Node seed = ReplayFixedPrefix(root, request);' \
     'private static Node ReplayFixedPrefix(' \
     'JointActionTransition.Apply(simulator, turns, action, deaths)' \
+    'private static IReadOnlyList<Node> ExpandBarrier(Node parent)' \
+    'foreach (Node advanced in ExpandBarrier(node))' \
     'action.Turn != turns.Turn + 1 || !turns.IsBarrierReached' \
     'IReadOnlyList<PlanCardChoice> endTurnChoices = transitionChoices' \
     'JointRoundTransition.CompletePlayerSide(' \
@@ -1819,6 +1822,8 @@ for token in \
     'JointRoundTransition.StartBasicPlayerSide('; do
     require_fixed "$joint_offline_search" "$token" 'joint fixed-prefix search missing F3c boundary:'
 done
+require_fixed "$joint_bfws" 'foreach (Node advanced in ExpandBarrier(node))' \
+    'joint BFWS no longer shares barrier expansion:'
 for token in \
     'combat.GetPotionAtSlot(player, slot)' \
     'combat.IsPotionAvailable(player, slot)' \

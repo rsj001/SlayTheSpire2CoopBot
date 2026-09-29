@@ -46,6 +46,12 @@ internal static partial class JointOfflineSearch
                     best = SelectBetter(root, best, snapshot, node.Actions, expanded);
                 continue;
             }
+            if (node.Turns.IsBarrierReached)
+            {
+                foreach (Node advanced in ExpandBarrier(node))
+                    Enqueue(advanced);
+                continue;
+            }
             foreach (JointActionCandidate candidate in JointActionExpander.Expand(
                          node.Simulator,
                          node.Turns))

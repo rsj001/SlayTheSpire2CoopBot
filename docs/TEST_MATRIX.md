@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 联合搜索自动跨轮（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：固定前缀仅含 Actor0/1 的 EndTurn，BFS、Beam、BFWS 与不去重 DFS oracle 自行完成屏障生命周期并枚举下一轮第三动作；四者最优分数、完整动作序和状态键一致，第三动作 Turn 为根 Turn `+1`；最终 `runId=a7a3e70a570a47f682d48af93f195d09`，Passed，实例已删除。此前 BFS/Beam 子集 `runId=5efdea6df01d432585243ecb80ddf463` Passed。
+- 该证据关闭普通搜索只能靠固定前缀跨轮的缺口；生产单人候选/结果等价归 F12，Linux 和可见 Steam 未运行。
+
 ## 联合敌方 owner-only Hatch RNG（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：两 Actor Tough Egg 根强制 Hatch，Niche RNG 计数只增加 1，怪物存活且当前 HP 等于新的最大 HP；`runId=e65b79f63f514e7195d4a046157e8d4f`，Passed，实例已删除。
