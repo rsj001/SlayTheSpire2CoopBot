@@ -23,6 +23,8 @@ namespace CombatSolver;
 
 internal sealed partial class UnattendedTestRunner
 {
+    private static string _coopWorkloadEvidence = "JointWorkload:NotRun";
+
     private static void AssertCoopMultiActorRoots(CombatState source)
     {
         AssertActorCount(2);
@@ -44,6 +46,7 @@ internal sealed partial class UnattendedTestRunner
         AssertOwnerOnlyEnemyRng(source);
         AssertCompleteStrictReplay(source, 2);
         AssertCompleteStrictReplay(source, 4);
+        AssertFourActorBoundedWorkload(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -961,6 +964,63 @@ internal sealed partial class UnattendedTestRunner
             changed);
         if (difference == null || !difference.StartsWith("actor[0]", StringComparison.Ordinal))
             throw new InvalidOperationException("联合 strict diff 未定位首个 Actor 字段差异。");
+    }
+
+    private static void AssertFourActorBoundedWorkload(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(source, 4);
+        JointOfflineSearchRequest request = JointOfflineSearchRequest.Default(
+            maximumActions: 3,
+            maximumStates: 256);
+        long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+        System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        JointOfflineSearchResult serial = JointOfflineSearch.SolveBeam(
+            root,
+            request,
+            beamWidth: 32,
+            degreeOfParallelism: 1);
+        stopwatch.Stop();
+        long coordinatorAllocated = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+        JointOfflineSearchResult repeated = JointOfflineSearch.SolveBeam(
+            root,
+            request,
+            beamWidth: 32,
+            degreeOfParallelism: 1);
+        JointOfflineSearchResult parallel = JointOfflineSearch.SolveBeam(
+            root,
+            request,
+            beamWidth: 32,
+            degreeOfParallelism: 4);
+        JointOfflineSearchResult bfws = JointOfflineSearch.SolveBfws(
+            root,
+            request,
+            maximumOpen: 64);
+        if (serial.ExpandedStates > request.MaximumStates
+            || repeated.ExpandedStates > request.MaximumStates
+            || parallel.ExpandedStates > request.MaximumStates
+            || bfws.ExpandedStates > request.MaximumStates)
+        {
+            throw new InvalidOperationException("四 Actor 有界搜索超过共享状态预算。");
+        }
+        foreach (JointOfflineSearchResult candidate in new[] { repeated, parallel })
+        {
+            if (JointObjectiveScore.Compare(candidate.Score, serial.Score) != 0
+                || !candidate.Score.HpLostByActor.SequenceEqual(serial.Score.HpLostByActor)
+                || candidate.Snapshot.StateKey != serial.Snapshot.StateKey
+                || ComparePlanActions(candidate.Actions, serial.Actions) != 0
+                || candidate.ExpandedStates != serial.ExpandedStates
+                || candidate.Termination != serial.Termination)
+            {
+                throw new InvalidOperationException(
+                    "四 Actor 固定预算 Beam 的重复或并行结果不确定。 ");
+            }
+        }
+        _coopWorkloadEvidence =
+            $"JointWorkload:Actors=4:Actions=3:Budget={request.MaximumStates}:" +
+            $"BeamExpanded={serial.ExpandedStates}:BeamStop={serial.Termination}:" +
+            $"BfwsExpanded={bfws.ExpandedStates}:BfwsStop={bfws.Termination}:" +
+            $"BeamElapsedMs={stopwatch.ElapsedMilliseconds}:" +
+            $"CoordinatorAllocatedBytes={coordinatorAllocated}";
     }
 
     private static void AssertBasicNextPlayerSide(CombatRootSnapshot root)

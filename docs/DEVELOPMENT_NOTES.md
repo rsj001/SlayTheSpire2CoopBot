@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 四 Actor 有界搜索工作量（2026-09-29）
+
+四 Actor 三动作固定根使用 256 状态硬预算与 Beam 宽 32/BFWS OPEN 64：Beam 展开 97、BFWS 展开 123，均 `Completed`；串行重复与 4 lane 的分数、逐 Actor 战损、动作、状态键、展开数和停止原因一致。首个串行 Beam 为 818 ms，协调线程累计分配差值 231,792,720 bytes；这只记录 headless 固定夹具工作量，不代表峰值内存、FPS 或可见 Steam 收益。`runId=3ba63f51cc0c4fb7a35a1da4b7e690fb` Passed，实例已删除。F11 未引入动作交换或无界队列。
+
 ## 离线联合 strict replay（2026-09-29）
 
 联合计划回放不再在跨轮时只增加 turn，而是从冻结根完整执行玩家尾、敌方侧和下一玩家侧，并保存逐动作快照。新的 strict verifier 将搜索增量终态与根级重放终态按联合阶段、逐 Actor 投影、完整 continuation 和状态键比较，失败报告动作与首字段并停止。2/4 Actor 的一步完整致死路线及故意 Actor0 Block 扰动最终通过，`runId=bb8330ee794148e2b59319b970fc65a9`。首轮 `6d28c4399b714e368778ae67ee370be9` 暴露 Soul Siphon owner 收尾重复 target，次轮 `6c73ac0f888144b5b669345718f2ca4b` 暴露数组引用假差异，均已修复且实例删除。该 actual/simulated 对照属于离线权威 transition 与根级 replay，不表示真实多人客户端已部署。

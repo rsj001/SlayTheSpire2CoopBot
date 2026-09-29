@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 四 Actor 有界工作量与确定性（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：四 Actor、三动作、状态预算 256；Beam 宽 32 展开 97、BFWS OPEN 64 展开 123，均 `Completed`。同一 Beam 串行重复与 4 lane 的分数、逐 Actor 战损向量、动作序、状态键、展开数和停止原因一致；`runId=3ba63f51cc0c4fb7a35a1da4b7e690fb` Passed，实例已删除。
+- 首个串行 Beam 818 ms、当前协调线程累计分配差值 231,792,720 bytes。仅作为 headless 工作量记录；未测峰值快照存活、可见帧时间或 FPS，未运行可见 Steam/WSL。
+
 ## 联合 2/4 Actor strict replay（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：分别建立 2/4 Actor、敌人 1 HP 的完整战斗，Beam 找到一步终局；`JointPlanReplayer` 从同一根重放后，联合 Turn/Phase、逐 Actor 投影、完整 continuation、状态键与终局完全一致。故意将 Actor0 Block `+1` 后，首差异稳定定位 `actor[0]`；最终 `runId=bb8330ee794148e2b59319b970fc65a9` Passed，实例已删除。

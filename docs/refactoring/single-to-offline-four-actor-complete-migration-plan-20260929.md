@@ -21,7 +21,7 @@
 | F8 联合终局目标 | 已完成 | 终局边界、存活、战损向量、药水/保命资源、成长、偷窃、回合、动作及稳定动作序通过；单人排序未改 |
 | F9 联合 Beam/BFWS | 已完成 | F9a Beam/转置、F9b 保路、F9c 固定 lane、F9d 有界 BFWS 与 2/4 Actor oracle 全部通过 |
 | F10 strict replay 与差分 | 已完成 | 2/4 Actor 完整致死搜索路线从同根逐动作回放，完整联合状态 strict diff 与首差异诊断通过 |
-| F11 性能与确定性 | 未开始 | - |
+| F11 性能与确定性 | 已完成 | 四 Actor 三动作固定预算：Beam/BFWS 有界完成，串行重复/4 lane 完全确定；记录实际工作量、耗时与分配 |
 | F12 最终门禁 | 未开始 | - |
 
 ## 1. 当前基线
@@ -398,6 +398,13 @@
 - 取消和异常无快照泄漏；
 - 搜索在状态上限、节点上限和时间上限内稳定结束；
 - 性能结论区分 headless 工作量和可见 Steam 性能。
+
+完成证据：
+
+- 四 Actor、三动作、共享状态预算 256 的固定根上，Beam 展开 97 个状态并 `Completed`，BFWS 展开 123 个状态并 `Completed`，均未超过请求硬上限。
+- 同一 Beam 串行重复及 4 lane 运行的分数、逐 Actor 战损向量、完整动作序、状态键、展开数和停止原因逐项一致；既有预取消及 lane 排空合同继续由 F9c 覆盖。
+- 首次串行 Beam 实测 818 ms，协调线程 `GC.GetAllocatedBytesForCurrentThread` 差值 231,792,720 bytes。该数值包含测试进程内该调用的累计分配，只作为固定夹具工作量基线，不外推峰值驻留、FPS 或可见 Steam 性能。
+- `COOP-MULTI-ACTOR-ROOT` `runId=3ba63f51cc0c4fb7a35a1da4b7e690fb` Passed，实例已删除；请求仍使用既有有界 Beam frontier、BFWS OPEN、共享状态预算和取消令牌，没有新增无界队列或扩大预算。
 
 ### F12：四 Actor 离线完成门禁
 
