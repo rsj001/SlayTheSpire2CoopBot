@@ -647,7 +647,10 @@ internal sealed partial class SimulatedCombatState
             return 0;
         }
         bool instanced = incoming.InstanceType == MegaCrit.Sts2.Core.Entities.Powers.PowerInstanceType.Instanced;
-        if (instanced || GetAmount<T>(target) == 0)
+        bool isNewApplication = instanced || GetAmount<T>(target) == 0;
+        if (isNewApplication)
+            amount = ScaleNewEnemyPowerForMultiplayer(incoming, target, amount, applier);
+        if (isNewApplication)
             beforeApplied?.Invoke(amount);
         PowerModel simulated;
         if (instanced)
@@ -693,6 +696,28 @@ internal sealed partial class SimulatedCombatState
             PhantomBladesPowerMirrors.AfterApplied(phantom, _predictionState
                 ?? throw new InvalidOperationException("Phantom blades requires attached branch card state."));
         return applied;
+    }
+
+    private int ScaleNewEnemyPowerForMultiplayer(
+        PowerModel power,
+        Creature target,
+        int amount,
+        Creature? applier)
+    {
+        if (Players.Count <= 1
+            || (!target.IsPrimaryEnemy && !target.IsSecondaryEnemy)
+            || !power.ShouldScaleInMultiplayer)
+        {
+            return amount;
+        }
+
+        decimal scaled = power.GetScaledAmountForMultiplayer(
+            this,
+            applier,
+            amount,
+            target,
+            CurrentPowerCardSource);
+        return (int)scaled;
     }
 
     public void ApplyPower(Type powerType, Creature target, int amount, Creature? applier = null)
@@ -886,8 +911,12 @@ internal sealed partial class SimulatedCombatState
         {
             return;
         }
+        bool instanced = incoming.InstanceType == MegaCrit.Sts2.Core.Entities.Powers.PowerInstanceType.Instanced;
+        bool isNewApplication = instanced || GetAmount<T>(owner) == 0;
+        if (isNewApplication)
+            amount = ScaleNewEnemyPowerForMultiplayer(incoming, target, amount, applier);
         PowerModel simulated;
-        if (incoming.InstanceType == MegaCrit.Sts2.Core.Entities.Powers.PowerInstanceType.Instanced)
+        if (instanced)
         {
             simulated = incoming;
             (_addedPowerInstances ??= []).Add(simulated);

@@ -65,6 +65,13 @@ internal sealed partial class UnattendedTestRunner
                 runner._completedChecks.Add(
                     "MultiplayerIdentity:SourceActor:DecisionActor:Applier:Target:ImitationPlayerTarget:CardOwner:InterceptCovering:CacophonyCounter:BeaconForkBoundary:SoulboundForkBoundary:ForkIsolation");
             }
+            if (request.ScenarioId == "COOP-MULTIPLAYER-SCALING")
+            {
+                runner.SetStage("coop_multiplayer_scaling");
+                AssertMultiplayerPowerScaling(scenario.CombatState);
+                runner._completedChecks.Add(
+                    "MultiplayerScaling:ActorCount2:ActorCount3:ActorCount4:PrimaryEnemy:SecondaryEnemy:PlayerUnscaled:NewApplicationOnly:Artifact:Plating:Skittish:Slippery:CurlUp:Flutter:Zero:Negative");
+            }
             if (request.ScenarioId == "COOP-JOINT-OBJECTIVE")
             {
                 runner.SetStage("coop_joint_objective");

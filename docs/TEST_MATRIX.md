@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 原版多人语义 M3 Power 缩放入口（2026-09-29）
+
+- `COOP-MULTIPLAYER-SCALING`：2/3/4 Actor 分别验证主敌人和带 `MinionPower` 的次要敌人；Artifact、Plating、Skittish、Slippery、CurlUp、Flutter 的首次应用量与原版虚方法结果一致，玩家目标保持原量，已有 Artifact 再叠加只增加请求量，并覆盖零/负数。最终 `runId=c6781d0366144ab9a06199cb4e08114d` Passed，fixture 阶段 300 ms，实例已删除。
+- 多人目录专项 verify 发现 13 个已核验 Power 缩放相关类型、0 个缺失、0 个新增未核验覆写；Release 构建 0 警告/0 错误。M3 的 HP/格挡/生成池最低证据尚未在本条声称完成；未启动可见 Steam 或 Linux/WSL。
+
 ## 原版多人语义 M2 身份与私有状态（2026-09-29）
 
 - `COOP-MULTIPLAYER-IDENTITY`：SourceActor 与 DecisionActor 独立；Applier、Target、ImitationLearning PlayerTarget、CardOwner、Intercept Covering、Cacophony 计数分别在兄弟 Fork 修改后改变联合状态，父 Fork 不变；Beacon/Soulbound 防重入事务为真时 Fork 稳定拒绝。最终 `runId=810a49aa1718477b881656c3cac37a19` Passed，fixture 阶段 260 ms，实例已删除。

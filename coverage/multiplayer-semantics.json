@@ -589,5 +589,7 @@
   "missingCards": [],
   "staleCards": [],
   "exactMirrorMismatches": [],
+  "missingPowerScalingTypes": [],
+  "unverifiedPowerScalingTypes": [],
   "isCurrent": true
 }

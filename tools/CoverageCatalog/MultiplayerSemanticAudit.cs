@@ -6,6 +6,23 @@ using MegaCrit.Sts2.Core.Models;
 
 internal static class MultiplayerSemanticAudit
 {
+    private static readonly string[] VerifiedPowerScalingTypes =
+    [
+        "MegaCrit.Sts2.Core.Models.Powers.ArtifactPower",
+        "MegaCrit.Sts2.Core.Models.Powers.BufferPower",
+        "MegaCrit.Sts2.Core.Models.Powers.CurlUpPower",
+        "MegaCrit.Sts2.Core.Models.Powers.FlutterPower",
+        "MegaCrit.Sts2.Core.Models.Powers.HardenedShellPower",
+        "MegaCrit.Sts2.Core.Models.Powers.PlatingPower",
+        "MegaCrit.Sts2.Core.Models.Powers.PlowPower",
+        "MegaCrit.Sts2.Core.Models.Powers.RampartPower",
+        "MegaCrit.Sts2.Core.Models.Powers.ReattachPower",
+        "MegaCrit.Sts2.Core.Models.Powers.RegenPower",
+        "MegaCrit.Sts2.Core.Models.Powers.ShriekPower",
+        "MegaCrit.Sts2.Core.Models.Powers.SkittishPower",
+        "MegaCrit.Sts2.Core.Models.Powers.SlipperyPower",
+    ];
+
     public static MultiplayerSemanticCoverageCatalog Build(
         string combatSolverVersion,
         string gameVersion)
@@ -44,6 +61,15 @@ internal static class MultiplayerSemanticAudit
             .Where(static entry => entry.ShouldScale || entry.OverridesScaleFlag || entry.OverridesAmount)
             .OrderBy(static entry => entry.Type, StringComparer.Ordinal)
             .ToArray();
+        string[] discoveredScalingTypes = powerScaling.Select(static entry => entry.Type).ToArray();
+        string[] missingPowerScalingTypes = VerifiedPowerScalingTypes
+            .Except(discoveredScalingTypes, StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        string[] unverifiedPowerScalingTypes = discoveredScalingTypes
+            .Except(VerifiedPowerScalingTypes, StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
 
         MultiplayerPotionTargetEntry[] crossPlayerPotions = ModelDb.All
             .OfType<PotionModel>()
@@ -79,7 +105,9 @@ internal static class MultiplayerSemanticAudit
             crossPlayerPotions,
             missingCards,
             staleCards,
-            exactMirrorMismatches);
+            exactMirrorMismatches,
+            missingPowerScalingTypes,
+            unverifiedPowerScalingTypes);
     }
 
     private static Type[] ReadExplicitMultiplayerOnPlayMirrors()
@@ -126,13 +154,17 @@ internal sealed record MultiplayerSemanticCoverageCatalog(
     IReadOnlyList<MultiplayerPotionTargetEntry> CrossPlayerPotions,
     IReadOnlyList<string> MissingCards,
     IReadOnlyList<string> StaleCards,
-    IReadOnlyList<string> ExactMirrorMismatches)
+    IReadOnlyList<string> ExactMirrorMismatches,
+    IReadOnlyList<string> MissingPowerScalingTypes,
+    IReadOnlyList<string> UnverifiedPowerScalingTypes)
 {
     public bool IsCurrent =>
         Cards.Count == 37
         && MissingCards.Count == 0
         && StaleCards.Count == 0
-        && ExactMirrorMismatches.Count == 0;
+        && ExactMirrorMismatches.Count == 0
+        && MissingPowerScalingTypes.Count == 0
+        && UnverifiedPowerScalingTypes.Count == 0;
 }
 
 internal sealed record MultiplayerCardCoverageEntry(

@@ -116,6 +116,10 @@ if (multiplayerSemanticOnly)
             Console.Error.WriteLine($"Stale catalog card: {type}");
         foreach (string type in multiplayerOnlyCatalog.ExactMirrorMismatches)
             Console.Error.WriteLine($"Exact mirror classification mismatch: {type}");
+        foreach (string type in multiplayerOnlyCatalog.MissingPowerScalingTypes)
+            Console.Error.WriteLine($"Missing verified multiplayer power scaling type: {type}");
+        foreach (string type in multiplayerOnlyCatalog.UnverifiedPowerScalingTypes)
+            Console.Error.WriteLine($"Unverified multiplayer power scaling override: {type}");
         return 13;
     }
     return 0;

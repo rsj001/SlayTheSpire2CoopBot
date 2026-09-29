@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## 原版多人语义 M3 Power 缩放入口（2026-09-29）
+
+模拟 Power 首次应用现在复刻原版 `PowerCmd.Apply` 的多人缩放位置：给予/接收修正与 Artifact 消耗之后、`BeforeApplied` 之前，仅主敌人和次要敌人进入 `ShouldScaleInMultiplayer` / `GetScaledAmountForMultiplayer`；玩家目标不缩放，已存在 Power 的普通叠加不重复缩放，小数结果与原版一样截断为整数。cardSource 沿现有卡牌 Power 作用域传入，默认缩放因此继续读取分支 `Players`、`Encounter`、Act 和 `MultiplayerScalingModel`，无需另建近似公式。
+
+`COOP-MULTIPLAYER-SCALING` 在 2/3/4 Actor 的主、次敌人上覆盖 Artifact、Plating、Skittish、Slippery、CurlUp、Flutter，并检查玩家目标、二次叠加、零与负数边界；`runId=c6781d0366144ab9a06199cb4e08114d` Passed，实例已删除。CoverageCatalog 将当前 13 个相关原版类型固定为已核验集合，新增或消失的覆写都会令多人专项门禁失败。M3 的敌人 HP/格挡与生成池证据仍在继续，本条不是 M3 完成声明。
+
 ## 原版多人语义 M2 身份与私有状态（2026-09-29）
 
 计划动作与选择新增不改变序列化形态的 `SourceActor` / `DecisionActor` 明确身份；联合 pending frame 同时暴露来源与决策 Actor，不再要求调用者把选择 Owner 猜成动作 Actor。多人 `ContinuationStamp` 补入 Power 的 Owner、类型、`Applier`、`Target`，并记录 `ImitationLearningPower.PlayerTarget`；该段只在 ActorCount>1 出现，单人 continuation 文本不变。
