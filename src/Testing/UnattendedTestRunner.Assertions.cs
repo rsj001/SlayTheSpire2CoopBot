@@ -56,7 +56,7 @@ internal sealed partial class UnattendedTestRunner
                 runner.AssertMultiplayerNativeDifferentialSubstrate(scenario.CombatState);
                 await runner.AssertMultiplayerNativeSimpleActionDifferentialAsync(scenario.CombatState);
                 runner._completedChecks.Add(
-                    "MultiplayerNativeDiff:ActorCount2:ActorCount3:ActorCount4:AllActorRootProjection:IndependentForks:RootIsolation:M4TenCardsBaseUpgrade:M4AllAlliesFourActorDead:M4DemonicShieldLethal:KnockdownEnemyHpPowerGap:TheBallOwnerPileDamageGap");
+                    "MultiplayerNativeDiff:ActorCount2:ActorCount3:ActorCount4:AllActorRootProjection:IndependentForks:RootIsolation:M4TenCardsBaseUpgrade:M4AllAlliesFourActorDead:M4DemonicShieldLethal:M5FifteenCardsBaseUpgrade:M5InitialPowerGraph:TheBallOwnerPileDamageGap");
             }
             if (request.ScenarioId == "COOP-MULTIPLAYER-IDENTITY")
             {

@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 原版多人语义 M5 Power 初始应用（进行中，2026-09-29）
+
+M5 的 15 张牌已先关闭 OnPlay 入口：普通/升级版分别与原版动作做全状态差分。该批不是生命周期完成声明，目录保持 `UnderTest / ExactMirror`。差分补齐了 Coordinate/Fade 的临时属性伴随 Power、Intercept 的 Covered/Intercept 双实例与 covering 引用、Tank 对存活队友施加 Guarded；TagTeam/Knockdown 从通用 spec 移到精确 mirror，避免同一 Power 双结算。阶段性 `COOP-MULTIPLAYER-NATIVE-DIFF` / `920231b15d1447d09379fed727dbf115` Passed，M5 段尚待触发、消费、移除、重获和跨回合验证。
+
 ## 原版多人语义 M4 直接结算牌（2026-09-29）
 
 `BelieveInYou`、`GangUp`、`Lift`、`Mimic`、`Rally`、`Blaze`、`DemonicShield`、`Constellation`、`EnergySurge`、`OneForAll` 已全部使用显式 OnPlay mirror，并从目录的 Missing/Generic/Partial/UnderTest 转为 Verified。精确实现保持 Recipient 能量、队友本回合攻击历史、目标格挡、出牌者复制格挡、存活队友遍历、Power applier/cardSource、抽牌/能量/格挡顺序以及所有玩家 Power 应用。

@@ -5,11 +5,11 @@
   "cards": [
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.BeaconOfHope",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.BelieveInYou",
@@ -37,19 +37,19 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Cacophony",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Concoct",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Constellation",
@@ -61,11 +61,11 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Coordinate",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.DemonicShield",
@@ -85,19 +85,19 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Fade",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Flanking",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.GangUp",
@@ -117,11 +117,11 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.HammerTime",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Hibernate",
@@ -158,18 +158,18 @@
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Intercept",
       "status": "UnderTest",
-      "onPlaySupport": "Partial",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Knockdown",
       "status": "UnderTest",
-      "onPlaySupport": "Partial",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Largesse",
@@ -198,10 +198,10 @@
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Midnight",
       "status": "UnderTest",
-      "onPlaySupport": "GenericCandidate",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Mimic",
@@ -245,35 +245,35 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Sneaky",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Soulbound",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.TagTeam",
       "status": "UnderTest",
-      "onPlaySupport": "GenericCandidate",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Tank",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.TheBall",
@@ -293,11 +293,11 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Underworld",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M5",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     }
   ],
   "powerScaling": [

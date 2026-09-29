@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Powers;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.Common.Mirrors;
 using CombatSolver.Engine.InCombat.Simulation;
@@ -99,6 +100,32 @@ internal static partial class CardOnPlayMirrors
         registry.Register<Blaze>(BespokeCardMirrors.BlazeOnPlay);
         registry.Register<DemonicShield>(BespokeCardMirrors.DemonicShieldOnPlay);
         registry.Register<EnergySurge>(BespokeCardMirrors.EnergySurgeOnPlay);
+        registry.Register<Coordinate>(BespokeCardMirrors.CoordinateOnPlay);
+        registry.Register<Intercept>(BespokeCardMirrors.InterceptOnPlay);
+        registry.Register<TagTeam>(BespokeCardMirrors.TagTeamOnPlay);
+        registry.Register<Knockdown>(BespokeCardMirrors.KnockdownOnPlay);
+        registry.Register<Midnight>(GeneralCardMirrors.GeneralAttackOnPlay);
+        registry.Register<BeaconOfHope>(static (card, context) =>
+            BespokeCardMirrors.SimpleSelfPowerOnPlay<BeaconOfHopePower>(card, context));
+        registry.Register<Tank>(BespokeCardMirrors.TankOnPlay);
+        registry.Register<Concoct>(static (card, context) =>
+            BespokeCardMirrors.SimpleTargetPowerOnPlay<ConcoctPower>(
+                card, context, card.DynamicVars["ConcoctPower"].IntValue));
+        registry.Register<Fade>(BespokeCardMirrors.FadeOnPlay);
+        registry.Register<Flanking>(static (card, context) =>
+            BespokeCardMirrors.SimpleTargetPowerOnPlay<FlankingPower>(card, context, 2));
+        registry.Register<Sneaky>(static (card, context) =>
+            BespokeCardMirrors.SimpleSelfPowerOnPlay<SneakyPower>(
+                card, context, card.DynamicVars["SneakyPower"].IntValue));
+        registry.Register<HammerTime>(static (card, context) =>
+            BespokeCardMirrors.SimpleSelfPowerOnPlay<HammerTimePower>(card, context));
+        registry.Register<Soulbound>(static (card, context) =>
+            BespokeCardMirrors.SimpleTargetPowerOnPlay<SoulboundPower>(card, context, 1));
+        registry.Register<Underworld>(static (card, context) =>
+            BespokeCardMirrors.SimpleSelfPowerOnPlay<UnderworldPower>(card, context));
+        registry.Register<Cacophony>(static (card, context) =>
+            BespokeCardMirrors.SimpleSelfPowerOnPlay<CacophonyPower>(
+                card, context, card.DynamicVars.Damage.IntValue));
         registry.Register<OneForAll>(BespokeCardMirrors.OneForAllOnPlay);
         registry.Register<Maul>(BespokeCardMirrors.MaulOnPlay);
         registry.Register<Sacrifice>(BespokeCardMirrors.SacrificeOnPlay);

@@ -49,7 +49,6 @@ internal static class CardEffectSpecRegistry
         [typeof(GuidingStar)] = [Owner<DrawCardsNextTurnPower>(card => card.DynamicVars.Cards.IntValue)],
         [typeof(Hegemony)] = [Owner<EnergyNextTurnPower>(card => card.DynamicVars.Energy.IntValue)],
         [typeof(Hyperbeam)] = [Owner<HyperbeamFocusDownPower>("FocusPower")],
-        [typeof(Knockdown)] = [Target<KnockdownPower>("KnockdownPower")],
         [typeof(LightningRod)] = [Owner<LightningRodPower>("LightningRodPower")],
         [typeof(Mangle)] = [Target<ManglePower>("StrengthLoss")],
         [typeof(NegativePulse)] = [AllEnemies<DoomPower>(card => card.DynamicVars.Doom.IntValue)],
@@ -70,7 +69,6 @@ internal static class CardEffectSpecRegistry
         [typeof(SicEm)] = [Target<SicEmPower>("SicEmPower")],
         [typeof(Strangle)] = [Target<StranglePower>("StranglePower")],
         [typeof(Synthesis)] = [Owner<FreePowerPower>(_ => 1)],
-        [typeof(TagTeam)] = [Target<TagTeamPower>(_ => 1)],
         [typeof(TheGambit)] = [Owner<TheGambitPower>(_ => 1)],
         [typeof(Unrelenting)] = [Owner<FreeAttackPower>(_ => 1)],
         [typeof(Veilpiercer)] = [Owner<VeilpiercerPower>(_ => 1)],
@@ -155,13 +153,6 @@ internal static class CardEffectSpecRegistry
                             effectTarget,
                             amount,
                             owner);
-                        if (effect.PowerType == typeof(KnockdownPower)
-                            && combat.GetPower<KnockdownPower>(effectTarget) is { } knockdown)
-                        {
-                            ((StringVar)knockdown.DynamicVars["Applier"]).StringValue = PlatformUtil.GetPlayerName(
-                                RunManager.Instance.NetService.Platform,
-                                playedCard.Preview.Owner.NetId);
-                        }
                         break;
                     }
                     case CardEffectTarget.AllEnemies:

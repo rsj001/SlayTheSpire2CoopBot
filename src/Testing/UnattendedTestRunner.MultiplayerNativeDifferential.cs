@@ -110,7 +110,6 @@ internal sealed partial class UnattendedTestRunner
         }
 
         await AssertMultiplayerDirectCardsAsync(source);
-        await AssertKnockdownExpectedGapAsync(source);
         await AssertTheBallExpectedGapAsync(source);
     }
 
@@ -133,6 +132,19 @@ internal sealed partial class UnattendedTestRunner
 
         AssertGangUpAllyHistory(source);
         AssertDemonicShieldLethalOwner(source);
+
+        Type[] lifecycleCardTypes =
+        [
+            typeof(Coordinate), typeof(Intercept), typeof(TagTeam), typeof(BeaconOfHope),
+            typeof(Knockdown), typeof(Midnight), typeof(Tank), typeof(Concoct), typeof(Fade),
+            typeof(Flanking), typeof(Sneaky), typeof(HammerTime), typeof(Soulbound),
+            typeof(Underworld), typeof(Cacophony),
+        ];
+        foreach (Type cardType in lifecycleCardTypes)
+        {
+            foreach (bool upgraded in new[] { false, true })
+                await AssertMultiplayerDirectCardAsync(source, cardType, upgraded, actorCount: 2, deadActor: false);
+        }
     }
 
     private static void AssertGangUpAllyHistory(CombatState source)
@@ -177,6 +189,7 @@ internal sealed partial class UnattendedTestRunner
         OfflineJointCombat native = CreateOfflineJointCombat(source, actorCount);
         Player sourceActor = native.Players[0];
         Player recipient = native.Players[1];
+        sourceActor.PlayerCombatState!.Energy = 99;
         sourceActor.PlayerCombatState!.Stars = 3;
         recipient.Creature.GainBlockInternal(7);
         sourceActor.Creature.GainBlockInternal(6);
@@ -327,32 +340,6 @@ internal sealed partial class UnattendedTestRunner
             vfxIsolation.Unpatch(powerVfx, powerVfxPrefix);
         }
 
-    }
-
-    private async Task AssertKnockdownExpectedGapAsync(CombatState source)
-    {
-        OfflineJointCombat native = CreateOfflineJointCombat(source, actorCount: 2);
-        Player sourceActor = native.Players[0];
-        CardModel card = native.State.CreateCard(ModelDb.Card<Knockdown>(), sourceActor);
-        sourceActor.PlayerCombatState!.Hand.AddInternal(card, silent: true);
-        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
-        CombatPredictionSimulator predicted = root.ForkSimulator();
-        int hpBefore = native.Enemy.CurrentHp;
-        await ExecuteSyntheticNativeCardAsync(card, native.Enemy);
-        PowerModel? power = native.Enemy.Powers.SingleOrDefault(item => item is KnockdownPower);
-        if (native.Enemy.CurrentHp >= hpBefore || power?.Amount != card.DynamicVars["KnockdownPower"].IntValue)
-        {
-            throw new InvalidOperationException(
-                "Knockdown 原版没有同时改变 Enemy.Hp 与 Enemy.Power[KNOCKDOWN_POWER]。 ");
-        }
-
-        AssertExpectedUnsupportedCardTransition(
-            root,
-            predicted,
-            card,
-            native.Enemy.CombatId,
-            "M5",
-            "Enemy.Hp/Power[KNOCKDOWN_POWER]");
     }
 
     private async Task AssertTheBallExpectedGapAsync(CombatState source)

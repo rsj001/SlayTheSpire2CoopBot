@@ -323,6 +323,8 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M5：跨玩家 Power 与 Hook 生命周期
 
+> 进度：进行中。15 张范围牌的普通/升级版初始 OnPlay 已全部进入精确 mirror，并以两 Actor 原生/预测全状态差分通过；Coordinate/Fade 使用临时属性族唯一入口，Intercept 建立 Covered/Intercept 双 Power 与 covering 引用，Tank 同步建立存活队友 Guarded，TagTeam/Knockdown 已移除旧 spec 双结算。当前目录状态为 UnderTest/Exact，尚未转 Verified；后续仍需逐 Power 跨触发点、叠加/消费/移除/重获和跨回合 L2。阶段性证据为 `COOP-MULTIPLAYER-NATIVE-DIFF` / `920231b15d1447d09379fed727dbf115`。
+
 目标：补齐由后续出牌、伤害、格挡、抽牌、回合边界触发的多人效果。
 
 范围：

@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 原版多人语义 M5 Power 初始应用（进行中，2026-09-29）
+
+- `COOP-MULTIPLAYER-NATIVE-DIFF`：Coordinate、Intercept、TagTeam、BeaconOfHope、Knockdown、Midnight、Tank、Concoct、Fade、Flanking、Sneaky、HammerTime、Soulbound、Underworld、Cacophony 普通/升级版分别从独立两 Actor 原生根执行，并与联合预测逐 Actor 做完整快照差分；最终 `runId=920231b15d1447d09379fed727dbf115` Passed，整个多人差分段 15745 ms，实例已删除。
+- 本条只证明初始动作与 Power 图一致；这些牌仍保持 UnderTest，尚未把后续 Hook 触发、消费/移除、跨回合和死亡清扫写成 M5 完成结论。Release 构建 0 警告/0 错误；未启动可见 Steam 或 Linux/WSL。
+
 ## 原版多人语义 M4 直接结算牌（2026-09-29）
 
 - `COOP-MULTIPLAYER-NATIVE-DIFF`：BelieveInYou、GangUp、Lift、Mimic、Rally、Blaze、DemonicShield、Constellation、EnergySurge、OneForAll 普通/升级版分别在独立两 Actor 原生根上走原版 `PlayCardAction` 与联合预测动作，之后对两个 Actor、敌人、牌堆、Power、资源、历史与 continuation 做完整快照差分；Rally/EnergySurge 升级版另以四 Actor 且一名死亡 Actor 验证存活过滤。最终 `runId=79c9fbed9f974699aa5f82cedafdb24c` Passed，M4 段 6472 ms，实例已删除。

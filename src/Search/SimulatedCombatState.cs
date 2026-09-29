@@ -691,6 +691,14 @@ internal sealed partial class SimulatedCombatState
                 throw new InvalidOperationException("击倒 Power 的施加者不是战斗中的玩家。");
             ((StringVar)knockdown.DynamicVars["Applier"]).StringValue = _playerNames[applyingPlayer];
         }
+        if (simulated is CoveredPower covered && applier != null)
+        {
+            Player? applyingPlayer = applier.Player
+                ?? Players.FirstOrDefault(player => player.Creature.CombatId == applier.CombatId);
+            if (applyingPlayer == null)
+                throw new InvalidOperationException("护卫 Power 的施加者不是战斗中的玩家。 ");
+            ((StringVar)covered.DynamicVars["Applier"]).StringValue = _playerNames[applyingPlayer];
+        }
         afterAmountChanged?.Invoke(amount, simulated);
         if (previousAmount == 0 && simulated._amount != 0 && simulated is PhantomBladesPower phantom)
             PhantomBladesPowerMirrors.AfterApplied(phantom, _predictionState
@@ -1065,6 +1073,24 @@ internal sealed partial class SimulatedCombatState
         where T : PowerModel
         => ApplyTemporaryStrength<T>(creature, amount, applier, 1);
 
+    public void ApplyTemporaryStrengthGainFromSource<T>(
+        Creature creature,
+        int amount,
+        Creature? applier,
+        CardModel cardSource)
+        where T : PowerModel
+    {
+        BeginCardPowerApplication(cardSource);
+        try
+        {
+            ApplyTemporaryStrengthGain<T>(creature, amount, applier);
+        }
+        finally
+        {
+            CompleteCardPowerApplication(cardSource);
+        }
+    }
+
     private void ApplyTemporaryStrength<T>(Creature creature, int amount, Creature? applier, int sign)
         where T : PowerModel
     {
@@ -1083,6 +1109,24 @@ internal sealed partial class SimulatedCombatState
     public void ApplyTemporaryDexterity<T>(Creature creature, int amount, Creature? applier)
         where T : PowerModel
         => ApplyTemporaryStat<T, DexterityPower>(creature, amount, applier, 1);
+
+    public void ApplyTemporaryDexterityFromSource<T>(
+        Creature creature,
+        int amount,
+        Creature? applier,
+        CardModel cardSource)
+        where T : PowerModel
+    {
+        BeginCardPowerApplication(cardSource);
+        try
+        {
+            ApplyTemporaryDexterity<T>(creature, amount, applier);
+        }
+        finally
+        {
+            CompleteCardPowerApplication(cardSource);
+        }
+    }
 
     public void ApplyTemporaryFocus<T>(Creature creature, int amount, Creature? applier)
         where T : PowerModel

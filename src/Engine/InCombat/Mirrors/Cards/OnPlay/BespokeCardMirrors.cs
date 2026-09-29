@@ -54,6 +54,89 @@ internal static class BespokeCardMirrors
             context.Calculate(card.DynamicVars.CalculatedBlock),
             card.DynamicVars.CalculatedBlock.Props);
 
+    public static void CoordinateOnPlay(Coordinate card, CardOnPlayMirrorContext context)
+        => RequireCombat(context).ApplyTemporaryStrengthGainFromSource<CoordinatePower>(
+            context.Target,
+            card.DynamicVars.Strength.IntValue,
+            card.Owner.Creature,
+            card);
+
+    public static void FadeOnPlay(Fade card, CardOnPlayMirrorContext context)
+        => RequireCombat(context).ApplyTemporaryDexterityFromSource<FadePower>(
+            context.Target,
+            card.DynamicVars.Dexterity.IntValue,
+            card.Owner.Creature,
+            card);
+
+    public static void InterceptOnPlay(Intercept card, CardOnPlayMirrorContext context)
+    {
+        context.GainBlock(card.Owner.Creature);
+        SimulatedCombatState combat = RequireCombat(context);
+        combat.Apply<CoveredPower>(context.Target, 1, card.Owner.Creature);
+        CoveredPower covered = combat.EffectivePowers().OfType<CoveredPower>()
+            .Last(power => ReferenceEquals(power.Owner, context.Target)
+                && ReferenceEquals(power.Applier, card.Owner.Creature));
+        InterceptPower? intercept = combat.GetPower<InterceptPower>(card.Owner.Creature);
+        if (intercept == null)
+        {
+            combat.Apply<InterceptPower>(card.Owner.Creature, 1, context.Target);
+            intercept = combat.GetPower<InterceptPower>(card.Owner.Creature)
+                ?? throw new InvalidOperationException("Intercept application did not create its owner power.");
+        }
+        InterceptPredictionState state = context.StateStore.Get(
+            intercept,
+            () => new InterceptPredictionState(intercept));
+        if (!state.CoveredCreatures.Contains(context.Target))
+            state.CoveredCreatures.Add(context.Target);
+        _ = covered;
+    }
+
+    public static void TagTeamOnPlay(TagTeam card, CardOnPlayMirrorContext context)
+    {
+        context.AttackSingle();
+        if (!context.Simulator.HasPendingChoice)
+            ApplyPower<TagTeamPower>(card, context, context.Target, 1);
+    }
+
+    public static void TankOnPlay(Tank card, CardOnPlayMirrorContext context)
+    {
+        SimulatedCombatState combat = RequireCombat(context);
+        combat.ApplyPowerFromSource(
+            typeof(TankPower), card.Owner.Creature, 1, card.Owner.Creature, card);
+        foreach (Creature teammate in context.CombatState.GetTeammatesOf(card.Owner.Creature)
+                     .Where(creature => creature.IsPlayer
+                         && !ReferenceEquals(creature, card.Owner.Creature)
+                         && context.State.GetCreature(creature).IsAlive))
+        {
+            combat.Apply<GuardedPower>(teammate, 1, card.Owner.Creature);
+        }
+    }
+
+    public static void KnockdownOnPlay(Knockdown card, CardOnPlayMirrorContext context)
+    {
+        context.AttackSingle();
+        if (!context.Simulator.HasPendingChoice)
+            ApplyPower<KnockdownPower>(card, context, context.Target,
+                card.DynamicVars["KnockdownPower"].IntValue);
+    }
+
+    public static void SimpleSelfPowerOnPlay<TPower>(CardModel card, CardOnPlayMirrorContext context, int amount = 1)
+        where TPower : PowerModel
+        => ApplyPower<TPower>(card, context, card.Owner.Creature, amount);
+
+    public static void SimpleTargetPowerOnPlay<TPower>(CardModel card, CardOnPlayMirrorContext context, int amount)
+        where TPower : PowerModel
+        => ApplyPower<TPower>(card, context, context.Target, amount);
+
+    private static void ApplyPower<TPower>(
+        CardModel card,
+        CardOnPlayMirrorContext context,
+        Creature target,
+        int amount)
+        where TPower : PowerModel
+        => RequireCombat(context).ApplyPowerFromSource(
+            typeof(TPower), target, amount, card.Owner.Creature, card);
+
     public static void OneForAllOnPlay(OneForAll card, CardOnPlayMirrorContext context)
     {
         if (context.CombatState is not ICombatPredictionEffectSink effects)
