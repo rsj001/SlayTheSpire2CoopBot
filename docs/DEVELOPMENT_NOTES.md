@@ -2,7 +2,7 @@
 
 ## 原版多人语义 M5 Power 初始应用（进行中，2026-09-29）
 
-M5 的 15 张牌已先关闭 OnPlay 入口：普通/升级版分别与原版动作做全状态差分。该批不是生命周期完成声明，目录保持 `UnderTest / ExactMirror`。差分补齐了 Coordinate/Fade 的临时属性伴随 Power、Intercept 的 Covered/Intercept 双实例与 covering 引用、Tank 对存活队友施加 Guarded；TagTeam/Knockdown 从通用 spec 移到精确 mirror，避免同一 Power 双结算。阶段性 `COOP-MULTIPLAYER-NATIVE-DIFF` / `920231b15d1447d09379fed727dbf115` Passed，M5 段尚待触发、消费、移除、重获和跨回合验证。
+M5 的 15 张牌已先关闭 OnPlay 入口：普通/升级版分别与原版动作做全状态差分。目录仍保持 `UnderTest / ExactMirror`。差分补齐了 Coordinate/Fade 的临时属性伴随 Power、Intercept 的 Covered/Intercept 双实例与 covering 引用、Tank 对存活队友施加 Guarded；TagTeam/Knockdown 从通用 spec 移到精确 mirror，避免同一 Power 双结算。后续生命周期审计又补齐五类多人伤害倍率的精确分支 mirror、Covered/Guarded 随施加者死亡移除、四类回合边界移除和 HammerTime 的 Forge 队友传播。`COOP-MULTIPLAYER-POWER-LIFECYCLE` / `dfc42d469b7e4682bcb3c2a8a33750ae` 已覆盖 15 张牌涉及的预测触发族并清理实例；这不是原生 actual/simulated 生命周期差分，因此 M5 尚未完成、目录未提升 Verified。
 
 ## 原版多人语义 M4 直接结算牌（2026-09-29）
 

@@ -1,4 +1,12 @@
 {
+  "MULTIPLAYER-SEMANTIC-M5-PREDICTED-LIFECYCLE-20260929": {
+    "status": "PassedWithNativeDifferentialPending",
+    "level": "HeadlessPredictedMultiplayerPowerLifecycle",
+    "procedure": "COOP-MULTIPLAYER-POWER-LIFECYCLE；两 Actor；临时属性、卡牌出牌/耗竭、伤害、格挡、抽牌、生成、Forge、死亡和敌方侧结束",
+    "expected": "M5 十五张牌涉及的预测 Power/Hook 生命周期在正确 Actor、目标、施加者和回合边界结算，防重入和已有 Fork 合同保持",
+    "observed": "runId=dfc42d469b7e4682bcb3c2a8a33750ae Passed，目标阶段430ms，实例已删除；这是预测合同，原生 actual/simulated 生命周期差分仍待补齐，目录保持 UnderTest。",
+    "evidence": "src/Testing/UnattendedTestRunner.MultiplayerPowerLifecycle.cs; docs/TEST_MATRIX.md; docs/refactoring/multiplayer-semantic-adaptation-completion-plan-20260929.md"
+  },
   "MULTIPLAYER-SEMANTIC-M4-DIRECT-CARDS-20260929": {
     "status": "Passed",
     "level": "HeadlessNativeMultiplayerCardDifferential",

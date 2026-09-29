@@ -52,8 +52,20 @@ internal static class AfterDeathMirrors
         registry.Register<StockPower>(HandleStock);
         registry.Register<CrabRagePower>(HandleCrabRage);
         registry.Register<DampenPower>(HandleDampen);
+        registry.Register<CoveredPower>(HandleApplierDeathRemoval);
+        registry.Register<GuardedPower>(HandleApplierDeathRemoval);
 
         return registry;
+    }
+
+    private static void HandleApplierDeathRemoval(PowerModel power, AfterDeathMirrorContext context)
+    {
+        if (!context.WasRemovalPrevented && context.Creature == power.Applier)
+        {
+            if (context.CombatState is not ICombatPredictionEffectSink effects)
+                throw new InvalidOperationException("Multiplayer applier death requires writable branch state.");
+            effects.SetPowerAmount(power, 0);
+        }
     }
 
     private static void HandleDampen(DampenPower power, AfterDeathMirrorContext context)

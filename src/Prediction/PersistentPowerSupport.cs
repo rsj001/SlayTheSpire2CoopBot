@@ -265,7 +265,8 @@ internal static class PersistentPowerSupport
     public static void Forge(
         CombatPredictionSimulator simulator,
         Player player,
-        int amount)
+        int amount,
+        AbstractModel? source = null)
     {
         if (simulator.HasPendingChoice)
             return;
@@ -293,6 +294,23 @@ internal static class PersistentPowerSupport
             if (card.Preview is not SovereignBlade preview || preview.IsDupe)
                 continue;
             ((SovereignBlade)card.MutablePreview).AddDamage(amount);
+        }
+
+        if (source is HammerTimePower)
+            return;
+        if (simulator.State.CombatState is not SimulatedCombatState combat)
+            throw new InvalidOperationException("Hammer Time forge propagation requires simulated combat state.");
+        foreach (HammerTimePower hammerTime in combat.EffectivePowers().OfType<HammerTimePower>().ToArray())
+        {
+            if (hammerTime.Amount <= 0 || hammerTime.Owner.Player != player)
+                continue;
+            foreach (Player teammate in combat.Players.Where(candidate =>
+                         candidate != player && simulator.State.GetCreature(candidate.Creature).IsAlive))
+            {
+                Forge(simulator, teammate, amount, hammerTime);
+                if (simulator.HasPendingChoice)
+                    return;
+            }
         }
     }
 }

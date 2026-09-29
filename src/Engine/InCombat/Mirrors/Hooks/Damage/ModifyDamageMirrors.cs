@@ -93,7 +93,12 @@ internal static class ModifyDamageMirrors
         var registry = new Registry(ModifyDamageMultiplicative);
 
         registry.Register<FlutterPower>(HandleFlutterPower);
+        registry.Register<CoveredPower>(HandleCoveredPower);
+        registry.Register<FlankingPower>(HandleOtherPlayerAmplifier);
+        registry.Register<GuardedPower>(HandleGuardedPower);
         registry.Register<InterceptPower>(HandleInterceptPower);
+        registry.Register<KnockdownPower>(HandleOtherPlayerAmplifier);
+        registry.Register<TankPower>(HandleTankPower);
         registry.Register<GigantificationPower>(GigantificationPowerMirrors.ModifyDamageMultiplicative);
         registry.Register<ColossusPower>(HandleColossusPower);
         registry.Register<LethalityPower>(HandleLethalityPower);
@@ -119,6 +124,38 @@ internal static class ModifyDamageMirrors
             context.Simulator,
             power).Count + 1;
     }
+
+    private static decimal HandleCoveredPower(
+        CoveredPower power,
+        ModifyDamageMirrorContext context)
+        => context.Target == power.Owner && context.Props.IsPoweredAttack() ? 0m : 1m;
+
+    private static decimal HandleOtherPlayerAmplifier(
+        PowerModel power,
+        ModifyDamageMirrorContext context)
+    {
+        if (context.Target != power.Owner
+            || !context.Props.IsPoweredAttack()
+            || context.Dealer == power.Applier)
+        {
+            return 1m;
+        }
+        return power.Amount;
+    }
+
+    private static decimal HandleGuardedPower(
+        GuardedPower power,
+        ModifyDamageMirrorContext context)
+        => context.Target == power.Owner && context.Props.IsPoweredAttack()
+            ? power.DynamicVars["DamageDecrease"].BaseValue
+            : 1m;
+
+    private static decimal HandleTankPower(
+        TankPower power,
+        ModifyDamageMirrorContext context)
+        => context.Target == power.Owner && context.Props.IsPoweredAttack()
+            ? power.DynamicVars["DamageIncrease"].BaseValue
+            : 1m;
 
     private static decimal HandleFlutterPower(FlutterPower power, ModifyDamageMirrorContext context)
     {

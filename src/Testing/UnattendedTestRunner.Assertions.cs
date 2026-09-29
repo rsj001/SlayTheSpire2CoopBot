@@ -72,6 +72,13 @@ internal sealed partial class UnattendedTestRunner
                 runner._completedChecks.Add(
                     "MultiplayerScaling:ActorCount2:ActorCount3:ActorCount4:NormalHp:EliteHp:BossHp:PredictedSpawnHp:PrimaryEnemyBlock:SecondaryEnemyBlock:PlayerUnscaled:NewApplicationOnly:Artifact:Plating:Skittish:Slippery:CurlUp:Flutter:Zero:Negative:GenerationAttackSkillPower");
             }
+            if (request.ScenarioId == "COOP-MULTIPLAYER-POWER-LIFECYCLE")
+            {
+                runner.SetStage("coop_multiplayer_power_lifecycle");
+                AssertMultiplayerPowerLifecycle(scenario.CombatState);
+                runner._completedChecks.Add(
+                    "MultiplayerPowerLifecycle:Coordinate:Fade:TagTeam:Midnight:Sneaky:DamageModifiers:Beacon:Concoct:Underworld:Cacophony:Soulbound:HammerTime:ApplierDeath:EnemySideRemoval");
+            }
             if (request.ScenarioId == "COOP-JOINT-OBJECTIVE")
             {
                 runner.SetStage("coop_joint_objective");

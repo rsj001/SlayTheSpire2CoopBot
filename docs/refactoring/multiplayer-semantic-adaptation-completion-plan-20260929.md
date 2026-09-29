@@ -323,7 +323,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M5：跨玩家 Power 与 Hook 生命周期
 
-> 进度：进行中。15 张范围牌的普通/升级版初始 OnPlay 已全部进入精确 mirror，并以两 Actor 原生/预测全状态差分通过；Coordinate/Fade 使用临时属性族唯一入口，Intercept 建立 Covered/Intercept 双 Power 与 covering 引用，Tank 同步建立存活队友 Guarded，TagTeam/Knockdown 已移除旧 spec 双结算。当前目录状态为 UnderTest/Exact，尚未转 Verified；后续仍需逐 Power 跨触发点、叠加/消费/移除/重获和跨回合 L2。阶段性证据为 `COOP-MULTIPLAYER-NATIVE-DIFF` / `920231b15d1447d09379fed727dbf115`。
+> 进度：进行中。15 张范围牌的普通/升级版初始 OnPlay 已全部进入精确 mirror，并以两 Actor 原生/预测全状态差分通过；Coordinate/Fade 使用临时属性族唯一入口，Intercept 建立 Covered/Intercept 双 Power 与 covering 引用，Tank 同步建立存活队友 Guarded，TagTeam/Knockdown 已移除旧 spec 双结算。随后补齐 Covered/Flanking/Guarded/Knockdown/Tank 的分支伤害 mirror、Covered/Guarded 的施加者死亡清扫、Intercept/Covered/Knockdown/Flanking 的回合移除，以及 HammerTime 的 Forge 传播。`COOP-MULTIPLAYER-POWER-LIFECYCLE` / `dfc42d469b7e4682bcb3c2a8a33750ae` 已穿过 15 张牌涉及的临时属性恢复、卡牌出牌/耗竭、伤害、格挡、抽牌、生成、Forge、死亡和敌方侧结束；这是预测分支生命周期合同，不替代后续原生 actual/simulated 生命周期差分。目录继续保持 UnderTest/Exact，尚未转 Verified。
 
 目标：补齐由后续出牌、伤害、格挡、抽牌、回合边界触发的多人效果。
 
@@ -538,11 +538,11 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 | 阶段 | 依赖 | 当前状态 | 完成提交/证据 |
 |---|---|---|---|
 | M0 版本化目录与失败边界 | F12 | 已完成 | 37 张目录、OnPlay fail-closed；CoverageCatalog 发现 13 个缩放 Power/51 个跨玩家药水目标且 0 漂移；失败边界 `e5b1f3588d9246a182725880c4526608` Passed；Windows 门禁通过，Linux/WSL 环境不可用 |
-| M1 原生多人差分底座 | M0 | 未开始 | — |
-| M2 身份与私有状态 | M1 | 未开始 | — |
-| M3 玩家人数缩放/生成 | M1-M2 | 未开始 | — |
-| M4 直接结算牌 | M2-M3 | 未开始 | — |
-| M5 Power/Hook 牌 | M2-M4 | 未开始 | — |
+| M1 原生多人差分底座 | M0 | 已完成 | `COOP-MULTIPLAYER-NATIVE-DIFF` / `3bbf9c123b664b8ebcf2e9ed8857ec39` |
+| M2 身份与私有状态 | M1 | 已完成 | `COOP-MULTIPLAYER-IDENTITY` / `810a49aa1718477b881656c3cac37a19` |
+| M3 玩家人数缩放/生成 | M1-M2 | 已完成 | `COOP-MULTIPLAYER-SCALING` / `ecb0a35c1357491fb57b252a4f856cae` |
+| M4 直接结算牌 | M2-M3 | 已完成 | `COOP-MULTIPLAYER-NATIVE-DIFF` / `79c9fbed9f974699aa5f82cedafdb24c` |
+| M5 Power/Hook 牌 | M2-M4 | 进行中 | 初始原生差分 `920231b15d1447d09379fed727dbf115`；预测生命周期 `dfc42d469b7e4682bcb3c2a8a33750ae`；尚缺原生生命周期差分 |
 | M6 选择/转移/复制牌 | M2、M4-M5 | 未开始 | — |
 | M7 球/宠物/角色资源 | M2、M4-M6 | 未开始 | — |
 | M8 药水/遗物/反广播/第三方 | M2-M7 | 未开始 | — |
