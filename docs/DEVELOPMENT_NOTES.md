@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 原版多人语义 M8 外围机制（进行中，2026-09-29）
+
+多人药水目录当前发现 51 个 AnyPlayer 目标。BlockPotion 已在 2/4 Actor 原生根上由原版 UsePotionAction 与联合预测逐 Actor 全状态差分，验证 Owner 与目标不同、目标格挡、药水消耗和 continuation；死亡玩家不会被列为合法目标。`COOP-MULTIPLAYER-NATIVE-DIFF` / `e750f21354d94bd6866a4fa8df1fb20f` Passed，实例已删除。选择取消、同型遗物原生代表与自用牌反广播原生哨兵仍待补。
+
 ## 原版多人语义 M7 资源牌（已完成，2026-09-29）
 
 LegionOfBone 现在对所有存活 Actor 各自召唤/强化 Osty，Hibernate 为出牌者施加 HibernatePower 并生成冰霜球，Ignition 沿用目标 Actor 的等离子球入口。三张牌普通/升级版两 Actor 原生/预测全状态差分 `69d21e089dd2494bad39fe7c07585655` Passed，实例已删除；原生合成宿主只隔离不属于战斗语义的 live CombatManager/节点登记和球槽动画，OstyCmd、OrbCmd、Hook、牌堆与历史仍走原版。

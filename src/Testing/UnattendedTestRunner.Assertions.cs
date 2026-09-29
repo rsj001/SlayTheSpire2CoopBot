@@ -56,7 +56,7 @@ internal sealed partial class UnattendedTestRunner
                 runner.AssertMultiplayerNativeDifferentialSubstrate(scenario.CombatState);
                 await runner.AssertMultiplayerNativeSimpleActionDifferentialAsync(scenario.CombatState);
                 runner._completedChecks.Add(
-                    "MultiplayerNativeDiff:ActorCount2:ActorCount3:ActorCount4:AllActorRootProjection:IndependentForks:RootIsolation:M4TenCardsBaseUpgrade:M4AllAlliesFourActorDead:M4DemonicShieldLethal:M5FifteenCardsBaseUpgrade:M5InitialPowerGraph:M5KnockdownDamage:M5TankGuardedDamage:M5HammerTimeForge:M5EnemySideRemoval:M6EightCardsBaseUpgrade:M6CardOwnerTransfer:M6ImitationTarget:M6ImitationAutoPlayLifecycle:M7ThreeCardsBaseUpgrade:M7FourActorMixedResources:M7HibernateLifecycle");
+                    "MultiplayerNativeDiff:ActorCount2:ActorCount3:ActorCount4:AllActorRootProjection:IndependentForks:RootIsolation:M4TenCardsBaseUpgrade:M4AllAlliesFourActorDead:M4DemonicShieldLethal:M5FifteenCardsBaseUpgrade:M5InitialPowerGraph:M5KnockdownDamage:M5TankGuardedDamage:M5HammerTimeForge:M5EnemySideRemoval:M6EightCardsBaseUpgrade:M6CardOwnerTransfer:M6ImitationTarget:M6ImitationAutoPlayLifecycle:M7ThreeCardsBaseUpgrade:M7FourActorMixedResources:M7HibernateLifecycle:M8BlockPotion2And4Actor:M8DeadPotionTargetRejected");
             }
             if (request.ScenarioId == "COOP-MULTIPLAYER-IDENTITY")
             {

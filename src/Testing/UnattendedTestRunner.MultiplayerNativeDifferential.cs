@@ -13,6 +13,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.Orbs;
+using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver.Engine.Common;
@@ -116,6 +117,64 @@ internal sealed partial class UnattendedTestRunner
         await AssertMultiplayerDirectCardsAsync(source);
         await AssertMultiplayerPowerLifecycleNativeDifferentialAsync(source);
         await AssertImitationLearningNativeLifecycleAsync(source);
+        await AssertCrossPlayerBlockPotionAsync(source, actorCount: 2);
+        await AssertCrossPlayerBlockPotionAsync(source, actorCount: 4);
+        AssertDeadPlayerPotionTargetRejected(source);
+    }
+
+    private async Task AssertCrossPlayerBlockPotionAsync(CombatState source, int actorCount)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(
+            source,
+            actorCount,
+            localPotion: CanonicalModels.Potion<BlockPotion>());
+        Player owner = native.Players[0];
+        Player target = native.Players[^1];
+        PotionModel potion = owner.GetPotionAtSlotIndex(0)
+            ?? throw new InvalidOperationException("Cross-player potion fixture has no owner potion.");
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator predicted = root.ForkSimulator();
+        JointTurnState turns = JointTurnState.Start(actorCount, root.StartTurnNumber);
+        PlanAction action = JointActionExpander.Expand(predicted, turns)
+            .Select(static candidate => candidate.Action)
+            .Single(candidate => candidate.Actor.Index == 0
+                && candidate.Kind == PlanActionKind.UsePotion
+                && candidate.PotionId == "BLOCK_POTION"
+                && candidate.TargetCombatId == target.Creature.CombatId);
+
+        UsePotionAction nativeAction = new(potion, target.Creature, isCombatInProgress: true);
+        nativeAction.OnEnqueued(_ => { }, uint.MaxValue - 2);
+        await nativeAction.Execute();
+        await nativeAction.CompletionTask;
+        if (nativeAction.Exception != null || nativeAction.State != GameActionState.Finished)
+            throw new InvalidOperationException("Cross-player native potion action did not finish.", nativeAction.Exception);
+        _ = JointActionTransition.Apply(
+            predicted,
+            turns,
+            action,
+            JointActionTransition.CaptureProcessedEnemyDeaths(root, predicted));
+        AssertMultiplayerLifecycleSnapshots(native, root, predicted, $"BlockPotion.ActorCount{actorCount}");
+    }
+
+    private static void AssertDeadPlayerPotionTargetRejected(CombatState source)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(
+            source,
+            actorCount: 2,
+            localPotion: CanonicalModels.Potion<BlockPotion>());
+        native.Players[1].Creature.SetCurrentHpInternal(0);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator predicted = root.ForkSimulator();
+        bool hasDeadTarget = JointActionExpander.Expand(
+                predicted,
+                JointTurnState.Start(2, root.StartTurnNumber))
+            .Select(static candidate => candidate.Action)
+            .Any(action => action.Actor.Index == 0
+                && action.Kind == PlanActionKind.UsePotion
+                && action.PotionId == "BLOCK_POTION"
+                && action.TargetCombatId == native.Players[1].Creature.CombatId);
+        if (hasDeadTarget)
+            throw new InvalidOperationException("Dead player was offered as a cross-player potion target.");
     }
 
     private async Task AssertImitationLearningNativeLifecycleAsync(CombatState source)

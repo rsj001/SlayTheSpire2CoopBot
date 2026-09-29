@@ -1,4 +1,12 @@
 {
+  "MULTIPLAYER-SEMANTIC-M8-POTION-TARGET-20260929": {
+    "status": "Pending",
+    "level": "HeadlessNativeMultiplayerPotionDifferential",
+    "procedure": "COOP-MULTIPLAYER-NATIVE-DIFF；BlockPotion 2/4 Actor跨Owner目标；死亡目标合法性",
+    "expected": "药水只修改指定存活Actor并从Owner槽消耗；死亡玩家不是合法目标",
+    "observed": "runId=e750f21354d94bd6866a4fa8df1fb20f Passed，实例已删除；M8其余选择取消、遗物actual和反广播仍待补。",
+    "evidence": "src/Testing/UnattendedTestRunner.MultiplayerNativeDifferential.cs; docs/TEST_MATRIX.md"
+  },
   "MULTIPLAYER-SEMANTIC-M7-RESOURCE-CARDS-20260929": {
     "status": "Passed",
     "level": "HeadlessNativeMultiplayerResourceCardDifferential",

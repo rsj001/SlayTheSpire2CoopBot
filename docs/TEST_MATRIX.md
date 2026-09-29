@@ -1,5 +1,9 @@
 # CombatSolver 测试清单
 
+## 原版多人语义 M8 外围机制（进行中，2026-09-29）
+
+- `COOP-MULTIPLAYER-NATIVE-DIFF`：BlockPotion 分别在 2 Actor 和 4 Actor 根由 Actor0 对最后一名队友使用，原版 UsePotionAction 与预测逐 Actor 全状态一致；另建死亡队友根断言扩展器不生成该目标。`runId=e750f21354d94bd6866a4fa8df1fb20f` Passed，实例已删除。
+
 ## 原版多人语义 M7 资源牌（已完成，2026-09-29）
 
 - `COOP-MULTIPLAYER-NATIVE-DIFF`：LegionOfBone、Hibernate、Ignition 普通/升级版分别在两 Actor 原生根执行，与预测逐 Actor 做完整快照差分，覆盖每名存活玩家的 Osty、出牌者 HibernatePower/冰霜球和目标玩家等离子球。`runId=69d21e089dd2494bad39fe7c07585655` Passed，实例已删除。
