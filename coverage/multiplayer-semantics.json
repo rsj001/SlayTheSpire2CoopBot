@@ -586,6 +586,878 @@
       "targetType": "AnyPlayer"
     }
   ],
+  "monsterMoveScopes": [
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Aeonglass",
+      "moveId": "EBB_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Aeonglass",
+      "moveId": "INCREASING_INTENSITY_MOVE",
+      "scope": "PostAttackMixed"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.AxeRubyRaider",
+      "moveId": "SWING_1",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.AxeRubyRaider",
+      "moveId": "SWING_2",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Axebot",
+      "moveId": "BOOT_UP_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Axebot",
+      "moveId": "HAMMER_UPPERCUT_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.BowlbugEgg",
+      "moveId": "BITE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.BowlbugNectar",
+      "moveId": "BUFF_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.BowlbugSilk",
+      "moveId": "TOXIC_SPIT_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.BruteRubyRaider",
+      "moveId": "ROAR_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.BygoneEffigy",
+      "moveId": "WAKE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.CalcifiedCultist",
+      "moveId": "INCANTATION_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.CeremonialBeast",
+      "moveId": "BEAST_CRY_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.CeremonialBeast",
+      "moveId": "CRUSH_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.CeremonialBeast",
+      "moveId": "PLOW_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.CeremonialBeast",
+      "moveId": "STAMP_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Chomper",
+      "moveId": "SCREECH_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.CorpseSlug",
+      "moveId": "GOOP_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.CrossbowRubyRaider",
+      "moveId": "RELOAD_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Crusher",
+      "moveId": "ADAPT_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Crusher",
+      "moveId": "BUG_STING_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Crusher",
+      "moveId": "GUARDED_STRIKE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.CubexConstruct",
+      "moveId": "CHARGE_UP_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.CubexConstruct",
+      "moveId": "REPEATER_BLAST_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.CubexConstruct",
+      "moveId": "REPEATER_BLAST_MOVE_2",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DampCultist",
+      "moveId": "INCANTATION_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DecimillipedeSegmentBack",
+      "moveId": "BULK_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DecimillipedeSegmentBack",
+      "moveId": "CONSTRICT_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DecimillipedeSegmentBack",
+      "moveId": "DEAD_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DecimillipedeSegmentBack",
+      "moveId": "REATTACH_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DecimillipedeSegmentFront",
+      "moveId": "BULK_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DecimillipedeSegmentFront",
+      "moveId": "CONSTRICT_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DecimillipedeSegmentFront",
+      "moveId": "DEAD_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DecimillipedeSegmentFront",
+      "moveId": "REATTACH_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DecimillipedeSegmentMiddle",
+      "moveId": "BULK_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DecimillipedeSegmentMiddle",
+      "moveId": "CONSTRICT_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DecimillipedeSegmentMiddle",
+      "moveId": "DEAD_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DecimillipedeSegmentMiddle",
+      "moveId": "REATTACH_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.DevotedSculptor",
+      "moveId": "FORBIDDEN_INCANTATION_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Entomancer",
+      "moveId": "PHEROMONE_SPIT_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Exoskeleton",
+      "moveId": "ENRAGE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.EyeWithTeeth",
+      "moveId": "DISTRACT_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Fabricator",
+      "moveId": "FABRICATE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Fabricator",
+      "moveId": "FABRICATING_STRIKE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.FakeMerchantMonster",
+      "moveId": "ENRAGE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.FakeMerchantMonster",
+      "moveId": "THROW_RELIC_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.FatGremlin",
+      "moveId": "FLEE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.FlailKnight",
+      "moveId": "WAR_CHANT",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Flyconid",
+      "moveId": "FRAIL_SPORES_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Flyconid",
+      "moveId": "VULNERABLE_SPORES_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Fogmog",
+      "moveId": "ILLUSION_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Fogmog",
+      "moveId": "SWIPE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Fogmog",
+      "moveId": "SWIPE_RANDOM_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.FossilStalker",
+      "moveId": "TACKLE_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.FrogKnight",
+      "moveId": "BEETLE_CHARGE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.FrogKnight",
+      "moveId": "FOR_THE_QUEEN",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.FrogKnight",
+      "moveId": "TONGUE_LASH",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.FuzzyWurmCrawler",
+      "moveId": "INHALE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.GasBomb",
+      "moveId": "EXPLODE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.GlobeHead",
+      "moveId": "GALVANIC_BURST",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.GlobeHead",
+      "moveId": "SHOCKING_SLAP",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.GremlinMerc",
+      "moveId": "DOUBLE_SMASH_MOVE",
+      "scope": "PostAttackMixed"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.GremlinMerc",
+      "moveId": "GIMME_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.GremlinMerc",
+      "moveId": "HEHE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Guardbot",
+      "moveId": "GUARD_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.HauntedShip",
+      "moveId": "HAUNT_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.HunterKiller",
+      "moveId": "TENDERIZING_GOOP_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.InfestedPrism",
+      "moveId": "PULSATE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.InfestedPrism",
+      "moveId": "RADIATE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.KinFollower",
+      "moveId": "POWER_DANCE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.KinPriest",
+      "moveId": "ORB_OF_FRAILTY_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.KinPriest",
+      "moveId": "ORB_OF_WEAKNESS_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.KinPriest",
+      "moveId": "RITUAL_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.KnowledgeDemon",
+      "moveId": "CURSE_OF_KNOWLEDGE_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.KnowledgeDemon",
+      "moveId": "PONDER_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.LagavulinMatriarch",
+      "moveId": "SLASH2_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.LagavulinMatriarch",
+      "moveId": "SOUL_SIPHON_MOVE",
+      "scope": "PostAttackMixed"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.LeafSlimeM",
+      "moveId": "STICKY_SHOT",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.LeafSlimeS",
+      "moveId": "GOOP_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.LivingFog",
+      "moveId": "ADVANCED_GAS_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.LivingFog",
+      "moveId": "BLOAT_MOVE",
+      "scope": "PreAttackMixed"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.LivingShield",
+      "moveId": "SMASH_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.LouseProgenitor",
+      "moveId": "CURL_AND_GROW_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.LouseProgenitor",
+      "moveId": "WEB_CANNON_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.MagiKnight",
+      "moveId": "DAMPEN_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.MagiKnight",
+      "moveId": "POWER_SHIELD_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.MagiKnight",
+      "moveId": "PREP_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Mawler",
+      "moveId": "ROAR_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.MechaKnight",
+      "moveId": "FLAMETHROWER_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.MechaKnight",
+      "moveId": "WINDUP_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.MysteriousKnight",
+      "moveId": "WAR_CHANT",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Myte",
+      "moveId": "SUCK_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Myte",
+      "moveId": "TOXIC_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Nibbit",
+      "moveId": "HISS_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Nibbit",
+      "moveId": "SLICE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Noisebot",
+      "moveId": "NOISE_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Ovicopter",
+      "moveId": "LAY_EGGS_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Ovicopter",
+      "moveId": "NUTRITIONAL_PASTE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Ovicopter",
+      "moveId": "TENDERIZER_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.OwlMagistrate",
+      "moveId": "JUDICIAL_FLIGHT",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.OwlMagistrate",
+      "moveId": "VERDICT",
+      "scope": "PostAttackMixed"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.PhantasmalGardener",
+      "moveId": "ENLARGE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.PhrogParasite",
+      "moveId": "INFECT_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.PunchConstruct",
+      "moveId": "FAST_PUNCH_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.PunchConstruct",
+      "moveId": "READY_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Queen",
+      "moveId": "BURN_BRIGHT_FOR_ME_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Queen",
+      "moveId": "ENRAGE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Queen",
+      "moveId": "PUPPET_STRINGS_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Queen",
+      "moveId": "YOU_ARE_MINE_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Rocket",
+      "moveId": "CHARGE_UP_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.ScrollOfBiting",
+      "moveId": "MORE_TEETH",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Seapunk",
+      "moveId": "BUBBLE_BURP_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SewerClam",
+      "moveId": "PRESSURIZE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.ShrinkerBeetle",
+      "moveId": "SHRINKER_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SkulkingColony",
+      "moveId": "INERTIA_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SlimedBerserker",
+      "moveId": "LEECHING_HUG_MOVE",
+      "scope": "PostAttackMixed"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SlimedBerserker",
+      "moveId": "VOMIT_ICHOR_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SlitheringStrangler",
+      "moveId": "CONSTRICT",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SlitheringStrangler",
+      "moveId": "THWACK",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SludgeSpinner",
+      "moveId": "OIL_SPRAY_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SludgeSpinner",
+      "moveId": "RAGE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SlumberingBeetle",
+      "moveId": "ROLL_OUT_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SnappingJaxfruit",
+      "moveId": "ENERGY_ORB_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SoulFysh",
+      "moveId": "BECKON_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SoulFysh",
+      "moveId": "FADE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SoulFysh",
+      "moveId": "GAZE_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SoulFysh",
+      "moveId": "SCREAM_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SoulNexus",
+      "moveId": "DRAIN_LIFE_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SpectralKnight",
+      "moveId": "HEX",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SpinyToad",
+      "moveId": "PROTRUDING_SPIKES_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.SpinyToad",
+      "moveId": "SPIKE_EXPLOSION_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Stabbot",
+      "moveId": "STAB_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TerrorEel",
+      "moveId": "TERROR_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TerrorEel",
+      "moveId": "THRASH_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TestSubject",
+      "moveId": "BIG_POUNCE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TestSubject",
+      "moveId": "BURNING_GROWL_MOVE",
+      "scope": "PostAttackMixed"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TestSubject",
+      "moveId": "MULTI_CLAW_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TestSubject",
+      "moveId": "PHASE3_LACERATE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TestSubject",
+      "moveId": "RESPAWN_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TestSubject",
+      "moveId": "SKULL_BASH_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TheAdversaryMkOne",
+      "moveId": "BARRAGE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TheAdversaryMkThree",
+      "moveId": "BARRAGE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TheAdversaryMkTwo",
+      "moveId": "BARRAGE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TheForgotten",
+      "moveId": "MIASMA",
+      "scope": "PostAttackMixed"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+      "moveId": "LIQUIFY_GROUND_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+      "moveId": "SALIVATE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TheLost",
+      "moveId": "DEBILITATING_SMOG",
+      "scope": "PostAttackMixed"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TheObscura",
+      "moveId": "HARDENING_STRIKE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TheObscura",
+      "moveId": "ILLUSION_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TheObscura",
+      "moveId": "SAIL_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.ThievingHopper",
+      "moveId": "ESCAPE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.ThievingHopper",
+      "moveId": "FLUTTER_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.ThievingHopper",
+      "moveId": "THIEVERY_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Toadpole",
+      "moveId": "SPIKEN_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Toadpole",
+      "moveId": "SPIKE_SPIT_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.ToughEgg",
+      "moveId": "HATCH_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TrackerRubyRaider",
+      "moveId": "TRACK_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Tunneler",
+      "moveId": "BURROW_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TurretOperator",
+      "moveId": "RELOAD_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TwigSlimeM",
+      "moveId": "STICKY_SHOT_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TwoTailedRat",
+      "moveId": "CALL_FOR_BACKUP_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.TwoTailedRat",
+      "moveId": "SCREECH_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Vantom",
+      "moveId": "DISMEMBER_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Vantom",
+      "moveId": "PREPARE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.VineShambler",
+      "moveId": "GRASPING_VINES_MOVE",
+      "scope": "TargetOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.WaterfallGiant",
+      "moveId": "ABOUT_TO_BLOW_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.WaterfallGiant",
+      "moveId": "EXPLODE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.WaterfallGiant",
+      "moveId": "PRESSURE_GUN_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.WaterfallGiant",
+      "moveId": "PRESSURE_UP_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.WaterfallGiant",
+      "moveId": "PRESSURIZE_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.WaterfallGiant",
+      "moveId": "RAM_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.WaterfallGiant",
+      "moveId": "SIPHON_MOVE",
+      "scope": "OwnerOnly"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.WaterfallGiant",
+      "moveId": "STOMP_MOVE",
+      "scope": "PostAttackMixed"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Monsters.Wriggler",
+      "moveId": "WRIGGLE_MOVE",
+      "scope": "PostAttackMixed"
+    }
+  ],
   "missingCards": [],
   "staleCards": [],
   "exactMirrorMismatches": [],

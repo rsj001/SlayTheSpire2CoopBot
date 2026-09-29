@@ -3,6 +3,8 @@ using CombatSolver;
 using CombatSolver.Engine.Common.Mirrors;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Monsters;
+using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 
 internal static class MultiplayerSemanticAudit
 {
@@ -81,6 +83,7 @@ internal static class MultiplayerSemanticAudit
                 potion.TargetType.ToString()))
             .OrderBy(static entry => entry.Type, StringComparer.Ordinal)
             .ToArray();
+        MultiplayerMonsterMoveScopeEntry[] monsterMoveScopes = BuildMonsterMoveScopes();
 
         string[] missingCards = discoveredCards
             .Where(type => !declaredSet.Contains(type))
@@ -103,11 +106,76 @@ internal static class MultiplayerSemanticAudit
             cards,
             powerScaling,
             crossPlayerPotions,
+            monsterMoveScopes,
             missingCards,
             staleCards,
             exactMirrorMismatches,
             missingPowerScalingTypes,
             unverifiedPowerScalingTypes);
+    }
+
+    private static MultiplayerMonsterMoveScopeEntry[] BuildMonsterMoveScopes()
+    {
+        Assembly solver = typeof(MultiplayerSemanticCatalog).Assembly;
+        Type effects = solver.GetType("CombatSolver.MonsterMoveEffects", throwOnError: true)!;
+        Type semantics = solver.GetType("CombatSolver.MonsterMoveSemantics", throwOnError: true)!;
+        MethodInfo supports = effects.GetMethod(
+            "Supports",
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new InvalidOperationException("MonsterMoveEffects.Supports was not found.");
+        MethodInfo describe = semantics.GetMethod(
+            "DescribeJointEffectScope",
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new InvalidOperationException("MonsterMoveSemantics scope descriptor was not found.");
+        List<MultiplayerMonsterMoveScopeEntry> entries = [];
+        foreach (MonsterModel canonical in ModelDb.All
+                     .OfType<MonsterModel>()
+                     .Where(static monster => monster.GetType().Namespace == "MegaCrit.Sts2.Core.Models.Monsters")
+                     .DistinctBy(static monster => monster.GetType())
+                     .OrderBy(static monster => monster.GetType().FullName, StringComparer.Ordinal))
+        {
+            MonsterModel monster = canonical.ToMutable();
+            MethodInfo generate = monster.GetType().GetMethod(
+                "GenerateMoveStateMachine",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException($"{monster.GetType().FullName} has no move generator.");
+            MonsterMoveStateMachine machine;
+            try
+            {
+                machine = (MonsterMoveStateMachine)(generate.Invoke(monster, null)
+                    ?? throw new InvalidOperationException("Move generator returned null."));
+            }
+            catch (TargetInvocationException exception)
+            {
+                throw new InvalidOperationException(
+                    $"Could not enumerate multiplayer move scopes for {monster.GetType().FullName}.",
+                    exception.InnerException ?? exception);
+            }
+            foreach (MoveState move in machine.States.Values.OfType<MoveState>()
+                         .Distinct()
+                         .OrderBy(static move => move.Id, StringComparer.Ordinal))
+            {
+                if (!(bool)(supports.Invoke(null, [monster, move.Id]) ?? false))
+                    continue;
+                string scope;
+                try
+                {
+                    scope = (string)(describe.Invoke(null, [monster, move.Id])
+                        ?? throw new InvalidOperationException("Scope descriptor returned null."));
+                }
+                catch (TargetInvocationException exception)
+                {
+                    throw new InvalidOperationException(
+                        $"Could not classify {monster.GetType().Name}/{move.Id}.",
+                        exception.InnerException ?? exception);
+                }
+                entries.Add(new MultiplayerMonsterMoveScopeEntry(
+                    monster.GetType().FullName ?? monster.GetType().Name,
+                    move.Id,
+                    scope));
+            }
+        }
+        return entries.ToArray();
     }
 
     private static Type[] ReadExplicitMultiplayerOnPlayMirrors()
@@ -152,6 +220,7 @@ internal sealed record MultiplayerSemanticCoverageCatalog(
     IReadOnlyList<MultiplayerCardCoverageEntry> Cards,
     IReadOnlyList<MultiplayerPowerScalingEntry> PowerScaling,
     IReadOnlyList<MultiplayerPotionTargetEntry> CrossPlayerPotions,
+    IReadOnlyList<MultiplayerMonsterMoveScopeEntry> MonsterMoveScopes,
     IReadOnlyList<string> MissingCards,
     IReadOnlyList<string> StaleCards,
     IReadOnlyList<string> ExactMirrorMismatches,
@@ -163,6 +232,9 @@ internal sealed record MultiplayerSemanticCoverageCatalog(
         && MissingCards.Count == 0
         && StaleCards.Count == 0
         && ExactMirrorMismatches.Count == 0
+        && MonsterMoveScopes.Count > 0
+        && MonsterMoveScopes.All(static entry => entry.Scope is
+            "OwnerOnly" or "TargetOnly" or "PostAttackMixed" or "PreAttackMixed")
         && MissingPowerScalingTypes.Count == 0
         && UnverifiedPowerScalingTypes.Count == 0;
 }
@@ -182,3 +254,5 @@ internal sealed record MultiplayerPowerScalingEntry(
     bool OverridesAmount);
 
 internal sealed record MultiplayerPotionTargetEntry(string Type, string TargetType);
+
+internal sealed record MultiplayerMonsterMoveScopeEntry(string Type, string MoveId, string Scope);

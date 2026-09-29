@@ -1,5 +1,9 @@
 # CombatSolver 测试清单
 
+## 多人语义补全 M9（进行中，2026-09-29）
+
+- `CoverageCatalog --verify-multiplayer-semantics`：通过；发现 37 张多人牌、13 类多人缩放 Power、51 个跨玩家目标药水及 174 个求解器已支持的特殊敌方行动，所有行动均具有明确多人作用域，卡牌/Power/作用域未知项为 0。本项是目录门禁，不宣称原版多人完整回合差分已经通过。
+
 ## 原版多人语义 M8 外围机制（已完成，2026-09-29）
 
 - `COOP-MULTIPLAYER-NATIVE-DIFF`：BlockPotion 分别在 2 Actor 和 4 Actor 根由 Actor0 对最后一名队友使用，原版 UsePotionAction 与预测逐 Actor 全状态一致；另建死亡队友根断言扩展器不生成该目标。`runId=e750f21354d94bd6866a4fa8df1fb20f` Passed，实例已删除。

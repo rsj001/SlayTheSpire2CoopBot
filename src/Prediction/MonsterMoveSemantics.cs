@@ -137,6 +137,14 @@ internal static class MonsterMoveSemantics
         }
     }
 
+    internal static string DescribeJointEffectScope(MonsterModel monster, string moveId)
+    {
+        if (!MonsterMoveEffects.Supports(monster, moveId))
+            throw new PredictionUnsupportedException(
+                $"怪物行动 {monster.Id.Entry}/{moveId} 尚未进入多人作用域目录。");
+        return JointEffectScope(monster, moveId).ToString();
+    }
+
     private static JointMoveEffectScope JointEffectScope(MonsterModel monster, string moveId)
     {
         (string Type, string Move) key = (monster.GetType().Name, moveId);

@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 多人敌方行动作用域机器目录（2026-09-29）
+
+多人语义目录新增当前游戏版本的怪物行动枚举：从每个原版怪物的真实 `MoveStateMachine` 发现行动，只收录求解器已经支持的特殊行动，并由联合敌方语义返回 `OwnerOnly`、`TargetOnly`、`PostAttackMixed` 或 `PreAttackMixed`。当前共 174 项，`--verify-multiplayer-semantics` 通过且没有未知作用域。该结果证明作用域登记完整，不替代 M9 尚待完成的原版多人回合命令链与 2/4 Actor 跨侧 actual/simulated 差分。
+
 ## 原版多人语义 M8 外围机制（已完成，2026-09-29）
 
 多人药水目录当前发现 51 个 AnyPlayer 目标。BlockPotion 已在 2/4 Actor 原生根上由原版 UsePotionAction 与联合预测逐 Actor 全状态差分，验证 Owner 与目标不同、目标格挡、药水消耗和 continuation；死亡玩家不会被列为合法目标，原版拒绝该动作后药水与状态保持。远端 Actor 连续三次攻击时，Shuriken 计数和力量只属于其 Owner；四 Actor 根由远端 Defect 打出自用 Defend 时不广播给队友。`COOP-MULTIPLAYER-NATIVE-DIFF` / `78a22003c4284ccbb635bb451cee62d8` Passed，实例已删除。结合既有九类选择药水严格回放、同型遗物父/兄弟 Fork 隔离和未知 gameplay subscriber 类型/scope 拒绝，M8 完成。

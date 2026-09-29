@@ -104,6 +104,7 @@ if (multiplayerSemanticOnly)
         $"Multiplayer semantics: {multiplayerOnlyCatalog.Cards.Count} cards, " +
         $"{multiplayerOnlyCatalog.PowerScaling.Count} power scaling types, " +
         $"{multiplayerOnlyCatalog.CrossPlayerPotions.Count} cross-player potion targets, " +
+        $"{multiplayerOnlyCatalog.MonsterMoveScopes.Count} multiplayer monster-move scopes, " +
         $"{multiplayerOnlyCatalog.MissingCards.Count} missing cards, " +
         $"{multiplayerOnlyCatalog.StaleCards.Count} stale cards, " +
         $"{multiplayerOnlyCatalog.ExactMirrorMismatches.Count} exact-mirror mismatches.");
