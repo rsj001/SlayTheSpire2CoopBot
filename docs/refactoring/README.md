@@ -7,6 +7,7 @@
 - [策略与搜索大重构计划](strategy-refactor-plan-20260927.md)：目标架构、P0–P8 阶段、迁移方法、门禁、验证与风险，含里程碑与完成定义。
 - [Co-op Bot 离线多 Actor 联合搜索开发计划](coop-multi-actor-offline-search-plan-20260928.md)：保持生产单人边界，分阶段推广战斗根、搜索节点、动作、状态键、严格回放与小型穷举 oracle。
 - [从单人到离线四 Actor 完整迁移计划](single-to-offline-four-actor-complete-migration-plan-20260929.md)：在前置联合模型之上，完整迁移卡牌、药水、遗物、Power、选择、RNG、死亡召唤、跨回合、联合搜索和严格回放。
+- [原版多人战斗语义适配补齐计划](multiplayer-semantic-adaptation-completion-plan-20260929.md)：在 F 阶段完成的单人功能迁移之上，补齐原版多人专属内容、通用人数规则、原生多人 actual/simulated 差分，以及未来独立 Co-op Bot Runtime 的边界。
 - [策略与搜索重构实施总结](strategy-search-refactor-summary-20260928.md)：P0–P6 已落地的职责、逐阶段证据，以及 P7/P8 的实际状态。
 - [P2–P6 执行计划](strategy-refactor-p2-p6-execution-plan-20260927.md)：P2–P6 的实施顺序与验收停损。
 - [策略重构待测清单](strategy-refactor-test-backlog-20260927.md)：P2 抽取时的历史待测快照；当前结果以实施总结为准。
