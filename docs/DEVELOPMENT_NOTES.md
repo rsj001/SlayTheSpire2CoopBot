@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor F0-F12 完成（2026-09-29）
+
+完整迁移计划 F0-F12 已收口：生产单人搜索继续只接受 ActorCount=1；离线联合模型支持 1-4 Actor，具备 Actor-aware 状态/Fork/续用、卡牌/药水/Power/遗物/角色资源、选择链、完整回合与敌方生命周期、联合目标、Beam/BFWS、根级 strict replay 和有界确定性证据。单人边界最终 `runId=9cbc7199dd9a4a29914c9ed6bbb3fe5f` Passed；联合最终同源码入口 `3ba63f51cc0c4fb7a35a1da4b7e690fb` Passed。该结论不包含真实多人 Runtime、客户端控制、网络动作或承诺性修正；总战损仍是不同角色 HP 价值模型完成前的 workaround。
+
 ## 四 Actor 有界搜索工作量（2026-09-29）
 
 四 Actor 三动作固定根使用 256 状态硬预算与 Beam 宽 32/BFWS OPEN 64：Beam 展开 97、BFWS 展开 123，均 `Completed`；串行重复与 4 lane 的分数、逐 Actor 战损、动作、状态键、展开数和停止原因一致。首个串行 Beam 为 818 ms，协调线程累计分配差值 231,792,720 bytes；这只记录 headless 固定夹具工作量，不代表峰值内存、FPS 或可见 Steam 收益。`runId=3ba63f51cc0c4fb7a35a1da4b7e690fb` Passed，实例已删除。F11 未引入动作交换或无界队列。

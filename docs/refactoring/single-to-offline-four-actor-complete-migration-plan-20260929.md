@@ -1,6 +1,6 @@
 # 从单人 CombatSolver 到离线四 Actor 完整自动规划开发计划
 
-> 状态：执行中；前置联合模型 P0-P12、F0-F9 已完成，F10-F12 待完成
+> 状态：已完成；前置联合模型 P0-P12 与 F0-F12 全部实现并通过计划内离线门禁
 > 日期：2026-09-29  
 > 基线提交：`f14acea6`  
 > 目标：在不改变单人 CombatSolver 语义的前提下，建立一个可以控制最多四名 Actor、完整覆盖单人战斗机制的离线联合自动规划器。  
@@ -22,7 +22,7 @@
 | F9 联合 Beam/BFWS | 已完成 | F9a Beam/转置、F9b 保路、F9c 固定 lane、F9d 有界 BFWS 与 2/4 Actor oracle 全部通过 |
 | F10 strict replay 与差分 | 已完成 | 2/4 Actor 完整致死搜索路线从同根逐动作回放，完整联合状态 strict diff 与首差异诊断通过 |
 | F11 性能与确定性 | 已完成 | 四 Actor 三动作固定预算：Beam/BFWS 有界完成，串行重复/4 lane 完全确定；记录实际工作量、耗时与分配 |
-| F12 最终门禁 | 未开始 | - |
+| F12 最终门禁 | 已完成 | 单人生产边界、2/4 strict、机制代表、oracle、并行确定性、Windows 门禁、Release 构建与 Testing 离线入口通过 |
 
 ## 1. 当前基线
 
@@ -426,6 +426,13 @@
 > CombatSolver 已具备覆盖单人机制的离线四 Actor 联合自动规划能力。
 
 这仍不表示已经具备真实多人 Runtime、客户端控制、网络动作、承诺性修正或线上部署能力。
+
+完成证据（2026-09-29）：
+
+- 单人生产搜索边界 `COOP-PRODUCTION-SINGLE-BOUNDARY` 接受 ActorCount=1、拒绝 ActorCount=2；首次启动在进入游戏前被私有实例校验拒绝并删除，串行重试 `runId=9cbc7199dd9a4a29914c9ed6bbb3fe5f` Passed。
+- 2/4 Actor strict replay、药水/遗物/Power/选择/RNG/死亡/召唤/跨回合代表、BFS/Beam/BFWS 与 DFS oracle、串行/4 lane 确定性均由 `COOP-MULTI-ACTOR-ROOT` 最终同源码运行 `runId=3ba63f51cc0c4fb7a35a1da4b7e690fb` Passed；其中 strict 专项首次完成证据为 `bb8330ee794148e2b59319b970fc65a9`。
+- Windows `verify-refactor-boundaries.ps1`、Release 构建与 `COOP-MULTI-ACTOR-ROOT` Testing 离线入口通过；WSL/Linux 不可用，可见 Steam 按本批约束未启动。
+- 完成结论限于：CombatSolver 现在具备 1-4 Actor 的离线联合自动规划模型，并覆盖已登记的单人模拟机制与计划内代表门禁。生产 CombatSolver 仍保持单人；真实联机控制、客户端同步、网络提交和承诺性修正仍未实现。
 
 ## 5. 迁移问题记录规则
 

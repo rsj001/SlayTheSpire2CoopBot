@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 离线四 Actor F12 最终门禁（2026-09-29）
+
+- 生产单人边界：`COOP-PRODUCTION-SINGLE-BOUNDARY` 接受 ActorCount=1、拒绝 2，串行重试 `runId=9cbc7199dd9a4a29914c9ed6bbb3fe5f` Passed，实例已删除；首次启动仅在进入游戏前被私有实例可执行文件校验拒绝并清理，不计行为结果。
+- 联合入口：`COOP-MULTI-ACTOR-ROOT` 最终同源码 `runId=3ba63f51cc0c4fb7a35a1da4b7e690fb` Passed，覆盖 2/4 根、完整机制代表、strict replay、BFS/Beam/BFWS/DFS 对照、串并行确定性及有界工作量；实例已删除。
+- Windows 结构门禁与 Release 构建通过；Testing 是当前离线入口。WSL/Linux 不可用，本批未启动可见 Steam。真实联机 Runtime、客户端控制、网络动作及承诺性修正不在本门禁内。
+
 ## 四 Actor 有界工作量与确定性（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：四 Actor、三动作、状态预算 256；Beam 宽 32 展开 97、BFWS OPEN 64 展开 123，均 `Completed`。同一 Beam 串行重复与 4 lane 的分数、逐 Actor 战损向量、动作序、状态键、展开数和停止原因一致；`runId=3ba63f51cc0c4fb7a35a1da4b7e690fb` Passed，实例已删除。
