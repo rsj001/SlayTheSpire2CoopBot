@@ -11,6 +11,8 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Characters;
+using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver.Engine.Common;
@@ -298,6 +300,15 @@ internal sealed partial class UnattendedTestRunner
             foreach (bool upgraded in new[] { false, true })
                 await AssertMultiplayerDirectCardAsync(source, cardType, upgraded, actorCount: 2, deadActor: false);
         }
+        await AssertMultiplayerDirectCardAsync(
+            source, typeof(LegionOfBone), upgraded: true, actorCount: 4, deadActor: true);
+        await AssertMultiplayerDirectCardAsync(
+            source, typeof(Hibernate), upgraded: true, actorCount: 4, deadActor: true,
+            sourceActorIndex: 1);
+        await AssertMultiplayerDirectCardAsync(
+            source, typeof(Ignition), upgraded: true, actorCount: 4, deadActor: true,
+            sourceActorIndex: 1, targetActorIndex: 3);
+        await AssertHibernateLifecycleAsync(source);
     }
 
     private static void AssertGangUpAllyHistory(CombatState source)
@@ -337,11 +348,13 @@ internal sealed partial class UnattendedTestRunner
         Type cardType,
         bool upgraded,
         int actorCount,
-        bool deadActor)
+        bool deadActor,
+        int sourceActorIndex = 0,
+        int targetActorIndex = 1)
     {
         OfflineJointCombat native = CreateOfflineJointCombat(source, actorCount);
-        Player sourceActor = native.Players[0];
-        Player recipient = native.Players[1];
+        Player sourceActor = native.Players[sourceActorIndex];
+        Player recipient = native.Players[targetActorIndex];
         sourceActor.PlayerCombatState!.Energy = 99;
         sourceActor.PlayerCombatState!.Stars = 3;
         recipient.Creature.GainBlockInternal(7);
@@ -372,7 +385,7 @@ internal sealed partial class UnattendedTestRunner
             root.StartTurnNumber,
             CardId: card.Id.Entry,
             TargetCombatId: target?.CombatId,
-            Actor: new CombatActorId(0));
+                Actor: new CombatActorId(sourceActorIndex));
         _ = JointActionTransition.Apply(
             predicted,
             JointTurnState.Start(actorCount, root.StartTurnNumber),
@@ -392,6 +405,64 @@ internal sealed partial class UnattendedTestRunner
                 "MultiplayerDirectCard",
                 $"{cardType.Name}.{(upgraded ? "Upgraded" : "Base")}.Actor{actorIndex}.Count{actorCount}");
         }
+    }
+
+    private async Task AssertHibernateLifecycleAsync(CombatState source)
+    {
+        CharacterModel[] roster =
+        [
+            ModelDb.Character<Defect>(), ModelDb.Character<Defect>(),
+            ModelDb.Character<Regent>(), ModelDb.Character<Necrobinder>(),
+        ];
+        OfflineJointCombat native = CreateOfflineJointCombat(
+            source,
+            actorCount: 4,
+            characterRoster: roster);
+        Player owner = native.Players[0];
+        native.Players[2].Creature.SetCurrentHpInternal(0);
+        owner.PlayerCombatState!.Energy = 99;
+        for (int index = 0; index < owner.PlayerCombatState.OrbQueue.Capacity; index++)
+        {
+            LightningOrb lightning = (LightningOrb)ModelDb.Orb<LightningOrb>().ToMutable();
+            lightning.Owner = owner;
+            if (!await owner.PlayerCombatState.OrbQueue.TryEnqueue(lightning))
+                throw new InvalidOperationException("Hibernate lifecycle could not fill the native orb queue.");
+        }
+        CardModel card = native.State.CreateCard(ModelDb.Card<Hibernate>(), owner);
+        owner.PlayerCombatState.Hand.AddInternal(card, silent: true);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator predicted = root.ForkSimulator();
+        SimulatedCombatState predictedCombat = (SimulatedCombatState)predicted.State.CombatState;
+
+        await ExecuteSyntheticNativeCardAsync(card, target: null);
+        _ = JointActionTransition.Apply(
+            predicted,
+            JointTurnState.Start(4, root.StartTurnNumber),
+            new PlanAction(
+                PlanActionKind.PlayCard,
+                root.StartTurnNumber,
+                CardId: card.Id.Entry,
+                Actor: new CombatActorId(0)),
+            JointActionTransition.CaptureProcessedEnemyDeaths(root, predicted));
+
+        FrostOrb nativeFrost = owner.PlayerCombatState.OrbQueue.Orbs.OfType<FrostOrb>().First();
+        FrostOrb predictedFrost = predicted.State.GetPlayerCombatState(owner).OrbQueue.Orbs
+            .OfType<FrostOrb>().First();
+        await nativeFrost.Passive(new ThrowingPlayerChoiceContext(), target: null);
+        predicted.OrbPassive(predictedFrost);
+        AssertMultiplayerLifecycleSnapshots(native, root, predicted, "HibernateFrostPassive");
+
+        HibernatePower nativePower = owner.Creature.GetPower<HibernatePower>()
+            ?? throw new InvalidOperationException("Hibernate lifecycle did not create native Power.");
+        await nativePower.AfterPlayerTurnStart(new ThrowingPlayerChoiceContext(), owner);
+        _ = TurnStartPowerSupport.TriggerAfterPlayerTurnStart(
+            predicted,
+            predictedCombat,
+            owner,
+            new TurnStartChoiceCursor(null));
+        if (predicted.HasPendingChoice)
+            throw new InvalidOperationException("Hibernate turn-start lifecycle unexpectedly suspended.");
+        AssertMultiplayerLifecycleSnapshots(native, root, predicted, "HibernateTurnStartRemoval");
     }
 
     private static void AssertDemonicShieldLethalOwner(CombatState source)
@@ -506,11 +577,41 @@ internal sealed partial class UnattendedTestRunner
             nameof(AddSyntheticOrbSlotsWithoutVisuals),
             BindingFlags.Static | BindingFlags.NonPublic)
             ?? throw new MissingMethodException(nameof(AddSyntheticOrbSlotsWithoutVisuals));
+        MethodInfo addDuringManualPlay = typeof(CardPileCmd).GetMethod(
+            nameof(CardPileCmd.AddDuringManualCardPlay),
+            BindingFlags.Static | BindingFlags.Public,
+            binder: null,
+            types: [typeof(CardModel)],
+            modifiers: null)
+            ?? throw new MissingMethodException(
+                typeof(CardPileCmd).FullName,
+                nameof(CardPileCmd.AddDuringManualCardPlay));
+        MethodInfo addDuringManualPlayPrefix = typeof(UnattendedTestRunner).GetMethod(
+            nameof(MoveSyntheticCardToPlayWithoutVisuals),
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(nameof(MoveSyntheticCardToPlayWithoutVisuals));
+        MethodInfo addCard = typeof(CardPileCmd).GetMethod(
+            nameof(CardPileCmd.Add),
+            BindingFlags.Static | BindingFlags.Public,
+            binder: null,
+            types:
+            [
+                typeof(CardModel), typeof(CardPile), typeof(CardPilePosition),
+                typeof(AbstractModel), typeof(bool)
+            ],
+            modifiers: null)
+            ?? throw new MissingMethodException(typeof(CardPileCmd).FullName, nameof(CardPileCmd.Add));
+        MethodInfo addCardPrefix = typeof(UnattendedTestRunner).GetMethod(
+            nameof(SkipSyntheticCardPileVisuals),
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(nameof(SkipSyntheticCardPileVisuals));
         Harmony vfxIsolation = new("CombatSolver.Testing.MultiplayerNativePowerVfx." + _request.RunId);
         vfxIsolation.Patch(powerVfx, prefix: new HarmonyMethod(powerVfxPrefix));
         vfxIsolation.Patch(addCreature, prefix: new HarmonyMethod(addCreaturePrefix));
         vfxIsolation.Patch(addCreatureNode, prefix: new HarmonyMethod(addCreaturePrefix));
         vfxIsolation.Patch(addOrbSlots, prefix: new HarmonyMethod(addOrbSlotsPrefix));
+        vfxIsolation.Patch(addDuringManualPlay, prefix: new HarmonyMethod(addDuringManualPlayPrefix));
+        vfxIsolation.Patch(addCard, prefix: new HarmonyMethod(addCardPrefix));
         try
         {
             PlayCardAction actualAction = new(nativeCard, target);
@@ -528,6 +629,8 @@ internal sealed partial class UnattendedTestRunner
             vfxIsolation.Unpatch(addCreature, addCreaturePrefix);
             vfxIsolation.Unpatch(addCreatureNode, addCreaturePrefix);
             vfxIsolation.Unpatch(addOrbSlots, addOrbSlotsPrefix);
+            vfxIsolation.Unpatch(addDuringManualPlay, addDuringManualPlayPrefix);
+            vfxIsolation.Unpatch(addCard, addCardPrefix);
         }
 
     }
@@ -636,4 +739,30 @@ internal sealed partial class UnattendedTestRunner
         __result = Task.CompletedTask;
         return false;
     }
+
+    private static bool MoveSyntheticCardToPlayWithoutVisuals(CardModel card, ref Task __result)
+    {
+        __result = MoveSyntheticCardToPlayWithoutVisualsAsync(card);
+        return false;
+    }
+
+    private static async Task MoveSyntheticCardToPlayWithoutVisualsAsync(CardModel card)
+    {
+        ICombatState combatState = card.Owner.Creature.CombatState
+            ?? throw new InvalidOperationException("Synthetic card has no combat state.");
+        if (!combatState.ContainsCard(card))
+            throw new InvalidOperationException(card.Id.Entry + " must be added to a CombatState before playing it.");
+        PileType oldPileType = card.Pile?.Type ?? PileType.None;
+        card.RemoveFromCurrentPile();
+        PileType.Play.GetPile(card.Owner).AddInternal(card);
+        await Hook.AfterCardChangedPiles(
+            card.Owner.RunState,
+            card.CombatState,
+            card,
+            oldPileType,
+            null);
+    }
+
+    private static void SkipSyntheticCardPileVisuals(ref bool skipVisuals)
+        => skipVisuals = true;
 }

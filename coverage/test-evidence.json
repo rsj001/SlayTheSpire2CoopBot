@@ -1,10 +1,10 @@
 {
   "MULTIPLAYER-SEMANTIC-M7-RESOURCE-CARDS-20260929": {
-    "status": "Pending",
+    "status": "Passed",
     "level": "HeadlessNativeMultiplayerResourceCardDifferential",
-    "procedure": "COOP-MULTIPLAYER-NATIVE-DIFF；LegionOfBone、Hibernate、Ignition普通/升级；两 Actor 原版/预测全状态",
+    "procedure": "COOP-MULTIPLAYER-NATIVE-DIFF；三张牌普通/升级；四Actor双Defect混合资源；满球槽、死亡队友、Frost被动与Hibernate回合开始",
     "expected": "Osty、HibernatePower、冰霜球和等离子球只进入原版指定Actor状态，根捕获后不读取变化的live宠物引用",
-    "observed": "runId=69d21e089dd2494bad39fe7c07585655 Passed；实例已删除。三张入口通过，四Actor混合资源与Hibernate跨回合生命周期待补。",
+    "observed": "两Actor入口runId=69d21e089dd2494bad39fe7c07585655 Passed；四Actor混合资源和生命周期runId=94100373a0f04ddebd6465b1971fe156 Passed；实例均删除，三张目录晋升Verified。",
     "evidence": "src/Engine/InCombat/Mirrors/Cards/OnPlay/BespokeCardMirrors.cs; src/Search/SimulatedCombatState.CardLifecycle.cs; docs/TEST_MATRIX.md"
   },
   "MULTIPLAYER-SEMANTIC-M6-DIRECT-ENTRIES-20260929": {

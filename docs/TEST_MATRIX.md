@@ -1,9 +1,9 @@
 # CombatSolver 测试清单
 
-## 原版多人语义 M7 资源牌（进行中，2026-09-29）
+## 原版多人语义 M7 资源牌（已完成，2026-09-29）
 
 - `COOP-MULTIPLAYER-NATIVE-DIFF`：LegionOfBone、Hibernate、Ignition 普通/升级版分别在两 Actor 原生根执行，与预测逐 Actor 做完整快照差分，覆盖每名存活玩家的 Osty、出牌者 HibernatePower/冰霜球和目标玩家等离子球。`runId=69d21e089dd2494bad39fe7c07585655` Passed，实例已删除。
-- 原生合成宿主对 `CombatManager.AddCreature`、`NCombatRoom.AddCreature` 和自动补球槽只隔离 live/UI 登记，同时保留合成 CombatState 的生物、宠物、Power、球队列、历史与 Hook 变更。该轮还证明预测根不会在捕获后读取变化的 live `Player.Osty`。尚未把直接入口通过写成 Hibernate 跨回合生命周期通过。
+- 原生合成宿主对 `CombatManager.AddCreature`、`NCombatRoom.AddCreature`、卡牌节点与球槽动画只隔离 live/UI 登记，同时保留合成 CombatState 的生物、宠物、Power、球队列、历史与 Hook 变更。最终四 Actor 根以两个 Defect、Regent、Necrobinder 组成，施法者球槽预先填满，一名队友死亡；三张牌定向执行以及 Hibernate 满槽唤回、Frost 被动全队格挡和下一回合 Power 移除均与预测全状态一致。`runId=94100373a0f04ddebd6465b1971fe156` Passed，实例已删除。
 
 ## 原版多人语义 M6 选择、转移与复制（已完成，2026-09-29）
 

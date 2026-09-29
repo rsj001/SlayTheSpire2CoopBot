@@ -1,10 +1,10 @@
 # CombatSolver 开发笔记与未来构想
 
-## 原版多人语义 M7 资源牌（进行中，2026-09-29）
+## 原版多人语义 M7 资源牌（已完成，2026-09-29）
 
 LegionOfBone 现在对所有存活 Actor 各自召唤/强化 Osty，Hibernate 为出牌者施加 HibernatePower 并生成冰霜球，Ignition 沿用目标 Actor 的等离子球入口。三张牌普通/升级版两 Actor 原生/预测全状态差分 `69d21e089dd2494bad39fe7c07585655` Passed，实例已删除；原生合成宿主只隔离不属于战斗语义的 live CombatManager/节点登记和球槽动画，OstyCmd、OrbCmd、Hook、牌堆与历史仍走原版。
 
-差分发现根捕获后的原生 Osty 召唤会改变共享 Player.Osty，而预测曾回退读取该 live 值。预测根现保存每个 Actor 捕获时的 Osty 映射（包括 null），Fork 使用 COW 映射，后续召唤只更新分支状态。四 Actor 混合资源与 Hibernate 跨回合边界尚待完成。
+差分发现根捕获后的原生 Osty 召唤会改变共享 Player.Osty，而预测曾回退读取该 live 值。预测根现保存每个 Actor 捕获时的 Osty 映射（包括 null），Fork 使用 COW 映射，后续召唤只更新分支状态。最终四 Actor 根同时包含两个 Defect、Regent、Necrobinder、满球槽与死亡队友，验证满槽唤回、冰霜格挡广播、Hibernate 回合开始移除、全队 Osty 与指定队友等离子球；`94100373a0f04ddebd6465b1971fe156` Passed，实例已删除，M7 完成。
 
 ## 原版多人语义 M6 选择、转移与复制（已完成，2026-09-29）
 
