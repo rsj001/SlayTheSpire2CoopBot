@@ -39,21 +39,21 @@ public static class MultiplayerSemanticCatalog
 
     private static readonly MultiplayerCardSemanticDescriptor[] CardEntries =
     [
-        Missing<BelieveInYou>("M4"),
+        Verified<BelieveInYou>("M4"),
         Missing<Coordinate>("M5"),
-        Generic<GangUp>("M4"),
+        Verified<GangUp>("M4"),
         Exact<HuddleUp>("M6"),
         Partial<Intercept>("M5"),
-        Generic<Lift>("M4"),
+        Verified<Lift>("M4"),
         Generic<TagTeam>("M5"),
         Partial<TheBall>("M6"),
         Missing<BeaconOfHope>("M5"),
         Partial<Knockdown>("M5"),
-        Generic<Mimic>("M4"),
-        Generic<Rally>("M4"),
+        Verified<Mimic>("M4"),
+        Verified<Rally>("M4"),
 
-        Missing<Blaze>("M4"),
-        Partial<DemonicShield>("M4"),
+        Verified<Blaze>("M4"),
+        Verified<DemonicShield>("M4"),
         Partial<Outrage>("M6"),
         Generic<Midnight>("M5"),
         Missing<Tank>("M5"),
@@ -64,7 +64,7 @@ public static class MultiplayerSemanticCatalog
         Missing<Flanking>("M5"),
         Missing<Sneaky>("M5"),
 
-        Exact<Constellation>("M4"),
+        Verified<Constellation>("M4"),
         Exact<Largesse>("M6"),
         Missing<Plot>("M6"),
         Missing<HammerTime>("M5"),
@@ -76,11 +76,11 @@ public static class MultiplayerSemanticCatalog
         Missing<Cacophony>("M5"),
         Missing<GlimpseBeyond>("M6"),
 
-        Missing<EnergySurge>("M4"),
+        Verified<EnergySurge>("M4"),
         Missing<Hibernate>("M7"),
         Exact<Ignition>("M7"),
         Missing<ImitationLearning>("M6"),
-        Exact<OneForAll>("M4"),
+        Verified<OneForAll>("M4"),
     ];
 
     private static readonly IReadOnlyDictionary<Type, MultiplayerCardSemanticDescriptor> CardsByType =
@@ -130,6 +130,13 @@ public static class MultiplayerSemanticCatalog
         where TCard : CardModel => new(
             typeof(TCard),
             MultiplayerSemanticSupportStatus.UnderTest,
+            MultiplayerCardOnPlaySupportKind.ExactMirror,
+            stage);
+
+    private static MultiplayerCardSemanticDescriptor Verified<TCard>(string stage)
+        where TCard : CardModel => new(
+            typeof(TCard),
+            MultiplayerSemanticSupportStatus.Verified,
             MultiplayerCardOnPlaySupportKind.ExactMirror,
             stage);
 

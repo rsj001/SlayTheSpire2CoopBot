@@ -297,6 +297,8 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M4：直接结算型多人牌
 
+> 进度：已完成。十张范围牌均改为 Verified 精确 mirror；普通/升级版两 Actor 原生动作全状态差分通过，Rally/EnergySurge 增加四 Actor 含死亡 Actor，GangUp 覆盖队友命中倍率，DemonicShield 覆盖 Owner 致死后目标得格挡。差分期间修正 Mimic“读取目标格挡、给予出牌者”而非普通 AnyAlly 受益者。最终证据为 `COOP-MULTIPLAYER-NATIVE-DIFF` / `79c9fbed9f974699aa5f82cedafdb24c`。
+
 目标：完成不依赖长期私有 Hook 状态的伤害、格挡、抽牌、能量和直接全队 Power。
 
 首批范围：

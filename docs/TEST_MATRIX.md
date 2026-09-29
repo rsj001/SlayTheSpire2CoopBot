@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 原版多人语义 M4 直接结算牌（2026-09-29）
+
+- `COOP-MULTIPLAYER-NATIVE-DIFF`：BelieveInYou、GangUp、Lift、Mimic、Rally、Blaze、DemonicShield、Constellation、EnergySurge、OneForAll 普通/升级版分别在独立两 Actor 原生根上走原版 `PlayCardAction` 与联合预测动作，之后对两个 Actor、敌人、牌堆、Power、资源、历史与 continuation 做完整快照差分；Rally/EnergySurge 升级版另以四 Actor 且一名死亡 Actor 验证存活过滤。最终 `runId=79c9fbed9f974699aa5f82cedafdb24c` Passed，M4 段 6472 ms，实例已删除。
+- GangUp 升级版另由队友先造成一次 powered attack，随后断言伤害等于 Base+升级 Extra；DemonicShield 另以 Owner 1 HP/9 格挡验证 Owner 死亡后目标仍获得 9 格挡。开发差分先发现 `Mimic` 通用推断把 7 格挡给目标（出牌者保持 6），改为精确 mirror 后原版与预测均为出牌者 13。Release 构建 0 警告/0 错误；未启动可见 Steam 或 Linux/WSL。
+
 ## 原版多人语义 M3 Power 缩放入口（2026-09-29）
 
 - `COOP-MULTIPLAYER-SCALING`：2/3/4 Actor 在普通、精英、Boss 遭遇核对缩放前 HP 与原版缩放函数，另建预测召唤怪物核对当前/最大 HP；主敌人和由 `MinionPower` 标记、且有存活主敌人陪同的次要敌人格挡均按人数缩放。Artifact、Plating、Skittish、Slippery、CurlUp、Flutter 的首次应用量与原版虚方法结果一致，玩家目标保持原量，已有 Artifact 再叠加只增加请求量，并覆盖零/负数。最终 `runId=ecb0a35c1357491fb57b252a4f856cae` Passed，fixture 阶段 342 ms，实例已删除。

@@ -1,4 +1,12 @@
 {
+  "MULTIPLAYER-SEMANTIC-M4-DIRECT-CARDS-20260929": {
+    "status": "Passed",
+    "level": "HeadlessNativeMultiplayerCardDifferential",
+    "procedure": "COOP-MULTIPLAYER-NATIVE-DIFF；M4 十张牌普通/升级；两 Actor 原版/预测全状态；四 Actor 死亡成员；GangUp 历史；DemonicShield 致死顺序",
+    "expected": "十张直接结算牌的受益者、来源、伤害、格挡、抽牌、能量和 Power 与原版一致，升级值及死亡成员边界明确",
+    "observed": "runId=79c9fbed9f974699aa5f82cedafdb24c Passed，M4 段 6472ms，实例已删除；开发差分发现并修正 Mimic 把复制格挡给目标而非出牌者的问题。",
+    "evidence": "src/Engine/InCombat/Mirrors/Cards/OnPlay/BespokeCardMirrors.cs; src/Testing/UnattendedTestRunner.MultiplayerNativeDifferential.cs; coverage/multiplayer-semantics.json; docs/TEST_MATRIX.md"
+  },
   "MULTIPLAYER-SEMANTIC-M3-POWER-SCALING-20260929": {
     "status": "Passed",
     "level": "HeadlessMultiplayerPowerScaling",

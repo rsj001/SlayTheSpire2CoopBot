@@ -13,11 +13,11 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.BelieveInYou",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "Verified",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M4",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.BladeSymphony",
@@ -29,11 +29,11 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Blaze",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "Verified",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M4",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Cacophony",
@@ -53,7 +53,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Constellation",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M4",
       "discoveredInGame": true,
@@ -69,19 +69,19 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.DemonicShield",
-      "status": "UnderTest",
-      "onPlaySupport": "Partial",
+      "status": "Verified",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M4",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.EnergySurge",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "Verified",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M4",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Fade",
@@ -101,11 +101,11 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.GangUp",
-      "status": "UnderTest",
-      "onPlaySupport": "GenericCandidate",
+      "status": "Verified",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M4",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.GlimpseBeyond",
@@ -189,11 +189,11 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Lift",
-      "status": "UnderTest",
-      "onPlaySupport": "GenericCandidate",
+      "status": "Verified",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M4",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Midnight",
@@ -205,15 +205,15 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Mimic",
-      "status": "UnderTest",
-      "onPlaySupport": "GenericCandidate",
+      "status": "Verified",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M4",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.OneForAll",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M4",
       "discoveredInGame": true,
@@ -237,11 +237,11 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Rally",
-      "status": "UnderTest",
-      "onPlaySupport": "GenericCandidate",
+      "status": "Verified",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M4",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Sneaky",

@@ -91,6 +91,14 @@ internal static partial class CardOnPlayMirrors
         registry.Register<Entrench>(BespokeCardMirrors.EntrenchOnPlay);
         registry.Register<FiendFire>(BespokeCardMirrors.FiendFireOnPlay);
         registry.Register<LeadingStrike>(BespokeCardMirrors.LeadingStrikeOnPlay);
+        registry.Register<BelieveInYou>(BespokeCardMirrors.BelieveInYouOnPlay);
+        registry.Register<GangUp>(GeneralCardMirrors.GeneralAttackOnPlay);
+        registry.Register<Lift>(GeneralCardMirrors.GeneralBlockOnPlay);
+        registry.Register<Mimic>(BespokeCardMirrors.MimicOnPlay);
+        registry.Register<Rally>(GeneralCardMirrors.GeneralBlockOnPlay);
+        registry.Register<Blaze>(BespokeCardMirrors.BlazeOnPlay);
+        registry.Register<DemonicShield>(BespokeCardMirrors.DemonicShieldOnPlay);
+        registry.Register<EnergySurge>(BespokeCardMirrors.EnergySurgeOnPlay);
         registry.Register<OneForAll>(BespokeCardMirrors.OneForAllOnPlay);
         registry.Register<Maul>(BespokeCardMirrors.MaulOnPlay);
         registry.Register<Sacrifice>(BespokeCardMirrors.SacrificeOnPlay);

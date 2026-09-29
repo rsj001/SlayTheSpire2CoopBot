@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
 
@@ -13,6 +14,46 @@ namespace CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 
 internal static class BespokeCardMirrors
 {
+    public static void BelieveInYouOnPlay(BelieveInYou card, CardOnPlayMirrorContext context)
+        => context.Simulator.GainEnergy(context.TargetPlayer, card.DynamicVars.Energy.IntValue);
+
+    public static void BlazeOnPlay(Blaze card, CardOnPlayMirrorContext context)
+        => RequireCombat(context).ApplyPowerFromSource(
+            typeof(StrengthPower),
+            context.Target,
+            card.DynamicVars.Strength.IntValue,
+            card.Owner.Creature,
+            card);
+
+    public static void DemonicShieldOnPlay(DemonicShield card, CardOnPlayMirrorContext context)
+    {
+        decimal block = context.Calculate(card.DynamicVars.CalculatedBlock);
+        context.Simulator.Damage(
+            [card.Owner.Creature],
+            card.DynamicVars.HpLoss.BaseValue,
+            ValueProp.Unblockable | ValueProp.Unpowered | ValueProp.Move,
+            card.Owner.Creature,
+            context.Card,
+            context.CardPlay);
+        if (!context.Simulator.HasPendingChoice)
+            context.GainBlock(context.Target, block, card.DynamicVars.CalculatedBlock.Props);
+    }
+
+    public static void EnergySurgeOnPlay(EnergySurge card, CardOnPlayMirrorContext context)
+    {
+        foreach (Creature ally in context.CombatState.GetTeammatesOf(card.Owner.Creature)
+                     .Where(creature => creature.IsPlayer && context.State.GetCreature(creature).IsAlive))
+        {
+            context.Simulator.GainEnergy(ally.Player!, card.DynamicVars.Energy.IntValue);
+        }
+    }
+
+    public static void MimicOnPlay(Mimic card, CardOnPlayMirrorContext context)
+        => context.GainBlock(
+            card.Owner.Creature,
+            context.Calculate(card.DynamicVars.CalculatedBlock),
+            card.DynamicVars.CalculatedBlock.Props);
+
     public static void OneForAllOnPlay(OneForAll card, CardOnPlayMirrorContext context)
     {
         if (context.CombatState is not ICombatPredictionEffectSink effects)
@@ -27,6 +68,10 @@ internal static class BespokeCardMirrors
                 card.Owner.Creature);
         }
     }
+
+    private static SimulatedCombatState RequireCombat(CardOnPlayMirrorContext context)
+        => context.CombatState as SimulatedCombatState
+           ?? throw new InvalidOperationException("Multiplayer card effect requires SimulatedCombatState.");
 
     public static void AstralPulseOnPlay(AstralPulse _, CardOnPlayMirrorContext context)
         => context.AttackAllOpponents(hitCount: 2);

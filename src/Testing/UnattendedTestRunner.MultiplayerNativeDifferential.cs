@@ -2,12 +2,15 @@ using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
 
@@ -106,9 +109,151 @@ internal sealed partial class UnattendedTestRunner
                 $"OneForAll.Actor{actorIndex}");
         }
 
-        await AssertBelieveInYouExpectedGapAsync(source);
+        await AssertMultiplayerDirectCardsAsync(source);
         await AssertKnockdownExpectedGapAsync(source);
         await AssertTheBallExpectedGapAsync(source);
+    }
+
+    private async Task AssertMultiplayerDirectCardsAsync(CombatState source)
+    {
+        Type[] cardTypes =
+        [
+            typeof(BelieveInYou), typeof(GangUp), typeof(Lift), typeof(Mimic), typeof(Rally),
+            typeof(Blaze), typeof(DemonicShield), typeof(Constellation), typeof(EnergySurge),
+            typeof(OneForAll),
+        ];
+        foreach (Type cardType in cardTypes)
+        {
+            foreach (bool upgraded in new[] { false, true })
+                await AssertMultiplayerDirectCardAsync(source, cardType, upgraded, actorCount: 2, deadActor: false);
+        }
+
+        foreach (Type cardType in new[] { typeof(Rally), typeof(EnergySurge) })
+            await AssertMultiplayerDirectCardAsync(source, cardType, upgraded: true, actorCount: 4, deadActor: true);
+
+        AssertGangUpAllyHistory(source);
+        AssertDemonicShieldLethalOwner(source);
+    }
+
+    private static void AssertGangUpAllyHistory(CombatState source)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(source, actorCount: 2);
+        Player owner = native.Players[0];
+        CardModel card = native.State.CreateCard(ModelDb.Card<GangUp>(), owner);
+        card.UpgradeInternal();
+        card.FinalizeUpgradeInternal();
+        owner.PlayerCombatState!.Hand.AddInternal(card, silent: true);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        simulator.Damage(
+            [native.Enemy],
+            1,
+            ValueProp.Move,
+            native.Players[1].Creature);
+        int before = simulator.State.GetCreature(native.Enemy).CurrentHp;
+        _ = JointActionTransition.Apply(
+            simulator,
+            JointTurnState.Start(2, root.StartTurnNumber),
+            new PlanAction(
+                PlanActionKind.PlayCard,
+                root.StartTurnNumber,
+                CardId: card.Id.Entry,
+                TargetCombatId: native.Enemy.CombatId,
+                Actor: new CombatActorId(0)),
+            JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator));
+        int dealt = before - simulator.State.GetCreature(native.Enemy).CurrentHp;
+        int expected = card.DynamicVars.CalculationBase.IntValue + card.DynamicVars.ExtraDamage.IntValue;
+        if (dealt != expected)
+            throw new InvalidOperationException($"GangUp 队友本回合命中倍率错误：expected={expected}, actual={dealt}。 ");
+    }
+
+    private async Task AssertMultiplayerDirectCardAsync(
+        CombatState source,
+        Type cardType,
+        bool upgraded,
+        int actorCount,
+        bool deadActor)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(source, actorCount);
+        Player sourceActor = native.Players[0];
+        Player recipient = native.Players[1];
+        sourceActor.PlayerCombatState!.Stars = 3;
+        recipient.Creature.GainBlockInternal(7);
+        sourceActor.Creature.GainBlockInternal(6);
+        if (deadActor)
+            native.Players[2].Creature.SetCurrentHpInternal(0);
+
+        CardModel canonical = ModelDb.All.OfType<CardModel>().Single(card => card.GetType() == cardType);
+        CardModel card = native.State.CreateCard(canonical, sourceActor);
+        if (upgraded)
+        {
+            card.UpgradeInternal();
+            card.FinalizeUpgradeInternal();
+        }
+        sourceActor.PlayerCombatState.Hand.AddInternal(card, silent: true);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator predicted = root.ForkSimulator();
+        SimulatedCombatState predictedCombat = (SimulatedCombatState)predicted.State.CombatState;
+        Creature? target = card.TargetType switch
+        {
+            TargetType.AnyEnemy => native.Enemy,
+            TargetType.AnyAlly => recipient.Creature,
+            _ => null,
+        };
+        await ExecuteSyntheticNativeCardAsync(card, target);
+        PlanAction action = new(
+            PlanActionKind.PlayCard,
+            root.StartTurnNumber,
+            CardId: card.Id.Entry,
+            TargetCombatId: target?.CombatId,
+            Actor: new CombatActorId(0));
+        _ = JointActionTransition.Apply(
+            predicted,
+            JointTurnState.Start(actorCount, root.StartTurnNumber),
+            action,
+            JointActionTransition.CaptureProcessedEnemyDeaths(root, predicted));
+
+        for (int actorIndex = 0; actorIndex < actorCount; actorIndex++)
+        {
+            AssertSnapshotEqual(
+                CaptureSimulated(
+                    predicted,
+                    predictedCombat,
+                    root.Actors[actorIndex].PlayerIdentity,
+                    native.Enemy,
+                    root.PlayerIdentity),
+                CaptureActual(native.State, native.Players[actorIndex], native.Enemy),
+                "MultiplayerDirectCard",
+                $"{cardType.Name}.{(upgraded ? "Upgraded" : "Base")}.Actor{actorIndex}.Count{actorCount}");
+        }
+    }
+
+    private static void AssertDemonicShieldLethalOwner(CombatState source)
+    {
+        OfflineJointCombat native = CreateOfflineJointCombat(source, actorCount: 2);
+        Player sourceActor = native.Players[0];
+        Player recipient = native.Players[1];
+        sourceActor.Creature.SetCurrentHpInternal(1);
+        sourceActor.Creature.GainBlockInternal(9);
+        CardModel card = native.State.CreateCard(ModelDb.Card<DemonicShield>(), sourceActor);
+        sourceActor.PlayerCombatState!.Hand.AddInternal(card, silent: true);
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(native.State);
+        CombatPredictionSimulator predicted = root.ForkSimulator();
+        _ = JointActionTransition.Apply(
+            predicted,
+            JointTurnState.Start(2, root.StartTurnNumber),
+            new PlanAction(
+                PlanActionKind.PlayCard,
+                root.StartTurnNumber,
+                CardId: card.Id.Entry,
+                TargetCombatId: recipient.Creature.CombatId,
+                Actor: new CombatActorId(0)),
+            JointActionTransition.CaptureProcessedEnemyDeaths(root, predicted));
+        SimCreatureState ownerState = predicted.State.GetCreature(sourceActor.Creature);
+        SimCreatureState recipientState = predicted.State.GetCreature(recipient.Creature);
+        if (!ownerState.IsDead || recipientState.Block != 9)
+            throw new InvalidOperationException(
+                $"DemonicShield 致死顺序错误：ownerDead={ownerState.IsDead}, recipientBlock={recipientState.Block}。 ");
     }
 
     private async Task AssertBelieveInYouExpectedGapAsync(CombatState source)

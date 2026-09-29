@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## 原版多人语义 M4 直接结算牌（2026-09-29）
+
+`BelieveInYou`、`GangUp`、`Lift`、`Mimic`、`Rally`、`Blaze`、`DemonicShield`、`Constellation`、`EnergySurge`、`OneForAll` 已全部使用显式 OnPlay mirror，并从目录的 Missing/Generic/Partial/UnderTest 转为 Verified。精确实现保持 Recipient 能量、队友本回合攻击历史、目标格挡、出牌者复制格挡、存活队友遍历、Power applier/cardSource、抽牌/能量/格挡顺序以及所有玩家 Power 应用。
+
+原生差分发现并修正了 `Mimic` 不能套用通用 AnyAlly 格挡：原版读取目标格挡但把结果给出牌者。最终同一 fixture 对十张牌普通/升级版逐 Actor 全状态差分，Rally/EnergySurge 加入四 Actor 含死亡 Actor，GangUp 单独验证升级后队友本回合命中倍率，DemonicShield 单独验证 Owner 先致死而目标仍获得结算前 Owner 格挡。`COOP-MULTIPLAYER-NATIVE-DIFF` / `79c9fbed9f974699aa5f82cedafdb24c` Passed，实例已删除，M4 完成。
+
 ## 原版多人语义 M3 Power 缩放入口（2026-09-29）
 
 模拟 Power 首次应用现在复刻原版 `PowerCmd.Apply` 的多人缩放位置：给予/接收修正与 Artifact 消耗之后、`BeforeApplied` 之前，仅主敌人和次要敌人进入 `ShouldScaleInMultiplayer` / `GetScaledAmountForMultiplayer`；玩家目标不缩放，已存在 Power 的普通叠加不重复缩放，小数结果与原版一样截断为整数。cardSource 沿现有卡牌 Power 作用域传入，默认缩放因此继续读取分支 `Players`、`Encounter`、Act 和 `MultiplayerScalingModel`，无需另建近似公式。
