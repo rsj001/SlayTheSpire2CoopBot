@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver.Engine.Common;
@@ -247,6 +248,30 @@ internal static class BespokeCardMirrors
             context.TargetPlayer,
             PileType.Draw,
             1);
+    }
+
+    public static void LegionOfBoneOnPlay(LegionOfBone card, CardOnPlayMirrorContext context)
+    {
+        SimulatedCombatState combat = RequireCombat(context);
+        foreach (Player player in context.CombatState.Players)
+        {
+            if (context.State.GetCreature(player.Creature).IsAlive)
+                combat.SummonOsty(context.Simulator, player, card.DynamicVars.Summon.IntValue);
+        }
+    }
+
+    public static void HibernateOnPlay(Hibernate card, CardOnPlayMirrorContext context)
+    {
+        SimulatedCombatState combat = RequireCombat(context);
+        combat.ApplyPowerFromSource(
+            typeof(HibernatePower),
+            card.Owner.Creature,
+            1,
+            card.Owner.Creature,
+            card);
+        if (context.Simulator.HasPendingChoice)
+            return;
+        context.Simulator.OrbChannel<FrostOrb>(card.Owner, card.DynamicVars.Repeat.IntValue);
     }
 
     private static SimulatedCombatState RequireCombat(CardOnPlayMirrorContext context)

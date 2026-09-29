@@ -17,7 +17,7 @@ internal sealed partial class SimulatedCombatState
 {
     private List<PowerModel>? _addedPowerInstances;
     private Dictionary<NightmarePower, PredictedCard>? _nightmareSelections;
-    private ForkableDictionary<Player, Creature>? _simulatedOsties;
+    private ForkableDictionary<Player, Creature?>? _simulatedOsties;
     private ForkableDictionary<Creature, int>? _simulatedOstyMaxHp;
     private HashSet<PredictedCard>? _returnToHandNextTurn;
     private ForkableDictionary<Creature, int>? _cardsPlayedThisTurn;
@@ -140,7 +140,7 @@ internal sealed partial class SimulatedCombatState
     }
 
     public Creature? GetOsty(Player player)
-        => _simulatedOsties?.GetValueOrDefault(player) ?? player.Osty;
+        => _simulatedOsties?.GetValueOrDefault(player);
 
     public void RecordCardLifecycle(CombatPredictionSimulator simulator, PredictedCard card)
     {

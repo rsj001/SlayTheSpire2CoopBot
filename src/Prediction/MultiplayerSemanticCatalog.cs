@@ -70,14 +70,14 @@ public static class MultiplayerSemanticCatalog
         Verified<HammerTime>("M5"),
         Verified<Tutor>("M6"),
 
-        Missing<LegionOfBone>("M7"),
+        Exact<LegionOfBone>("M7"),
         Verified<Soulbound>("M5"),
         Verified<Underworld>("M5"),
         Verified<Cacophony>("M5"),
         Verified<GlimpseBeyond>("M6"),
 
         Verified<EnergySurge>("M4"),
-        Missing<Hibernate>("M7"),
+        Exact<Hibernate>("M7"),
         Exact<Ignition>("M7"),
         Verified<ImitationLearning>("M6"),
         Verified<OneForAll>("M4"),

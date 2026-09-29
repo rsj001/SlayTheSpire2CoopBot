@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 原版多人语义 M7 资源牌（进行中，2026-09-29）
+
+- `COOP-MULTIPLAYER-NATIVE-DIFF`：LegionOfBone、Hibernate、Ignition 普通/升级版分别在两 Actor 原生根执行，与预测逐 Actor 做完整快照差分，覆盖每名存活玩家的 Osty、出牌者 HibernatePower/冰霜球和目标玩家等离子球。`runId=69d21e089dd2494bad39fe7c07585655` Passed，实例已删除。
+- 原生合成宿主对 `CombatManager.AddCreature`、`NCombatRoom.AddCreature` 和自动补球槽只隔离 live/UI 登记，同时保留合成 CombatState 的生物、宠物、Power、球队列、历史与 Hook 变更。该轮还证明预测根不会在捕获后读取变化的 live `Player.Osty`。尚未把直接入口通过写成 Hibernate 跨回合生命周期通过。
+
 ## 原版多人语义 M6 选择、转移与复制（已完成，2026-09-29）
 
 - `COOP-MULTIPLAYER-NATIVE-DIFF`：HuddleUp、TheBall、Outrage、BladeSymphony、Largesse、Plot、GlimpseBeyond、ImitationLearning 普通/升级版分别在两 Actor 原生根执行，与预测逐 Actor 做完整快照差分，覆盖卡牌 Owner/牌堆、随机移交、生成 RNG、动态伤害和 PlayerTarget。最终 `runId=eaf4c2c85834405997b1b07a4e69e2fe` Passed，目标差分段 22278ms，实例已删除。

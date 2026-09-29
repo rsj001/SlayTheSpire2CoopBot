@@ -291,6 +291,13 @@ internal sealed partial class UnattendedTestRunner
             foreach (bool upgraded in new[] { false, true })
                 await AssertMultiplayerDirectCardAsync(source, cardType, upgraded, actorCount: 2, deadActor: false);
         }
+
+        Type[] resourceCardTypes = [typeof(LegionOfBone), typeof(Hibernate), typeof(Ignition)];
+        foreach (Type cardType in resourceCardTypes)
+        {
+            foreach (bool upgraded in new[] { false, true })
+                await AssertMultiplayerDirectCardAsync(source, cardType, upgraded, actorCount: 2, deadActor: false);
+        }
     }
 
     private static void AssertGangUpAllyHistory(CombatState source)
@@ -468,8 +475,42 @@ internal sealed partial class UnattendedTestRunner
             nameof(SkipSyntheticPowerCardVfx),
             BindingFlags.Static | BindingFlags.NonPublic)
             ?? throw new MissingMethodException(nameof(SkipSyntheticPowerCardVfx));
+        MethodInfo addCreature = typeof(CombatManager).GetMethod(
+            nameof(CombatManager.AddCreature),
+            BindingFlags.Instance | BindingFlags.Public,
+            binder: null,
+            types: [typeof(Creature)],
+            modifiers: null)
+            ?? throw new MissingMethodException(typeof(CombatManager).FullName, nameof(CombatManager.AddCreature));
+        MethodInfo addCreaturePrefix = typeof(UnattendedTestRunner).GetMethod(
+            nameof(SkipSyntheticCombatManagerCreatureRegistration),
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(nameof(SkipSyntheticCombatManagerCreatureRegistration));
+        MethodInfo addCreatureNode = typeof(MegaCrit.Sts2.Core.Nodes.Rooms.NCombatRoom).GetMethod(
+            nameof(MegaCrit.Sts2.Core.Nodes.Rooms.NCombatRoom.AddCreature),
+            BindingFlags.Instance | BindingFlags.Public,
+            binder: null,
+            types: [typeof(Creature)],
+            modifiers: null)
+            ?? throw new MissingMethodException(
+                typeof(MegaCrit.Sts2.Core.Nodes.Rooms.NCombatRoom).FullName,
+                nameof(MegaCrit.Sts2.Core.Nodes.Rooms.NCombatRoom.AddCreature));
+        MethodInfo addOrbSlots = typeof(OrbCmd).GetMethod(
+            nameof(OrbCmd.AddSlots),
+            BindingFlags.Static | BindingFlags.Public,
+            binder: null,
+            types: [typeof(Player), typeof(int)],
+            modifiers: null)
+            ?? throw new MissingMethodException(typeof(OrbCmd).FullName, nameof(OrbCmd.AddSlots));
+        MethodInfo addOrbSlotsPrefix = typeof(UnattendedTestRunner).GetMethod(
+            nameof(AddSyntheticOrbSlotsWithoutVisuals),
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(nameof(AddSyntheticOrbSlotsWithoutVisuals));
         Harmony vfxIsolation = new("CombatSolver.Testing.MultiplayerNativePowerVfx." + _request.RunId);
         vfxIsolation.Patch(powerVfx, prefix: new HarmonyMethod(powerVfxPrefix));
+        vfxIsolation.Patch(addCreature, prefix: new HarmonyMethod(addCreaturePrefix));
+        vfxIsolation.Patch(addCreatureNode, prefix: new HarmonyMethod(addCreaturePrefix));
+        vfxIsolation.Patch(addOrbSlots, prefix: new HarmonyMethod(addOrbSlotsPrefix));
         try
         {
             PlayCardAction actualAction = new(nativeCard, target);
@@ -484,6 +525,9 @@ internal sealed partial class UnattendedTestRunner
         finally
         {
             vfxIsolation.Unpatch(powerVfx, powerVfxPrefix);
+            vfxIsolation.Unpatch(addCreature, addCreaturePrefix);
+            vfxIsolation.Unpatch(addCreatureNode, addCreaturePrefix);
+            vfxIsolation.Unpatch(addOrbSlots, addOrbSlotsPrefix);
         }
 
     }
@@ -579,6 +623,16 @@ internal sealed partial class UnattendedTestRunner
 
     private static bool SkipSyntheticPowerCardVfx(ref Task __result)
     {
+        __result = Task.CompletedTask;
+        return false;
+    }
+
+    private static bool SkipSyntheticCombatManagerCreatureRegistration() => false;
+
+    private static bool AddSyntheticOrbSlotsWithoutVisuals(Player player, int amount, ref Task __result)
+    {
+        amount = Math.Min(10 - player.PlayerCombatState!.OrbQueue.Capacity, amount);
+        player.PlayerCombatState.OrbQueue.AddCapacity(amount);
         __result = Task.CompletedTask;
         return false;
     }

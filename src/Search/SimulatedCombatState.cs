@@ -417,12 +417,14 @@ internal sealed partial class SimulatedCombatState
         _deathPhases = BuildInitialDeathPhases(inner.Enemies);
         _playerTurnNumbers = [];
         _simulatedPlayerGold = [];
+        _simulatedOsties = [];
         foreach (Player player in _players)
         {
             PlayerCombatState playerState = player.PlayerCombatState
                 ?? throw new InvalidOperationException($"Player {player.NetId} has no combat state to capture.");
             _playerTurnNumbers.Add(player, playerState.TurnNumber);
             _simulatedPlayerGold.Add(player, player.Gold);
+            _simulatedOsties.Add(player, player.Osty);
         }
     }
 

@@ -381,6 +381,8 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M7：球、宠物和角色专属多人资源
 
+> 进度：进行中。LegionOfBone、Hibernate 已补齐精确入口，Ignition 复用既有球入口；三张牌普通/升级版两 Actor 原生/预测全状态差分 `69d21e089dd2494bad39fe7c07585655` Passed，实例已删除。差分期间修正预测 Osty 不得在根捕获后回退读取 live `Player.Osty`，根现在保存逐 Actor 宠物映射并随 Fork 复制。尚缺四 Actor 混合资源、Hibernate 跨回合/死亡/满槽及多个 Defect 边界。
+
 目标：完成不能只用通用卡牌/Power 表达的角色机制。
 
 范围：
@@ -546,7 +548,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 | M4 直接结算牌 | M2-M3 | 已完成 | `COOP-MULTIPLAYER-NATIVE-DIFF` / `79c9fbed9f974699aa5f82cedafdb24c` |
 | M5 Power/Hook 牌 | M2-M4 | 已完成 | 初始原生差分 `920231b15d1447d09379fed727dbf115`；预测生命周期 `dfc42d469b7e4682bcb3c2a8a33750ae`；原生生命周期代表 `5d9c977d6bc349be97a28f734a4ab050` |
 | M6 选择/转移/复制牌 | M2、M4-M5 | 已完成 | 八张直接入口原生差分 `eaf4c2c85834405997b1b07a4e69e2fe`；Tutor 身份/结算 `ec8b1d83ac2c414f8bdb4162b3536aab`；ImitationLearning AutoPlay 生命周期 `2d8abe21720a4bbd92ab24b16996a14b` |
-| M7 球/宠物/角色资源 | M2、M4-M6 | 未开始 | — |
+| M7 球/宠物/角色资源 | M2、M4-M6 | 进行中 | 三张牌普通/升级原生差分 `69d21e089dd2494bad39fe7c07585655`；尚缺四 Actor 混合资源与 Hibernate 生命周期 |
 | M8 药水/遗物/反广播/第三方 | M2-M7 | 未开始 | — |
 | M9 回合/敌人/死亡/并发选择 | M3-M8 | 未开始 | — |
 | M10 完整内容门禁 | M3-M9 | 未开始 | — |

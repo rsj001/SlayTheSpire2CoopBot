@@ -21,7 +21,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.BladeSymphony",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
@@ -109,7 +109,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.GlimpseBeyond",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
@@ -125,15 +125,15 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Hibernate",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M7",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.HuddleUp",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
@@ -149,7 +149,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.ImitationLearning",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
@@ -173,7 +173,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Largesse",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
@@ -181,11 +181,11 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.LegionOfBone",
-      "status": "Unsupported",
-      "onPlaySupport": "Missing",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
       "plannedStage": "M7",
       "discoveredInGame": true,
-      "hasExactMirror": false
+      "hasExactMirror": true
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Lift",
@@ -221,7 +221,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Outrage",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
@@ -229,7 +229,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Plot",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
@@ -277,7 +277,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.TheBall",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,
@@ -285,7 +285,7 @@
     },
     {
       "type": "MegaCrit.Sts2.Core.Models.Cards.Tutor",
-      "status": "UnderTest",
+      "status": "Verified",
       "onPlaySupport": "ExactMirror",
       "plannedStage": "M6",
       "discoveredInGame": true,

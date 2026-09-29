@@ -134,6 +134,8 @@ internal static partial class CardOnPlayMirrors
         registry.Register<GlimpseBeyond>(BespokeCardMirrors.GlimpseBeyondOnPlay);
         registry.Register<ImitationLearning>(BespokeCardMirrors.ImitationLearningOnPlay);
         registry.Register<Tutor>(BespokeCardMirrors.TutorOnPlay);
+        registry.Register<LegionOfBone>(BespokeCardMirrors.LegionOfBoneOnPlay);
+        registry.Register<Hibernate>(BespokeCardMirrors.HibernateOnPlay);
         registry.Register<Maul>(BespokeCardMirrors.MaulOnPlay);
         registry.Register<Sacrifice>(BespokeCardMirrors.SacrificeOnPlay);
         registry.Register<Spite>(BespokeCardMirrors.SpiteOnPlay);
