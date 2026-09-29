@@ -70,7 +70,7 @@ internal sealed partial class UnattendedTestRunner
                 runner.SetStage("coop_multiplayer_scaling");
                 AssertMultiplayerPowerScaling(scenario.CombatState);
                 runner._completedChecks.Add(
-                    "MultiplayerScaling:ActorCount2:ActorCount3:ActorCount4:PrimaryEnemy:SecondaryEnemy:PlayerUnscaled:NewApplicationOnly:Artifact:Plating:Skittish:Slippery:CurlUp:Flutter:Zero:Negative");
+                    "MultiplayerScaling:ActorCount2:ActorCount3:ActorCount4:NormalHp:EliteHp:BossHp:PredictedSpawnHp:PrimaryEnemyBlock:SecondaryEnemyBlock:PlayerUnscaled:NewApplicationOnly:Artifact:Plating:Skittish:Slippery:CurlUp:Flutter:Zero:Negative:GenerationAttackSkillPower");
             }
             if (request.ScenarioId == "COOP-JOINT-OBJECTIVE")
             {

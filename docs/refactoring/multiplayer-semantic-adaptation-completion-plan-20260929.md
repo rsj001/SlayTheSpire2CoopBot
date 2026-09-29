@@ -276,7 +276,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M3：完成玩家人数缩放和生成规则
 
-> 进度：进行中。Power 首次应用已接入唯一多人缩放入口，2/3/4 Actor 主/次敌人、玩家不缩放、叠加不重缩放及六类代表 Power/零负边界通过；CoverageCatalog 对当前 13 个相关类型新增精确集合门禁。证据为 `COOP-MULTIPLAYER-SCALING` / `c6781d0366144ab9a06199cb4e08114d`。敌人 HP/格挡和生成池最低证据仍待本阶段后续完成。
+> 进度：已完成。Power 首次应用接入唯一多人缩放入口；2/3/4 Actor 普通/精英/Boss 出生 HP、预测召唤 HP、主/次敌人格挡、玩家不缩放、叠加不重缩放及六类代表 Power/零负边界通过。当前 37 张多人专属牌在多人/单人生成过滤中分别包含/排除并覆盖攻击、技能、能力，0.111.0 当前无 `SingleplayerOnly` 原版牌；CoverageCatalog 对 13 个相关 Power 类型执行精确集合门禁。最终证据为 `COOP-MULTIPLAYER-SCALING` / `ecb0a35c1357491fb57b252a4f856cae`。
 
 目标：在逐卡内容前关闭所有全局人数规则。
 

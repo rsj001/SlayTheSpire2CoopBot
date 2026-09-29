@@ -2,8 +2,8 @@
 
 ## 原版多人语义 M3 Power 缩放入口（2026-09-29）
 
-- `COOP-MULTIPLAYER-SCALING`：2/3/4 Actor 分别验证主敌人和带 `MinionPower` 的次要敌人；Artifact、Plating、Skittish、Slippery、CurlUp、Flutter 的首次应用量与原版虚方法结果一致，玩家目标保持原量，已有 Artifact 再叠加只增加请求量，并覆盖零/负数。最终 `runId=c6781d0366144ab9a06199cb4e08114d` Passed，fixture 阶段 300 ms，实例已删除。
-- 多人目录专项 verify 发现 13 个已核验 Power 缩放相关类型、0 个缺失、0 个新增未核验覆写；Release 构建 0 警告/0 错误。M3 的 HP/格挡/生成池最低证据尚未在本条声称完成；未启动可见 Steam 或 Linux/WSL。
+- `COOP-MULTIPLAYER-SCALING`：2/3/4 Actor 在普通、精英、Boss 遭遇核对缩放前 HP 与原版缩放函数，另建预测召唤怪物核对当前/最大 HP；主敌人和由 `MinionPower` 标记、且有存活主敌人陪同的次要敌人格挡均按人数缩放。Artifact、Plating、Skittish、Slippery、CurlUp、Flutter 的首次应用量与原版虚方法结果一致，玩家目标保持原量，已有 Artifact 再叠加只增加请求量，并覆盖零/负数。最终 `runId=ecb0a35c1357491fb57b252a4f856cae` Passed，fixture 阶段 342 ms，实例已删除。
+- 同 fixture 从当前原版程序集发现 37 张 `MultiplayerOnly`，多人过滤全部保留、单人过滤全部排除，且覆盖攻击/技能/能力三类；当前程序集没有 `SingleplayerOnly` 原版牌，未把不存在的类型写成正样本。多人目录专项 verify 发现 13 个已核验 Power 缩放相关类型、0 个缺失、0 个新增未核验覆写；Release 构建 0 警告/0 错误。未启动可见 Steam 或 Linux/WSL。
 
 ## 原版多人语义 M2 身份与私有状态（2026-09-29）
 

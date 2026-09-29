@@ -4,7 +4,7 @@
 
 模拟 Power 首次应用现在复刻原版 `PowerCmd.Apply` 的多人缩放位置：给予/接收修正与 Artifact 消耗之后、`BeforeApplied` 之前，仅主敌人和次要敌人进入 `ShouldScaleInMultiplayer` / `GetScaledAmountForMultiplayer`；玩家目标不缩放，已存在 Power 的普通叠加不重复缩放，小数结果与原版一样截断为整数。cardSource 沿现有卡牌 Power 作用域传入，默认缩放因此继续读取分支 `Players`、`Encounter`、Act 和 `MultiplayerScalingModel`，无需另建近似公式。
 
-`COOP-MULTIPLAYER-SCALING` 在 2/3/4 Actor 的主、次敌人上覆盖 Artifact、Plating、Skittish、Slippery、CurlUp、Flutter，并检查玩家目标、二次叠加、零与负数边界；`runId=c6781d0366144ab9a06199cb4e08114d` Passed，实例已删除。CoverageCatalog 将当前 13 个相关原版类型固定为已核验集合，新增或消失的覆写都会令多人专项门禁失败。M3 的敌人 HP/格挡与生成池证据仍在继续，本条不是 M3 完成声明。
+`COOP-MULTIPLAYER-SCALING` 最终在 2/3/4 Actor 的普通、精英、Boss 遭遇核对原生出生 HP，并验证预测召唤沿用同一缩放；主、次敌人格挡以及 Artifact、Plating、Skittish、Slippery、CurlUp、Flutter 均覆盖，同时检查玩家目标、二次叠加、零与负数边界。生成池以当前 37 张多人专属牌核对多人包含、单人排除，并要求攻击/技能/能力三类均实际出现；游戏 0.111.0 当前没有 `SingleplayerOnly` 原版牌，因此“单人限定不进入多人池”由空集合和共享过滤谓词共同守卫，不虚构不存在的内容。最终 `runId=ecb0a35c1357491fb57b252a4f856cae` Passed，实例已删除。CoverageCatalog 将当前 13 个相关原版 Power 类型固定为已核验集合，新增或消失的覆写都会令多人专项门禁失败，M3 完成。
 
 ## 原版多人语义 M2 身份与私有状态（2026-09-29）
 

@@ -2,9 +2,9 @@
   "MULTIPLAYER-SEMANTIC-M3-POWER-SCALING-20260929": {
     "status": "Passed",
     "level": "HeadlessMultiplayerPowerScaling",
-    "procedure": "COOP-MULTIPLAYER-SCALING；2/3/4 Actor；主/次敌人；玩家目标；首次/叠加；六类代表 Power；零/负数；CoverageCatalog 覆写集合",
-    "expected": "仅新应用到主/次敌人的 ShouldScale Power 按原版虚方法缩放，玩家与叠加保持原规则，新增覆写未经验证时目录门禁失败",
-    "observed": "runId=c6781d0366144ab9a06199cb4e08114d Passed，fixture 300ms，实例已删除；13 个已核验相关类型，missing/unverified 均为 0。",
+    "procedure": "COOP-MULTIPLAYER-SCALING；2/3/4 Actor 普通/精英/Boss HP；预测召唤；主/次敌人格挡；玩家目标；首次/叠加；六类代表 Power；零/负数；生成池；CoverageCatalog 覆写集合",
+    "expected": "出生/召唤 HP 与主次敌人格挡按人数规则；仅新应用到主/次敌人的 ShouldScale Power 按原版虚方法缩放；多人专属生成约束生效；新增覆写未经验证时目录门禁失败",
+    "observed": "runId=ecb0a35c1357491fb57b252a4f856cae Passed，fixture 342ms，实例已删除；37 张 MultiplayerOnly 包含/排除及三种牌型通过，当前 SingleplayerOnly=0；13 个已核验 Power 相关类型，missing/unverified 均为 0。",
     "evidence": "src/Search/SimulatedCombatState.cs; src/Testing/UnattendedTestRunner.MultiplayerScaling.cs; coverage/multiplayer-semantics.json; docs/TEST_MATRIX.md"
   },
   "MULTIPLAYER-SEMANTIC-M2-IDENTITY-20260929": {
