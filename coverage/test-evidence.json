@@ -1,4 +1,12 @@
 {
+  "MULTIPLAYER-SEMANTIC-M0-20260929": {
+    "status": "Passed",
+    "level": "HeadlessNativeFailureBoundaryAndStaticCatalog",
+    "procedure": "CoverageCatalog --verify-multiplayer-semantics；PredictionFailureBoundaries 根边界；Windows 结构门禁；Release 构建",
+    "expected": "当前程序集 37 张 MultiplayerOnly 卡牌与目录一致；目录外、缺实现和未验证推断在效果执行前稳定失败；已有精确 mirror 可进入后续 M1 验证",
+    "observed": "37 张卡牌、13 个多人缩放相关 Power、51 个跨玩家药水目标；missing/stale/exact-mirror mismatch 均为 0。runId=e5b1f3588d9246a182725880c4526608 Passed，实例已删除。Windows 门禁通过；本机 WSL 服务不可用，Linux 门禁未执行。",
+    "evidence": "coverage/multiplayer-semantics.json; docs/TEST_MATRIX.md; src/Prediction/MultiplayerSemanticCatalog.cs"
+  },
   "INFUSED-CORE-INITIAL-SETUP-20260927": {
     "status": "Pending",
     "level": "OfflineProductionHookDiagnostic",

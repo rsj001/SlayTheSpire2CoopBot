@@ -1,0 +1,593 @@
+{
+  "schemaVersion": 1,
+  "combatSolverVersion": "0.47.2",
+  "gameVersion": "0.111.0",
+  "cards": [
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.BeaconOfHope",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.BelieveInYou",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M4",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.BladeSymphony",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M6",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Blaze",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M4",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Cacophony",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Concoct",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Constellation",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
+      "plannedStage": "M4",
+      "discoveredInGame": true,
+      "hasExactMirror": true
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Coordinate",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.DemonicShield",
+      "status": "UnderTest",
+      "onPlaySupport": "Partial",
+      "plannedStage": "M4",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.EnergySurge",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M4",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Fade",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Flanking",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.GangUp",
+      "status": "UnderTest",
+      "onPlaySupport": "GenericCandidate",
+      "plannedStage": "M4",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.GlimpseBeyond",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M6",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.HammerTime",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Hibernate",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M7",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.HuddleUp",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
+      "plannedStage": "M6",
+      "discoveredInGame": true,
+      "hasExactMirror": true
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Ignition",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
+      "plannedStage": "M7",
+      "discoveredInGame": true,
+      "hasExactMirror": true
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.ImitationLearning",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M6",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Intercept",
+      "status": "UnderTest",
+      "onPlaySupport": "Partial",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Knockdown",
+      "status": "UnderTest",
+      "onPlaySupport": "Partial",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Largesse",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
+      "plannedStage": "M6",
+      "discoveredInGame": true,
+      "hasExactMirror": true
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.LegionOfBone",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M7",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Lift",
+      "status": "UnderTest",
+      "onPlaySupport": "GenericCandidate",
+      "plannedStage": "M4",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Midnight",
+      "status": "UnderTest",
+      "onPlaySupport": "GenericCandidate",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Mimic",
+      "status": "UnderTest",
+      "onPlaySupport": "GenericCandidate",
+      "plannedStage": "M4",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.OneForAll",
+      "status": "UnderTest",
+      "onPlaySupport": "ExactMirror",
+      "plannedStage": "M4",
+      "discoveredInGame": true,
+      "hasExactMirror": true
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Outrage",
+      "status": "UnderTest",
+      "onPlaySupport": "Partial",
+      "plannedStage": "M6",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Plot",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M6",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Rally",
+      "status": "UnderTest",
+      "onPlaySupport": "GenericCandidate",
+      "plannedStage": "M4",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Sneaky",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Soulbound",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.TagTeam",
+      "status": "UnderTest",
+      "onPlaySupport": "GenericCandidate",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Tank",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.TheBall",
+      "status": "UnderTest",
+      "onPlaySupport": "Partial",
+      "plannedStage": "M6",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Tutor",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M6",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Cards.Underworld",
+      "status": "Unsupported",
+      "onPlaySupport": "Missing",
+      "plannedStage": "M5",
+      "discoveredInGame": true,
+      "hasExactMirror": false
+    }
+  ],
+  "powerScaling": [
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.ArtifactPower",
+      "shouldScale": true,
+      "overridesScaleFlag": true,
+      "overridesAmount": true
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.BufferPower",
+      "shouldScale": false,
+      "overridesScaleFlag": false,
+      "overridesAmount": true
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.CurlUpPower",
+      "shouldScale": true,
+      "overridesScaleFlag": true,
+      "overridesAmount": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.FlutterPower",
+      "shouldScale": true,
+      "overridesScaleFlag": true,
+      "overridesAmount": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.HardenedShellPower",
+      "shouldScale": true,
+      "overridesScaleFlag": true,
+      "overridesAmount": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.PlatingPower",
+      "shouldScale": true,
+      "overridesScaleFlag": true,
+      "overridesAmount": true
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.PlowPower",
+      "shouldScale": true,
+      "overridesScaleFlag": true,
+      "overridesAmount": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.RampartPower",
+      "shouldScale": true,
+      "overridesScaleFlag": true,
+      "overridesAmount": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.ReattachPower",
+      "shouldScale": true,
+      "overridesScaleFlag": true,
+      "overridesAmount": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.RegenPower",
+      "shouldScale": true,
+      "overridesScaleFlag": true,
+      "overridesAmount": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.ShriekPower",
+      "shouldScale": true,
+      "overridesScaleFlag": true,
+      "overridesAmount": false
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.SkittishPower",
+      "shouldScale": true,
+      "overridesScaleFlag": true,
+      "overridesAmount": true
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Powers.SlipperyPower",
+      "shouldScale": true,
+      "overridesScaleFlag": true,
+      "overridesAmount": true
+    }
+  ],
+  "crossPlayerPotions": [
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.Ambergris",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.Ashwater",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.AttackPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.BlessingOfTheForge",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.BlockPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.BloodPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.BoneBrew",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.BottledPotential",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.Clarity",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.ColorlessPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.CosmicConcoction",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.CunningPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.CureAll",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.DexterityPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.DistilledChaos",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.DropletOfPrecognition",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.Duplicator",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.EnergyPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.EntropicBrew",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.EssenceOfDarkness",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.FlexPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.FocusPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.Fortifier",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.FruitJuice",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.FyshOil",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.GamblersBrew",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.GhostInAJar",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.GigantificationPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.GlowwaterPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.HeartOfIron",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.KingsCourage",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.LiquidBronze",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.LiquidMemories",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.LuckyTonic",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.MazalethsGift",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.OrobicAcid",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.PotOfGhouls",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.PotionOfCapacity",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.PowerPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.RadiantTincture",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.RegenPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.ShipInABottle",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.SkillPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.SneckoOil",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.SoldiersStew",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.SpeedPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.StableSerum",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.StarPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.StrengthPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.SwiftPotion",
+      "targetType": "AnyPlayer"
+    },
+    {
+      "type": "MegaCrit.Sts2.Core.Models.Potions.TouchOfInsanity",
+      "targetType": "AnyPlayer"
+    }
+  ],
+  "missingCards": [],
+  "staleCards": [],
+  "exactMirrorMismatches": [],
+  "isCurrent": true
+}

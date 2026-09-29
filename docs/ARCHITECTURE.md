@@ -255,6 +255,8 @@ RitsuLib 0.6.0 自身拥有 BaseLib 目标类型的外部登记查询、按程�
 
 ### 3.1 离线多 Actor 联合模型（Co-op Bot 第一阶段）
 
+`MultiplayerSemanticCatalog` 是当前游戏版本原版多人增量语义的失败边界：它逐项声明 `MultiplayerOnly` 卡牌的支持状态、OnPlay 覆盖形态与计划阶段。`CardOnPlayMirrors` 在执行任何普通 registry handler/inferrer 前检查该目录；目录外、明确未支持或尚未验证却落入普通推断器的多人牌抛出 `PredictionUnsupportedException`，不产生部分分支。已有精确 mirror 仅表示可以进入后续 M1 actual/simulated 验证，不等于已验证。CoverageCatalog 只通过公开 `MultiplayerSemanticCatalog` 与 `MethodMirrorRegistryDescriptor` 核对当前程序集，不反射 registry 私有登记布局，并输出多人牌、Power 缩放相关类型和跨玩家药水目标的版本化目录。
+
 F0 起的完整单人功能迁移范围由[离线四 Actor 单人功能迁移库存](refactoring/offline-four-actor-feature-inventory-20260929.md)统一维护。库存把根/状态、候选/选择、结算机制、回合/终局和搜索政策映射到权威源码与最低动态证据；后续阶段只能在该库存中关闭缺口，不能凭编译将待迁移功能记为已覆盖。
 
 联合状态键由 `JointTurnState` 的 Actor 阶段和完整 `ContinuationStamp` 文本组成；后者按固定 Actor 顺序保存阶段、资源、五牌堆、Osty、球、药水、回合历史和有状态遗物，并在全局段保存敌人、Power、RNG 与适配器状态。`JointActorSnapshot` 只是诊断投影，不维护第二套战斗等价性字段。`src/Search/Coop` 禁止恢复 `Players.Single()` 或 `LocalContext.GetMe()`；生产单人 Search 中的 `_player` 不因此改写。

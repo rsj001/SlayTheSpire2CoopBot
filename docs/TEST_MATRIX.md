@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 原版多人语义 M0 目录与失败边界（2026-09-29）
+
+- `dotnet run --project tools/CoverageCatalog/CoverageCatalog.csproj -c Release --no-build -- . --verify-multiplayer-semantics`：从当前 0.111.0 程序集发现 37 张多人专属牌，与版本化目录逐项一致；发现 13 个 Power 多人缩放相关类型、51 个跨玩家药水目标，目录缺失/陈旧/精确 mirror 分类差异均为 0。
+- `PredictionFailureBoundaries` 增加目录合同：精确登记的 `OneForAll` 可进入后续语义执行；缺 OnPlay 的 `Blaze`、未经原生多人验证的推断候选 `GangUp`、目录外 MultiplayerOnly 测试牌分别在效果执行前以 `Unsupported / Unverified inferred / Unregistered` 稳定失败，消息含完整类型和计划阶段。`runId=e5b1f3588d9246a182725880c4526608` Passed，只执行根边界检查，实例已删除；本条不替代 M1 的原生多人 actual/simulated 差分。
+- Windows Release 构建 0 警告/0 错误；未启动可见 Steam，不验证 37 张牌的真实结算。
+
 ## 联合跨轮逐点 strict replay 与生命周期（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：2 Actor 保存两个 EndTurn、一个完整屏障及下一轮终局动作共 4 个 checkpoint；4 Actor 对应 4 个 EndTurn、屏障和终局动作共 6 个 checkpoint。搜索分支与冻结根回放逐点同 Turn/Phase、完整 continuation、状态键，终态再次严格比较；`runId=d30b2148a2fb41c7bcd76d6f2d13c196` Passed，实例已删除。

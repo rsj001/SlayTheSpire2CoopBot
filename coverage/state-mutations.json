@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "combatSolverVersion": "0.38.2",
+  "combatSolverVersion": "0.47.2",
   "gameVersion": "0.111.0",
-  "unverifiedCount": 0,
+  "unverifiedCount": 1,
   "snapshotOnlyWithoutRuntimeEvidenceCount": 22,
   "staticConfigurationWithoutRuntimeEvidenceCount": 115,
   "entries": [
@@ -15668,9 +15668,9 @@
       "hook": "AfterSideTurnStart(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList\u003CMegaCrit.Sts2.Core.Entities.Creatures.Creature\u003E,MegaCrit.Sts2.Core.Combat.ICombatState)",
       "phase": "FutureLifecycle",
       "effectiveStatus": "Exact",
-      "capability": "NativeSnapshot",
+      "capability": "SolverCompensation",
       "requiresRuntimeEvidence": true,
-      "runtimeVerified": true,
+      "runtimeVerified": false,
       "writes": [
         "call:MegaCrit.Sts2.Core.Commands.OrbCmd.Channel"
       ]

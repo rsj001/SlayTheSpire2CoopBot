@@ -754,6 +754,19 @@ if (Select-String -LiteralPath $onPlayAdapter -SimpleMatch 'PredictionModPatchAu
 if (-not (Select-String -LiteralPath $onPlayAdapter -SimpleMatch 'patchedOnPlayTargets.Contains(target)' -Quiet)) {
     $violations.Add("${onPlayAdapter}: missing frozen generated-card patch decision")
 }
+$multiplayerCatalog = Join-Path $repositoryRoot 'src/Prediction/MultiplayerSemanticCatalog.cs'
+foreach ($required in @(
+    'public const string GameVersion = "0.111.0"',
+    'public static IReadOnlyList<MultiplayerCardSemanticDescriptor> Cards',
+    'RequireExecutableOnPlay',
+    'Unverified inferred MultiplayerOnly card OnPlay')) {
+    if (-not (Select-String -LiteralPath $multiplayerCatalog -SimpleMatch $required -Quiet)) {
+        $violations.Add("${multiplayerCatalog}: missing multiplayer semantic boundary '$required'")
+    }
+}
+if (-not (Select-String -LiteralPath $onPlayFacade -SimpleMatch 'MultiplayerSemanticCatalog.RequireExecutableOnPlay' -Quiet)) {
+    $violations.Add("${onPlayFacade}: missing MultiplayerOnly fail-closed dispatch boundary")
+}
 
 $sessionPath = Join-Path $repositoryRoot "src\Runtime\SolverControllerSessions.cs"
 foreach ($sessionType in @("SolverCombatSession", "SolverSearchSession", "SolverDeploymentSession")) {

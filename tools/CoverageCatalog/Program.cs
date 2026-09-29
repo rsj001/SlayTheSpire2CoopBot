@@ -31,6 +31,7 @@ bool verifyPrePlayChoices = args.Contains("--verify-pre-play-choices", StringCom
 bool verifyCombatChoices = args.Contains("--verify-combat-choices", StringComparer.Ordinal);
 bool verifyAutoPlaySources = args.Contains("--verify-autoplay-sources", StringComparer.Ordinal);
 bool verifyRosterSources = args.Contains("--verify-roster-sources", StringComparer.Ordinal);
+bool verifyMultiplayerSemantics = args.Contains("--verify-multiplayer-semantics", StringComparer.Ordinal);
 bool generateSimpleCardFixture = args.Contains("--generate-simple-card-fixture", StringComparer.Ordinal);
 bool generateExactCardFixture = args.Contains("--generate-exact-card-fixture", StringComparer.Ordinal);
 bool generateSimpleMonsterMoveFixture = args.Contains("--generate-simple-monster-move-fixture", StringComparer.Ordinal);
@@ -48,6 +49,7 @@ string prePlayChoiceGapPath = Path.Combine(coverageDirectory, "pre-play-choice-g
 string combatChoiceSourcePath = Path.Combine(coverageDirectory, "combat-choice-sources.json");
 string autoPlaySourcePath = Path.Combine(coverageDirectory, "combat-autoplay-sources.json");
 string rosterSourcePath = Path.Combine(coverageDirectory, "combat-roster-sources.json");
+string multiplayerSemanticPath = Path.Combine(coverageDirectory, "multiplayer-semantics.json");
 string reportPath = Path.Combine(repositoryRoot, "docs", "COMBAT_HOOK_COVERAGE.md");
 string manifestPath = Path.Combine(repositoryRoot, "CombatSolver.json");
 
@@ -65,6 +67,59 @@ Dictionary<string, CoverageTestEvidence> testEvidence = File.Exists(evidencePath
 using JsonDocument manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
 string combatSolverVersion = manifest.RootElement.GetProperty("version").GetString()
     ?? throw new InvalidOperationException("CombatSolver.json version is null.");
+
+bool multiplayerSemanticOnly = verifyMultiplayerSemantics
+    && !verify
+    && !verifyEffective
+    && !verifyNoRescan
+    && !verifyRuntimeEvidence
+    && !verifyBranchStateReads
+    && !verifyStateFields
+    && !verifyStateWrites
+    && !verifyPrePlayChoices
+    && !verifyCombatChoices
+    && !verifyAutoPlaySources
+    && !verifyRosterSources
+    && !generateSimpleCardFixture
+    && !generateExactCardFixture
+    && !generateSimpleMonsterMoveFixture
+    && !generateStateMutationFixtures;
+if (multiplayerSemanticOnly)
+{
+    if (!ModelDb.All.Any())
+    {
+        Type[] gameModelTypes = typeof(AbstractModel).Assembly.GetTypes()
+            .Where(type => !type.IsAbstract && typeof(AbstractModel).IsAssignableFrom(type))
+            .ToArray();
+        ModelDb.Init(gameModelTypes);
+    }
+    MultiplayerSemanticCoverageCatalog multiplayerOnlyCatalog = MultiplayerSemanticAudit.Build(
+        combatSolverVersion,
+        "0.111.0");
+    File.WriteAllText(
+        multiplayerSemanticPath,
+        JsonSerializer.Serialize(multiplayerOnlyCatalog, JsonOptions()),
+        new UTF8Encoding(false));
+    Console.WriteLine(
+        $"Multiplayer semantics: {multiplayerOnlyCatalog.Cards.Count} cards, " +
+        $"{multiplayerOnlyCatalog.PowerScaling.Count} power scaling types, " +
+        $"{multiplayerOnlyCatalog.CrossPlayerPotions.Count} cross-player potion targets, " +
+        $"{multiplayerOnlyCatalog.MissingCards.Count} missing cards, " +
+        $"{multiplayerOnlyCatalog.StaleCards.Count} stale cards, " +
+        $"{multiplayerOnlyCatalog.ExactMirrorMismatches.Count} exact-mirror mismatches.");
+    Console.WriteLine(multiplayerSemanticPath);
+    if (!multiplayerOnlyCatalog.IsCurrent)
+    {
+        foreach (string type in multiplayerOnlyCatalog.MissingCards)
+            Console.Error.WriteLine($"Missing catalog card: {type}");
+        foreach (string type in multiplayerOnlyCatalog.StaleCards)
+            Console.Error.WriteLine($"Stale catalog card: {type}");
+        foreach (string type in multiplayerOnlyCatalog.ExactMirrorMismatches)
+            Console.Error.WriteLine($"Exact mirror classification mismatch: {type}");
+        return 13;
+    }
+    return 0;
+}
 
 EngineMirrorInventory engine = ReadEngineMirrorInventory();
 HashSet<string> compensatedCardTypes = ReadCompensatedCardTypes();
@@ -156,6 +211,9 @@ StateMutationCatalog stateMutations = AuditStateMutations(entries, combatSolverV
 CombatChoiceSourceCatalog combatChoiceSources = AuditCombatChoiceSources(combatSolverVersion);
 AutoPlaySourceCatalog autoPlaySources = AuditAutoPlaySources(combatSolverVersion);
 RosterSourceCatalog rosterSources = AuditRosterSources(combatSolverVersion);
+MultiplayerSemanticCoverageCatalog multiplayerSemantics = MultiplayerSemanticAudit.Build(
+    combatSolverVersion,
+    "0.111.0");
 string[] unknownClassificationKeys = classifications.Keys
     .Except(entries.Select(static entry => entry.Key), StringComparer.Ordinal)
     .Order(StringComparer.Ordinal)
@@ -260,6 +318,10 @@ File.WriteAllText(
 File.WriteAllText(
     rosterSourcePath,
     JsonSerializer.Serialize(rosterSources, JsonOptions()),
+    new UTF8Encoding(false));
+File.WriteAllText(
+    multiplayerSemanticPath,
+    JsonSerializer.Serialize(multiplayerSemantics, JsonOptions()),
     new UTF8Encoding(false));
 if (generateSimpleCardFixture)
 {
@@ -406,6 +468,14 @@ Console.WriteLine(
     $"Combat roster sources: {rosterSources.Entries.Count} call sites, " +
     $"{rosterSources.UnresolvedCount} unresolved in-scope sources.");
 Console.WriteLine(rosterSourcePath);
+Console.WriteLine(
+    $"Multiplayer semantics: {multiplayerSemantics.Cards.Count} cards, " +
+    $"{multiplayerSemantics.PowerScaling.Count} power scaling types, " +
+    $"{multiplayerSemantics.CrossPlayerPotions.Count} cross-player potion targets, " +
+    $"{multiplayerSemantics.MissingCards.Count} missing cards, " +
+    $"{multiplayerSemantics.StaleCards.Count} stale cards, " +
+    $"{multiplayerSemantics.ExactMirrorMismatches.Count} exact-mirror mismatches.");
+Console.WriteLine(multiplayerSemanticPath);
 if (verify && (unclassified > 0 || pendingImplementation > 0 || missingTestIds.Length > 0 || nonPassingTestIds.Length > 0))
 {
     Console.Error.WriteLine(
@@ -523,6 +593,20 @@ if ((verifyRosterSources || verify) && rosterSources.UnresolvedCount > 0)
         Console.Error.WriteLine(entry.Key);
     }
     return 12;
+}
+if (verifyMultiplayerSemantics && !multiplayerSemantics.IsCurrent)
+{
+    Console.Error.WriteLine(
+        $"Multiplayer-semantic verification failed: cards={multiplayerSemantics.Cards.Count}, " +
+        $"missing={multiplayerSemantics.MissingCards.Count}, stale={multiplayerSemantics.StaleCards.Count}, " +
+        $"exactMirrorMismatches={multiplayerSemantics.ExactMirrorMismatches.Count}.");
+    foreach (string type in multiplayerSemantics.MissingCards)
+        Console.Error.WriteLine($"Missing catalog card: {type}");
+    foreach (string type in multiplayerSemantics.StaleCards)
+        Console.Error.WriteLine($"Stale catalog card: {type}");
+    foreach (string type in multiplayerSemantics.ExactMirrorMismatches)
+        Console.Error.WriteLine($"Exact mirror classification mismatch: {type}");
+    return 13;
 }
 
 static RosterSourceCatalog AuditRosterSources(string combatSolverVersion)
@@ -1894,7 +1978,7 @@ static RuntimeEvidenceGapEntry ToRuntimeEvidenceGap(CoverageEntry entry)
 {
     Type? type = typeof(AbstractModel).Assembly.GetType(entry.EntityType, throwOnError: false);
     AbstractModel? model = type is { IsAbstract: false }
-        ? Activator.CreateInstance(type) as AbstractModel
+        ? ModelDb.All.FirstOrDefault(candidate => candidate.GetType() == type)
         : null;
     return new RuntimeEvidenceGapEntry(
         entry.Key,
@@ -2383,6 +2467,8 @@ internal enum VerificationStatus
     Pending,
     StaticPassed,
     Passed,
+    PassedWithDocumentedBoundaries,
+    PassedWithDocumentedPerformanceRegression,
     Failed,
 }
 

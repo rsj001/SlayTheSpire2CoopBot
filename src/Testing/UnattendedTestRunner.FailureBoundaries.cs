@@ -1,8 +1,10 @@
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 using CombatSolver.Engine.InCombat.Simulation;
@@ -115,6 +117,8 @@ internal sealed partial class UnattendedTestRunner
         if (!firstInferredActionRan)
             throw new InvalidOperationException("推断动作失败测试没有执行前置动作。");
 
+        AssertMultiplayerOnPlayFailureBoundaries();
+
         AssertSearchTransitionFailure(new PlanAction(
             PlanActionKind.PlayCard,
             Turn: 1,
@@ -125,6 +129,44 @@ internal sealed partial class UnattendedTestRunner
             PotionSlot: 0,
             PotionId: "FAILURE_POTION"));
         AssertExpectedSearchTransitionExceptionsPassThrough();
+    }
+
+    private static void AssertMultiplayerOnPlayFailureBoundaries()
+    {
+        if (MultiplayerSemanticCatalog.Cards.Count != 37)
+            throw new InvalidOperationException("多人语义目录没有覆盖当前计划冻结的 37 张 MultiplayerOnly 卡牌。");
+
+        MultiplayerSemanticCatalog.RequireExecutableOnPlay(typeof(OneForAll), hasExactMirror: true);
+
+        AssertRejected<Blaze>(hasExactMirror: false, "Unsupported MultiplayerOnly card OnPlay");
+        AssertRejected<GangUp>(hasExactMirror: false, "Unverified inferred MultiplayerOnly card OnPlay");
+        AssertRejected<UnregisteredMultiplayerCard>(hasExactMirror: false, "Unregistered MultiplayerOnly card OnPlay");
+
+        static void AssertRejected<TCard>(bool hasExactMirror, string expected)
+            where TCard : CardModel
+        {
+            try
+            {
+                MultiplayerSemanticCatalog.RequireExecutableOnPlay(typeof(TCard), hasExactMirror);
+                throw new InvalidOperationException($"多人卡牌 {typeof(TCard).Name} 没有在 OnPlay 前稳定拒绝。");
+            }
+            catch (PredictionUnsupportedException error)
+            {
+                if (!error.Message.Contains(typeof(TCard).FullName!, StringComparison.Ordinal)
+                    || !error.Message.Contains(expected, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"多人卡牌 {typeof(TCard).Name} 的失败消息缺少类型或支持状态。",
+                        error);
+                }
+            }
+        }
+    }
+
+    private sealed class UnregisteredMultiplayerCard()
+        : CardModel(0, CardType.Skill, CardRarity.Token, TargetType.None, false)
+    {
+        public override CardMultiplayerConstraint MultiplayerConstraint => CardMultiplayerConstraint.MultiplayerOnly;
     }
 
     // 只覆写战斗外 hook 的订阅器（例如通过 RitsuLib HookedSingletonModel(HookType.Run) 注册、

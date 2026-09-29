@@ -14,14 +14,28 @@
     <Sts2DataDir Condition="'$(Sts2DataDir)' == '' and '$(OS)' == 'Windows_NT'">$(Sts2Dir)/data_sts2_windows_x86_64</Sts2DataDir>
     <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Dir)/data_sts2_linuxbsd_x86_64</Sts2DataDir>
     <RitsuLibDir Condition="'$(RitsuLibDir)' == ''">$(SteamRoot)/steamapps/workshop/content/2868840/3747602295/lib/0.111.0</RitsuLibDir>
+    <RitsuWorkshopRoot Condition="'$(RitsuWorkshopRoot)' == ''">$(SteamRoot)/steamapps/workshop/content/2868840/3747602295</RitsuWorkshopRoot>
+    <RitsuLibReferenceTarget Condition="'$(RitsuLibReferenceTarget)' == ''">0.111.0</RitsuLibReferenceTarget>
+    <RitsuLibReferencesProps>$(RitsuWorkshopRoot)/RitsuLib.References.props</RitsuLibReferencesProps>
     <CombatSolverAssembly Condition="'$(CombatSolverAssembly)' == ''">$(MSBuildProjectDirectory)/../../.godot/mono/temp/bin/Release/CombatSolver.dll</CombatSolverAssembly>
   </PropertyGroup>
+
+  <Import Project="$(RitsuLibReferencesProps)" Condition="Exists('$(RitsuLibReferencesProps)')" />
+
+  <ItemGroup Condition="Exists('$(RitsuLibReferencesProps)')">
+    <Reference Update="STS2-RitsuLib" Private="true" />
+    <Reference Update="STS2-RitsuLib.Runtime" Private="true" />
+    <Reference Update="STS2-RitsuLib.Shared" Private="true" />
+    <Reference Update="STS2-RitsuLib.Ui" Private="true" />
+    <Reference Update="STS2-RitsuLib.Settings" Private="true" />
+  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="sts2" HintPath="$(Sts2DataDir)/sts2.dll" Private="true" />
     <Reference Include="GodotSharp" HintPath="$(Sts2DataDir)/GodotSharp.dll" Private="true" />
     <Reference Include="0Harmony" HintPath="$(Sts2DataDir)/0Harmony.dll" Private="true" />
-    <Reference Include="STS2-RitsuLib" HintPath="$(RitsuLibDir)/STS2-RitsuLib.dll" Private="true" />
+    <Reference Include="STS2-RitsuLib" HintPath="$(RitsuLibDir)/STS2-RitsuLib.dll" Private="true"
+               Condition="!Exists('$(RitsuLibReferencesProps)')" />
     <Reference Include="CombatSolver" HintPath="$(CombatSolverAssembly)" Private="true" />
   </ItemGroup>
 </Project>

@@ -782,6 +782,12 @@ require_fixed "$repository_root/src/Engine/InCombat/Mirrors/Cards/OnPlay/CardOnP
 forbid_fixed "$repository_root/src/Engine/InCombat/Mirrors/Cards/OnPlay/CardOnPlayMirrors.cs" 'Harmony.GetPatchInfo' 'worker must not query Harmony'
 forbid_fixed "$repository_root/src/Prediction/AdaptedCardOnPlayMirrors.cs" 'PredictionModPatchAudit.AuditCardOnPlay(' 'generated cards must use frozen root patch evidence'
 require_fixed "$repository_root/src/Prediction/AdaptedCardOnPlayMirrors.cs" 'patchedOnPlayTargets.Contains(target)' 'missing frozen generated-card patch decision'
+multiplayer_catalog="$repository_root/src/Prediction/MultiplayerSemanticCatalog.cs"
+require_fixed "$multiplayer_catalog" 'public const string GameVersion = "0.111.0"' 'missing multiplayer semantic game version'
+require_fixed "$multiplayer_catalog" 'public static IReadOnlyList<MultiplayerCardSemanticDescriptor> Cards' 'missing multiplayer card catalog'
+require_fixed "$multiplayer_catalog" 'RequireExecutableOnPlay' 'missing multiplayer OnPlay boundary'
+require_fixed "$multiplayer_catalog" 'Unverified inferred MultiplayerOnly card OnPlay' 'missing inferred multiplayer rejection'
+require_fixed "$repository_root/src/Engine/InCombat/Mirrors/Cards/OnPlay/CardOnPlayMirrors.cs" 'MultiplayerSemanticCatalog.RequireExecutableOnPlay' 'missing MultiplayerOnly fail-closed dispatch boundary'
 for session_type in SolverCombatSession SolverSearchSession SolverDeploymentSession; do
     require_fixed "$session_path" "class $session_type" 'missing controller session type'
 done

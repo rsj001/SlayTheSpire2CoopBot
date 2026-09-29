@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## 原版多人语义 M0 目录与失败边界（2026-09-29）
+
+新增绑定游戏 0.111.0 的多人语义目录：37 张 `MultiplayerOnly` 卡牌逐项记录 `Unsupported / UnderTest / Verified`、OnPlay 覆盖形态和计划阶段；CoverageCatalog 从当前程序集核对目录、精确 OnPlay mirror、13 个 Power 多人缩放相关类型和 51 个跨玩家药水目标，输出 `coverage/multiplayer-semantics.json`。多人牌在 OnPlay 结算前先经过目录门禁：目录外类型、21 张明确缺入口的类型，以及试图走普通推断器但尚无原生多人证据的类型都会抛出带卡牌类型和计划阶段的 `PredictionUnsupportedException`；已有 5 个精确 mirror 保留给 M1 原生多人差分。该变化只影响离线多人语义入口，生产单人卡牌不经过此门禁。
+
+CoverageCatalog 的本地工具工程同步使用 RitsuLib 完整多程序集引用并复制运行时依赖；测试证据状态枚举补齐仓库已存在的两种带边界 Passed 状态，运行时证据目录读取已初始化的 `ModelDb`，避免重复构造原版 Model。Release 构建、多人目录专项 verify 和完整目录生成通过；`PredictionFailureBoundaries` 的 `runId=e5b1f3588d9246a182725880c4526608` Passed，实例已清理。原生多人 actual/simulated 底座仍归 M1，不能把 M0 目录与失败边界称为逐牌语义完成。
+
 ## 离线联合完成审计补强（2026-09-29）
 
 完成审计撤回了“一步终局即完整 strict diff”和“累计分配即无泄漏”的过度结论。联合搜索节点现保存每个动作与跨轮屏障后的不可变 checkpoint；2/4 Actor 都先让全队 EndTurn，完整经历玩家尾、敌方行动、AI/RNG 推进和下一轮开始，再由搜索终局，根级回放逐点比较 Turn/Phase、完整 continuation 与状态键，`runId=d30b2148a2fb41c7bcd76d6f2d13c196` Passed。生命周期探针对正常完成、取消和注入异常三条路径收集子模拟器弱引用，搜索栈退出并强制 GC 后全部释放，`runId=c1e614871b1142c28716a80fdb64466d` Passed。权威库存已同步关闭敌方/RNG/历史、strict replay 和快照所有权缺口；真实客户端 actual diff 仍不是本离线阶段结论。

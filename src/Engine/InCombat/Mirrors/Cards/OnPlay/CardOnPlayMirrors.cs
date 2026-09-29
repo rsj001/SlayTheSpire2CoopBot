@@ -53,6 +53,12 @@ internal static partial class CardOnPlayMirrors
                 && adapted.TryInvoke(simulator, card, cardPlay, out MirrorDispatchResult replacement))
                 return replacement;
         }
+        if (card.MutablePreview.MultiplayerConstraint == CardMultiplayerConstraint.MultiplayerOnly)
+        {
+            MultiplayerSemanticCatalog.RequireExecutableOnPlay(
+                card.MutablePreview.GetType(),
+                Registry.HasRegisteredHandler(card.MutablePreview));
+        }
         MirrorDispatchResult result;
         using (simulator.BeginExecutionDispatch())
             result = Registry.Invoke(card.MutablePreview, new()
