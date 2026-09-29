@@ -1,7 +1,10 @@
 using CoopBot.Capture;
 using CoopBot.Host;
+using CoopBot.Protocol;
+using CoopBot.UI;
 using Godot;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Runs;
 
@@ -11,6 +14,10 @@ internal sealed class CoopBotRuntime
 {
     private HostCombatRecorder? _hostRecorder;
     private HostSearchCoordinator? _hostSearch;
+    private HostSearchResult? _lastPlan;
+
+    internal event Action<CoopUiSnapshot>? UiSnapshotChanged;
+    internal event Action? UiCleared;
 
     internal void BeginCombat(CombatState combat)
     {
@@ -21,6 +28,7 @@ internal sealed class CoopBotRuntime
             ?? throw new InvalidOperationException("Multiplayer combat has no CombatId.");
         _hostRecorder = new HostCombatRecorder(combat, combatIdentity, () => false);
         _hostSearch = new HostSearchCoordinator(_hostRecorder);
+        _hostSearch.PlanPublished += OnPlanPublished;
     }
 
     internal void Poll()
@@ -31,22 +39,69 @@ internal sealed class CoopBotRuntime
 
     internal void StopCombat(string reason)
     {
+        if (_hostSearch is not null)
+            _hostSearch.PlanPublished -= OnPlanPublished;
         _hostSearch?.Dispose();
         _hostSearch = null;
+        _lastPlan = null;
         _hostRecorder?.Dispose(reason);
         _hostRecorder = null;
+        UiCleared?.Invoke();
     }
+
+    internal void RefreshUi()
+    {
+        if (_lastPlan is not null)
+            PublishUi(_lastPlan);
+    }
+
+    private void OnPlanPublished(HostSearchResult result)
+    {
+        _lastPlan = result;
+        PublishUi(result);
+    }
+
+    private void PublishUi(HostSearchResult result)
+        => UiSnapshotChanged?.Invoke(CoopUiSnapshot.Capture(
+            result.Published,
+            CoopUiRole.Host,
+            result.RecordedRoot.Root.LocalActorId.Index,
+            CoopAutomationMode.Suggest,
+            "计划就绪",
+            currentActionIndex: -1,
+            LocManager.Instance.Language));
 }
 
 internal partial class CoopBotRuntimeNode : Node
 {
     private readonly CoopBotRuntime _runtime = new();
+    private CoopBotOverlayRenderer? _overlay;
 
     internal CoopBotRuntime Runtime => _runtime;
+
+    public override void _Ready()
+    {
+        _overlay = new CoopBotOverlayRenderer { Name = "CoopBotOverlay" };
+        AddChild(_overlay);
+        _runtime.UiSnapshotChanged += _overlay.Render;
+        _runtime.UiCleared += _overlay.HideOverlay;
+        LocManager.Instance.SubscribeToLocaleChange(OnLocaleChanged);
+    }
 
     public override void _Process(double delta)
         => _runtime.Poll();
 
     public override void _ExitTree()
-        => _runtime.StopCombat("runtime_exit");
+    {
+        LocManager.Instance.UnsubscribeToLocaleChange(OnLocaleChanged);
+        if (_overlay is not null)
+        {
+            _runtime.UiSnapshotChanged -= _overlay.Render;
+            _runtime.UiCleared -= _overlay.HideOverlay;
+        }
+        _runtime.StopCombat("runtime_exit");
+    }
+
+    private void OnLocaleChanged()
+        => Callable.From(_runtime.RefreshUi).CallDeferred();
 }

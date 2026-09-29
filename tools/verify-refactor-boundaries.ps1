@@ -2477,6 +2477,8 @@ $coopStableGatePath = Join-Path $repositoryRoot 'coopbot/Capture/StableRootGate.
 $coopProbePath = Join-Path $repositoryRoot 'coopbot/Diagnostics/CoopBotHeadlessProbe.cs'
 $coopHostSearchPath = Join-Path $repositoryRoot 'coopbot/Host/HostSearchCoordinator.cs'
 $coopPlanSnapshotPath = Join-Path $repositoryRoot 'coopbot/Protocol/CoopPlanSnapshot.cs'
+$coopUiSnapshotPath = Join-Path $repositoryRoot 'coopbot/UI/CoopUiSnapshot.cs'
+$coopUiRendererPath = Join-Path $repositoryRoot 'coopbot/UI/CoopBotOverlayRenderer.cs'
 foreach ($check in @(
     @{ Path = $combatSolverProjectPath; Text = '<InternalsVisibleTo Include="CoopBot" />' },
     @{ Path = $coopBotProjectPath; Text = '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' },
@@ -2490,10 +2492,23 @@ foreach ($check in @(
     @{ Path = $coopHostSearchPath; Text = 'JointOfflineSearch.SolveBeam(' },
     @{ Path = $coopHostSearchPath; Text = 'JointStrictReplayVerifier.Verify(recorded.Root, searched)' },
     @{ Path = $coopPlanSnapshotPath; Text = 'public sealed record PlanPublishedPayload(' },
+    @{ Path = $coopUiSnapshotPath; Text = 'internal sealed record CoopUiSnapshot(' },
+    @{ Path = $coopUiRendererPath; Text = 'internal void Render(CoopUiSnapshot snapshot)' },
     @{ Path = (Join-Path $repositoryRoot 'tools/run-unattended-test.ps1'); Text = '[switch]$IncludeCoopBot' },
     @{ Path = (Join-Path $repositoryRoot 'tools/run-unattended-test.sh'); Text = 'add_option include-coop-bot 0 switch none' })) {
     if (-not (Select-String -LiteralPath $check.Path -SimpleMatch $check.Text -Quiet)) {
         $violations.Add("$($check.Path): missing CoopBot C2 boundary '$($check.Text)'")
+    }
+}
+foreach ($forbiddenRendererDependency in @(
+    'CoopBot.Protocol',
+    'CombatSolver',
+    'PlanAction',
+    'ModelDb',
+    'CombatState',
+    'RunManager')) {
+    if (Select-String -LiteralPath $coopUiRendererPath -SimpleMatch $forbiddenRendererDependency -Quiet) {
+        $violations.Add("${coopUiRendererPath}: CoopBot renderer bypasses read-only snapshot via '$forbiddenRendererDependency'")
     }
 }
 foreach ($forbiddenLiveRead in @(

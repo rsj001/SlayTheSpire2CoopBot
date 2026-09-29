@@ -1,5 +1,6 @@
 using CoopBot.Capture;
 using CoopBot.Protocol;
+using CoopBot.UI;
 using CombatSolver;
 using MegaCrit.Sts2.Core.Combat;
 using System.Reflection;
@@ -64,6 +65,67 @@ public static class CoopBotHeadlessProbe
         return $"actors={root.Actors.Count};actions={serial.Actions.Count};" +
                $"expanded={serial.ExpandedStates};checkpoints={serial.Checkpoints.Count};" +
                $"plan={serialPlan.PlanId};dop=1,4;strict_replay=2";
+    }
+
+    public static string ProjectFourUiSnapshots(CombatState combat)
+    {
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(combat);
+        JointOfflineSearchResult searched = JointOfflineSearch.SolveBeam(
+            root,
+            JointOfflineSearchRequest.Default(maximumActions: 1, maximumStates: 128),
+            beamWidth: 64,
+            degreeOfParallelism: 1);
+        JointReplayResult replay = JointStrictReplayVerifier.Verify(root, searched);
+        PlanPublishedPayload plan = CoopPlanSnapshotFactory.Create(
+            7,
+            "SYNTHETIC-C4",
+            root,
+            searched,
+            replay);
+        CoopUiSnapshot[] chinese = Enumerable.Range(0, 4)
+            .Select(actor => CoopUiSnapshot.Capture(
+                plan,
+                actor == 0 ? CoopUiRole.Host : CoopUiRole.Client,
+                actor,
+                CoopAutomationMode.ConfirmEach,
+                "计划就绪",
+                currentActionIndex: 0,
+                locale: "zhs"))
+            .ToArray();
+        CoopUiSnapshot[] english = Enumerable.Range(0, 4)
+            .Select(actor => CoopUiSnapshot.Capture(
+                plan,
+                actor == 0 ? CoopUiRole.Host : CoopUiRole.Client,
+                actor,
+                CoopAutomationMode.ConfirmEach,
+                "计划就绪",
+                currentActionIndex: 0,
+                locale: "eng"))
+            .ToArray();
+        foreach (CoopUiSnapshot snapshot in chinese.Concat(english))
+        {
+            if (snapshot.PlanId != plan.PlanId
+                || snapshot.Route.Count != plan.Actions.Count
+                || snapshot.Route.Select(step => (step.Index, step.ActorId))
+                    .SequenceEqual(plan.Actions.Select(action => (action.Index, action.ActorId))) == false)
+            {
+                throw new InvalidOperationException("Endpoint UI snapshot changed PlanId or route identity.");
+            }
+        }
+        if (!chinese[0].ShowHostControls || chinese[0].ShowClientControls
+            || chinese.Skip(1).Any(snapshot => snapshot.ShowHostControls || !snapshot.ShowClientControls))
+        {
+            throw new InvalidOperationException("Host/client UI controls do not match endpoint roles.");
+        }
+        if (chinese[0].Title == english[0].Title
+            || !english[0].Title.Contains("Co-op Bot", StringComparison.Ordinal)
+            || !chinese[0].StatusLine.Contains("逐步确认", StringComparison.Ordinal)
+            || !english[0].StatusLine.Contains("Confirm each", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("CoopBot zhs/eng UI projection is incomplete.");
+        }
+        return $"endpoints=4;plan={plan.PlanId};route={plan.Actions.Count};locales=zhs,eng;" +
+               "host_controls=1;client_controls=3";
     }
 
     private static void AssertPublishedDtoIsDetached(Type type, HashSet<Type> visited)

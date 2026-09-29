@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## Co-op Bot C4 四端只读 UI（2026-09-29）
+
+- `COOP-BOT-UI` / `badd049e2a914f16b7224d3c8d0044c1`：Passed；同一 PlanId/路线投影到 4 个端点，Host 控件 1 份、Client 控件 3 份，zhs/eng 的模式、状态、路线和按钮文案通过。1 CPU / 1536 MiB，实例已删除。
+- Windows `verify-refactor-boundaries.ps1`：Passed，`search_files=255`；renderer 禁止引用协议 DTO、Search、ModelDb、RunManager 或 live CombatState。CombatSolver 与 CoopBot Release 构建 0 warning / 0 error。未运行可见布局验收，未启动 Steam。
+
 ## Co-op Bot C3 Host 搜索桥（2026-09-29）
 
 - `COOP-BOT-HOST-SEARCH` / `4bdf976afd0c43c597fb9eb980b3b3e0`：Passed；四 Actor 冻结根分别以 DOP1/DOP4 完成同一路线，得到 `actions=1`、`expanded=37`、`checkpoints=1`、相同 PlanId，并分别通过 strict replay；发布 DTO 的递归类型门禁确认不含 CombatSolver/search mutable 类型。1 CPU / 1536 MiB，实例已删除。

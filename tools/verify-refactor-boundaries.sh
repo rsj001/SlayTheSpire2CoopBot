@@ -1947,6 +1947,8 @@ coop_stable_gate="$repository_root/coopbot/Capture/StableRootGate.cs"
 coop_probe="$repository_root/coopbot/Diagnostics/CoopBotHeadlessProbe.cs"
 coop_host_search="$repository_root/coopbot/Host/HostSearchCoordinator.cs"
 coop_plan_snapshot="$repository_root/coopbot/Protocol/CoopPlanSnapshot.cs"
+coop_ui_snapshot="$repository_root/coopbot/UI/CoopUiSnapshot.cs"
+coop_ui_renderer="$repository_root/coopbot/UI/CoopBotOverlayRenderer.cs"
 require_fixed "$repository_root/CombatSolver.csproj" '<InternalsVisibleTo Include="CoopBot" />' \
     'CombatSolver missing narrow CoopBot internal bridge:'
 require_fixed "$coopbot_project" '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' \
@@ -1964,6 +1966,8 @@ require_fixed "$coop_probe" 'SearchSyntheticRoot(CombatState combat)' 'CoopBot h
 require_fixed "$coop_host_search" 'JointOfflineSearch.SolveBeam(' 'CoopBot Host search bridge missing:'
 require_fixed "$coop_host_search" 'JointStrictReplayVerifier.Verify(recorded.Root, searched)' 'CoopBot Host strict replay missing:'
 require_fixed "$coop_plan_snapshot" 'public sealed record PlanPublishedPayload(' 'CoopBot detached plan payload missing:'
+require_fixed "$coop_ui_snapshot" 'internal sealed record CoopUiSnapshot(' 'CoopBot UI snapshot missing:'
+require_fixed "$coop_ui_renderer" 'internal void Render(CoopUiSnapshot snapshot)' 'CoopBot snapshot renderer missing:'
 require_fixed "$repository_root/tools/run-unattended-test.ps1" '[switch]$IncludeCoopBot' \
     'Windows unattended launcher missing optional CoopBot snapshot:'
 require_fixed "$repository_root/tools/run-unattended-test.sh" 'add_option include-coop-bot 0 switch none' \
@@ -1977,6 +1981,9 @@ for forbidden in \
     'PowerCmd.' \
     'CardPileCmd.'; do
     forbid_fixed "$coop_recorder" "$forbidden" 'read-only CoopBot recorder mutates live combat:'
+done
+for forbidden in CoopBot.Protocol CombatSolver PlanAction ModelDb CombatState RunManager; do
+    forbid_fixed "$coop_ui_renderer" "$forbidden" 'CoopBot renderer bypasses read-only snapshot:'
 done
 for forbidden in RunManager CombatManager CombatState Godot SolverController; do
     forbid_fixed "$coop_host_search" "$forbidden" 'frozen CoopBot Host search worker owns live dependency:'

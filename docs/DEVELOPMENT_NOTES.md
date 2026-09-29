@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## Co-op Bot C4 四端只读 UI（开发中，2026-09-29）
+
+独立 Mod 新增联合计划 UI 投影和轻量 overlay。四端 snapshot 共享 PlanId、RootRevision 和完整动作身份；Host 显示重规划、取消搜索、执行下一步与暂停入口，Client 显示允许本次、拒绝转人工与暂停入口。路线、当前 owner、逐 Actor HP/战损、总战损 workaround、药水和停止原因均在投影层生成。renderer 只读取 `CoopUiSnapshot`，不读取协议 DTO、Search、ModelDb 或 live 战斗；新增文案由内嵌目录同时提供中文与英文，语言变化重投影最近计划但不重搜。
+
+`COOP-BOT-UI` / `badd049e2a914f16b7224d3c8d0044c1` Passed：同一四 Actor 计划投影为一个 Host 与三个 Client，四端 PlanId/路线相同，角色控件分工正确，zhs/eng 文案均命中，实例已删除。Windows 结构门禁通过。Headless 只证明 snapshot 和控件树合同，不证明真实分辨率下的排版、拖动或四客户端同步显示；这些保留给可见实机验收。
+
 ## Co-op Bot C3 Host 搜索桥（开发中，2026-09-29）
 
 Recorder 发布的新冻结根现在会取消旧搜索并启动有界联合 Beam；后台只持有冻结 `CombatRootSnapshot`、预算和取消令牌，搜索完成后从同一根 strict replay，过期 revision 的完成结果不会发布。结果在 Host 边界降维成 `PlanPublishedPayload`：路线、选择、逐 Actor 终态/战损、目标、药水、checkpoint 指纹和停止原因均为纯 DTO，不携带 Simulator、Player、live Model、`JointCombatSnapshot` 或 `PlanAction`。
