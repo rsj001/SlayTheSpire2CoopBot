@@ -2261,6 +2261,15 @@ if (-not (Select-String -LiteralPath $jointTransitionPath `
         -SimpleMatch 'JointPendingChoicePlacement.Primary' -Quiet)) {
     $violations.Add('Joint transition no longer classifies authoritative pending primary choices.')
 }
+$monsterMoveSemanticsPath = Join-Path $repositoryRoot 'src/Prediction/MonsterMoveSemantics.cs'
+foreach ($text in @(
+    'IsJointOwnerOnlyMove(',
+    '("FuzzyWurmCrawler", "INHALE")'
+)) {
+    if (-not (Select-String -LiteralPath $monsterMoveSemanticsPath -SimpleMatch $text -Quiet)) {
+        $violations.Add("Joint owner-only monster move boundary missing: $text")
+    }
+}
 $jointOfflineSearchPath = Join-Path $repositoryRoot 'src/Search/Coop/JointOfflineSearch.cs'
 foreach ($text in @(
     'internal sealed record JointOfflineSearchRequest(',

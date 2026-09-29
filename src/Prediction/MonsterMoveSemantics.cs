@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -17,10 +18,22 @@ internal static class MonsterMoveSemantics
         IReadOnlyList<Creature> players,
         ISet<uint> processedEnemyDeaths)
     {
-        if (move.AttackHits.Count == 0 || MonsterMoveEffects.Supports(
-                move.Owner.Monster
-                    ?? throw new InvalidOperationException("预测行动所有者不是怪物。"),
-                move.Move.Id))
+        MonsterModel monster = move.Owner.Monster
+            ?? throw new InvalidOperationException("预测行动所有者不是怪物。");
+        if (IsJointOwnerOnlyMove(monster, move.Move.Id))
+        {
+            Creature? representative = players.FirstOrDefault(player =>
+                simulator.State.GetCreature(player).IsAlive);
+            if (representative != null)
+                _ = ApplyForecastMove(
+                    simulator,
+                    combat,
+                    move,
+                    representative,
+                    processedEnemyDeaths);
+            return;
+        }
+        if (move.AttackHits.Count == 0 || MonsterMoveEffects.Supports(monster, move.Move.Id))
         {
             throw new PredictionUnsupportedException(
                 $"联合敌方轮尚未登记 move={move.Owner.Monster?.Id.Entry}/{move.Move.Id} 的多人后效。");
@@ -33,6 +46,9 @@ internal static class MonsterMoveSemantics
                 return;
         }
     }
+
+    private static bool IsJointOwnerOnlyMove(MonsterModel monster, string moveId)
+        => (monster.GetType().Name, moveId) is ("FuzzyWurmCrawler", "INHALE");
 
     public static bool ApplyForecastMove(
         CombatPredictionSimulator simulator,

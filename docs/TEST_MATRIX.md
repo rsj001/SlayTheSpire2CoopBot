@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 联合敌方 owner-only Inhale（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：强制 Fuzzy Wurm Crawler 执行 Inhale，怪物 Strength 恰好 `+7`，两个 Actor HP 均不变；`runId=d49efb75554f47a1a1047b6b38a6c38c`，Passed，实例已删除。
+- 该证据只覆盖 owner-only 一次性后效；其他特殊后效、Linux 和可见 Steam 未运行。
+
 ## 联合 Actor1 重复自动出牌选择（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：Actor1 的 `Decisions, Decisions` 选择 Prepared，并为每次重复自动出牌按原序消费 Actor1 owned 嵌套选择；两个父 Fork 得到同一完整状态键且无 pending，`runId=05ebefd640864595ae272ceae4ae8e37`，Passed，实例已删除。

@@ -59,7 +59,7 @@
 | Actor 独立结束与全员屏障 | 单人 `EndTurn` 尾部 | `JointTurnState` | 已迁移 | 任意顺序、死亡 Actor、提前跨回合拒绝 |
 | 玩家回合尾 Hook、敌方回合、下一回合开始/抽牌 | `CombatBeamSolver.Terminal.cs`、simulation commands | F7a 玩家侧、F7c1 纯攻击敌方侧、F7d1 基础下一轮、F7d2 Power 回合选择前缀已接通 | 部分迁移 | 2 Actor 基础两轮及 Tools of the Trade 恢复通过；特殊敌方后效和其余选择待 F6b/F7c-d |
 | 额外回合、死亡、复活、逃跑和失去资格 | `Prediction/*`、`SimulatedCombatState*.cs` | F7b 已通过死亡 Actor 候选/屏障/玩家侧参与者；其余待补 | 待迁移 | 死亡代表通过；复活/逃跑/额外回合待验证 |
-| 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | F7c1 支持无登记后效的纯攻击行动；特殊后效明确拒绝 | 待迁移 | 纯攻击已通过；死亡/召唤/特殊后效待逐类严格对照 |
+| 敌方死亡、召唤、行动尾部和终局 | `Prediction/Monster*`、`CombatBeamSolver.Terminal.cs` | F7c1 支持无登记后效的纯攻击；F7c2 首个 owner-only Inhale 只结算一次 | 待迁移 | 纯攻击与 owner-only buff 通过；玩家目标/攻击后效、死亡/召唤待逐类严格对照 |
 | 单人终局政策 | `FinalPlanOrdering`、`RouteQualityPolicy` | 联合比较器独立位于 `Search/Coop`，单人入口未改 | 已保留 | 结构门禁 + 最终 F12 单人等价哨兵 |
 | 团队目标 | 无单人对应 | `JointObjective` 完整字典序；总战损仍为 workaround | 已迁移 | 终局边界、存活、分布、资源、成长、偷窃和稳定决胜通过 |
 | 药水政策、战略成本、成长、偷窃和强制目标 | `PotionUsePolicy`、`FinalPlanOrdering` | F4c 完成硬政策、共享预算 Smart 反事实、精确药量层、逐 Actor 奖励/Ambergris/Boss relief；F8 终局完成 | 已迁移 | 无收益拒绝、用药层、奖励抵扣及专门阈值通过 |

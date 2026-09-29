@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线联合敌方 owner-only 行动（2026-09-29）
+
+联合敌方侧新增显式 owner-only 行动分类，首个代表是 Fuzzy Wurm Crawler 的 Inhale：完整 move 语义只执行一次，不按玩家目标数量重复怪物自身后效。两 Actor 夹具强制 Inhale 后怪物精确增加 7 Strength、两名玩家 HP 均不变，`COOP-MULTI-ACTOR-ROOT` 的 `runId=d49efb75554f47a1a1047b6b38a6c38c` Passed，实例已删除。其他玩家目标、攻击后效、召唤与移除行动仍保持明确拒绝。
+
 ## 离线四 Actor 重复出牌选择与 F6 完成（2026-09-29）
 
 联合卡牌主选择不再从来源牌尚在根手牌时静态预建，而与嵌套选择一样，由权威 transition 实际执行到 pending 后返回精确 spec 再展开；原版要求的空选择仍可预填。首次 Actor1 `Decisions, Decisions` 将来源牌自身列为可重复技能，实际 OnPlay 时该牌已进入打出区，`runId=3ee53c2a957b4fdaaba7d64e9db8873a` Failed；修复后 Actor1 选择 Prepared 并确定性消费每次重复自动出牌的选择链，`COOP-MULTI-ACTOR-ROOT` 的 `runId=05ebefd640864595ae272ceae4ae8e37` Passed，实例均已删除。F6a-d 至此关闭。

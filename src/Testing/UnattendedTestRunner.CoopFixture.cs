@@ -98,6 +98,7 @@ internal sealed partial class UnattendedTestRunner
                 AssertJointPlayerEndBarrier(root);
                 AssertDeadActorBarrier(root);
                 AssertBasicEnemySide(root);
+                AssertOwnerOnlyEnemyMove(root);
                 AssertBasicNextPlayerSide(root);
                 AssertTurnStartChoiceContinuation(root);
                 AssertEndTurnPowerChoiceContinuation(root);
@@ -541,6 +542,34 @@ internal sealed partial class UnattendedTestRunner
             throw new InvalidOperationException(
                 $"纯攻击敌方轮未对全部 Actor 同序结算：before={string.Join(',', hpBefore)} " +
                 $"after={string.Join(',', hpAfter)}。");
+        }
+    }
+
+    private static void AssertOwnerOnlyEnemyMove(CombatRootSnapshot root)
+    {
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Creature enemy = combat.Enemies.Single();
+        combat.ForceMonsterMove(enemy, "INHALE");
+        int strengthBefore = combat.GetAmount<StrengthPower>(enemy);
+        int[] hpBefore = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+        int[] hpAfter = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        int strengthAfter = combat.GetAmount<StrengthPower>(enemy);
+        if (strengthAfter - strengthBefore != 7 || !hpBefore.SequenceEqual(hpAfter))
+        {
+            throw new InvalidOperationException(
+                $"联合 owner-only 敌方行动重复或漏结算：strength={strengthBefore}->{strengthAfter} " +
+                $"hp={string.Join(',', hpBefore)}->{string.Join(',', hpAfter)}。");
         }
     }
 

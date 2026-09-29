@@ -1764,6 +1764,11 @@ forbid_fixed "$joint_expander" 'CardChoiceSupport.GetSpec(simulator, card)' \
     'joint card expansion restored pre-play primary choice enumeration:'
 require_fixed "$joint_transition" 'JointPendingChoicePlacement.Primary' \
     'joint transition no longer classifies authoritative pending primary choices:'
+monster_move_semantics="$repository_root/src/Prediction/MonsterMoveSemantics.cs"
+require_fixed "$monster_move_semantics" 'IsJointOwnerOnlyMove(' \
+    'joint owner-only monster move boundary missing:'
+require_fixed "$monster_move_semantics" '("FuzzyWurmCrawler", "INHALE")' \
+    'joint owner-only monster move boundary missing:'
 joint_offline_search="$repository_root/src/Search/Coop/JointOfflineSearch.cs"
 for token in \
     'internal sealed record JointOfflineSearchRequest(' \
