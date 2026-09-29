@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## 原版多人语义 M2 身份合同（进行中，2026-09-29）
+
+计划动作与选择新增不改变序列化形态的 `SourceActor` / `DecisionActor` 明确身份；联合 pending frame 同时暴露来源与决策 Actor，不再要求调用者把选择 Owner 猜成动作 Actor。多人 `ContinuationStamp` 补入 Power 的 Owner、类型、`Applier`、`Target`，并记录 `ImitationLearningPower.PlayerTarget`；该段只在 ActorCount>1 出现，单人 continuation 文本不变。
+
+`COOP-MULTIPLAYER-IDENTITY` 在两个兄弟 Fork 中分别修改 Applier、Target、ImitationLearning PlayerTarget 和 CardOwner，每项都改变联合状态键与 continuation，父 Fork 再捕获保持不变；SourceActor/DecisionActor 的计划值相等合同也通过。`runId=900557e659464532a18ab8da752da865` Passed，实例已删除。M2 尚未关闭，仍需统一承载 `Intercept.Covering`、Beacon/Soulbound 防重入和 Cacophony 计数等私有状态。
+
 ## 原版多人语义 M1 原生动作差分底座（2026-09-29）
 
 离线联合建局现在除预测根外还保留 2/3/4 Actor 的原生 `CombatState`、稳定玩家顺序和敌人实例。新增的独立无人 fixture 从同一原生根捕获预测根并建立两个 prediction Fork，逐 Actor 对账 HP/格挡/资源、牌堆与卡牌状态、Power 与私有状态、药水、球、Osty、敌人/AI、九条 RNG 和完整 continuation；同时证明远端 Actor 状态进入联合状态键且兄弟 Fork 不污染原生根。`COOP-MULTIPLAYER-NATIVE-DIFF` 的 `runId=6baf957036cb4e7da22ef768b5d2841a` Passed，实例已删除。

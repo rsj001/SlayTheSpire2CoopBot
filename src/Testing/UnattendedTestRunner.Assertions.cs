@@ -58,6 +58,13 @@ internal sealed partial class UnattendedTestRunner
                 runner._completedChecks.Add(
                     "MultiplayerNativeDiff:ActorCount2:ActorCount3:ActorCount4:AllActorRootProjection:IndependentForks:RootIsolation:NativeOneForAllGameAction:BelieveInYouRecipientEnergyGap:KnockdownEnemyHpPowerGap:TheBallOwnerPileDamageGap");
             }
+            if (request.ScenarioId == "COOP-MULTIPLAYER-IDENTITY")
+            {
+                runner.SetStage("coop_multiplayer_identity");
+                AssertMultiplayerIdentityContracts(scenario.CombatState);
+                runner._completedChecks.Add(
+                    "MultiplayerIdentity:SourceActor:DecisionActor:Applier:Target:ImitationPlayerTarget:CardOwner:ForkIsolation");
+            }
             if (request.ScenarioId == "COOP-JOINT-OBJECTIVE")
             {
                 runner.SetStage("coop_joint_objective");

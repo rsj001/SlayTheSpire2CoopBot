@@ -256,6 +256,8 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M2：显式建模跨玩家身份和私有状态
 
+> 进度：进行中。已显式区分计划 `SourceActor`、选择 `DecisionActor`，多人 continuation 新增 Power `Applier/Target` 与 `ImitationLearning.PlayerTarget`；CardOwner、Applier、Target、PlayerTarget 的兄弟 Fork/状态键/continuation 隔离由 `COOP-MULTIPLAYER-IDENTITY` / `900557e659464532a18ab8da752da865` 证明。待补 `Intercept.Covering` 及 Beacon/Soulbound/Cacophony 等私有状态的统一描述器与稳定边界。
+
 目标：先修正共用底层身份，再逐卡实现，避免 37 张牌各自发明 Owner 规则。
 
 工作：

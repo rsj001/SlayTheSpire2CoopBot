@@ -116,6 +116,8 @@ internal sealed record PlanCardChoice(
     PlanChoiceTiming Timing = PlanChoiceTiming.Action,
     CombatActorId Actor = default)
 {
+    public CombatActorId DecisionActor => Actor;
+
     internal void ValidateActor(int actorCount)
     {
         if (actorCount <= 0)
@@ -164,6 +166,8 @@ internal sealed record PlanAction(
     string CardEnchantmentId = "",
     CombatActorId Actor = default)
 {
+    public CombatActorId SourceActor => Actor;
+
     public bool IsExecutable => Kind is PlanActionKind.PlayCard or PlanActionKind.UsePotion;
     public string ActionTitle => Kind == PlanActionKind.UsePotion ? PotionTitle : CardTitle;
 

@@ -194,6 +194,9 @@ internal sealed record ContinuationStamp(string StateText)
             Player player = state.Players[index];
             AppendActorContinuation(text, index, CaptureLiveActorContinuation(state, player));
         }
+        AppendMultiplayerPowerIdentities(
+            text,
+            state.Creatures.SelectMany(static creature => creature.Powers));
     }
 
     private static void AppendAdditionalActorContinuations(
@@ -209,6 +212,26 @@ internal sealed record ContinuationStamp(string StateText)
         {
             Player player = combat.Players[index];
             AppendActorContinuation(text, index, CapturePredictedActorContinuation(combat, simulator, player));
+        }
+        AppendMultiplayerPowerIdentities(text, combat.EffectivePowers());
+    }
+
+    private static void AppendMultiplayerPowerIdentities(
+        StringBuilder text,
+        IEnumerable<PowerModel> powers)
+    {
+        text.Append(";multiplayer_power_identities=");
+        int slot = 0;
+        foreach (PowerModel power in powers)
+        {
+            text.Append(slot++).Append(':')
+                .Append(power.Owner.CombatId).Append(':')
+                .Append(power.Id.Entry).Append(':')
+                .Append(power.Applier?.CombatId ?? uint.MaxValue).Append(':')
+                .Append(power.Target?.CombatId ?? uint.MaxValue);
+            if (power is ImitationLearningPower imitation)
+                text.Append(":player_target=").Append(imitation.PlayerTarget.NetId);
+            text.Append(',');
         }
     }
 

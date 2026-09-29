@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 原版多人语义 M2 身份合同（进行中，2026-09-29）
+
+- `COOP-MULTIPLAYER-IDENTITY`：SourceActor 与 DecisionActor 独立；Applier、Target、ImitationLearning PlayerTarget、CardOwner 分别在兄弟 Fork 修改后同时改变联合状态键与多人 continuation，父 Fork 不变。`runId=900557e659464532a18ab8da752da865` Passed，fixture 阶段 231 ms，实例已删除。
+- 多人 Power 身份字段仅附加到 ActorCount>1 continuation；单人文本格式未改。Release 构建 0 警告/0 错误；私有 Power 状态、可见 Steam 和 Linux/WSL 尚未验证。
+
 ## 原版多人语义 M1 原生动作差分底座（2026-09-29）
 
 - `COOP-MULTIPLAYER-NATIVE-DIFF`：分别建立 2/3/4 Actor 原生 `CombatState`，从同根捕获两个独立 prediction Fork；逐 Actor 对账完整 `MoveStateSnapshot`，远端 Actor 增加 1 能量后联合状态键变化，原生 continuation 不变。`runId=6baf957036cb4e7da22ef768b5d2841a` Passed，fixture 阶段 334 ms，实例已删除。

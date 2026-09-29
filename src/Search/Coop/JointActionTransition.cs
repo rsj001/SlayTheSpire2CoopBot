@@ -15,6 +15,8 @@ internal sealed record JointPendingChoiceFrame(
     string ContextId = "",
     PlanChoiceTiming Timing = PlanChoiceTiming.Action)
 {
+    internal CombatActorId DecisionActor => OwnerActor;
+    internal CombatActorId SourceActor => SourceAction.SourceActor;
     internal string SourceId { get; } = sourceId;
     internal CardChoiceSpec Spec { get; } = spec;
 }
