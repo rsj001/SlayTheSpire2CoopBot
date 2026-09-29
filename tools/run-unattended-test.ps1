@@ -8,6 +8,8 @@ param(
     [string]$Sts2GameRoot = "D:\Steam\steamapps\common\Slay the Spire 2",
     [string]$RitsuWorkshopRoot = "D:\Steam\steamapps\workshop\content\2868840\3747602295",
     [string]$CombatSolverBuildDir = "",
+    [string]$CoopBotBuildDir = "",
+    [switch]$IncludeCoopBot,
     [string]$HeadlessInstance = "",
     [ValidateSet("default", "server-generational")]
     [string]$RuntimeProfile = "default",
@@ -387,6 +389,13 @@ $combatSolverManifest = if ([string]::IsNullOrWhiteSpace($CombatSolverBuildDir))
 $memoryCleaner = if ([string]::IsNullOrWhiteSpace($CombatSolverBuildDir)) {
     Join-Path $repositoryRoot 'tools\CombatSolver.MemoryCleaner\bin\Release\net48\CombatSolver.MemoryCleaner.exe'
 } else { Join-Path $buildDirectory 'CombatSolver.MemoryCleaner.exe' }
+$coopBotBuildDirectory = if ([string]::IsNullOrWhiteSpace($CoopBotBuildDir)) {
+    Join-Path $repositoryRoot 'coopbot\.godot\mono\temp\bin\Release'
+} else { Get-HeadlessCanonicalPath $CoopBotBuildDir }
+$coopBotDll = Join-Path $coopBotBuildDirectory 'CoopBot.dll'
+$coopBotManifest = if ([string]::IsNullOrWhiteSpace($CoopBotBuildDir)) {
+    Join-Path $repositoryRoot 'coopbot\CoopBot.json'
+} else { Join-Path $coopBotBuildDirectory 'CoopBot.json' }
 $resolvedRitsuWorkshopRoot = [IO.Path]::GetFullPath($RitsuWorkshopRoot)
 $ritsuLegacyDll = Join-Path $resolvedRitsuWorkshopRoot "lib\0.111.0\STS2-RitsuLib.dll"
 $ritsuBundleDll = Join-Path $resolvedRitsuWorkshopRoot "STS2-RitsuLib.dll"
@@ -420,6 +429,11 @@ if (-not (Test-Path -LiteralPath $combatSolverDll -PathType Leaf) -or
     -not (Test-Path -LiteralPath $combatSolverManifest -PathType Leaf) -or
     -not (Test-Path -LiteralPath $memoryCleaner -PathType Leaf)) {
     throw "Built CombatSolver DLL/manifest/MemoryCleaner not found: $combatSolverDll ; $combatSolverManifest ; $memoryCleaner"
+}
+if ($IncludeCoopBot.IsPresent -and
+    (-not (Test-Path -LiteralPath $coopBotDll -PathType Leaf) -or
+     -not (Test-Path -LiteralPath $coopBotManifest -PathType Leaf))) {
+    throw "Built CoopBot DLL/manifest not found: $coopBotDll ; $coopBotManifest"
 }
 $hasLegacyRitsu = Test-Path -LiteralPath $ritsuLegacyDll -PathType Leaf
 $hasBundledRitsu = (Test-Path -LiteralPath $ritsuBundleDll -PathType Leaf) -and
@@ -1115,7 +1129,9 @@ if ($ReuseOnly) {
     }
     Write-Host "UNATTENDED_REUSE_ONLY instance=$($runtimeContext.Instance) snapshot_scan=skipped"
 } else {
-    $snapshotPlan = Get-HeadlessSnapshotPlan $runtimeContext $combatSolverDll $combatSolverManifest $memoryCleaner $resolvedRitsuWorkshopRoot $ritsuManifestSource
+    $snapshotPlan = Get-HeadlessSnapshotPlan $runtimeContext $combatSolverDll $combatSolverManifest $memoryCleaner $resolvedRitsuWorkshopRoot $ritsuManifestSource `
+        $(if ($IncludeCoopBot.IsPresent) { $coopBotDll } else { '' }) `
+        $(if ($IncludeCoopBot.IsPresent) { $coopBotManifest } else { '' })
     Write-Host "UNATTENDED_SNAPSHOT_PLAN cache_hits=$($snapshotPlan.cacheHits) hashed=$($snapshotPlan.hashedFiles) elapsed_ms=$($snapshotPlan.elapsedMilliseconds)"
     $runtimeContext.ArtifactId = $snapshotPlan.id
     $combatSolverDllSha256 = @($snapshotPlan.files | Where-Object { $_.relative -eq 'mods\CombatSolver\CombatSolver.dll' })[0].sha256

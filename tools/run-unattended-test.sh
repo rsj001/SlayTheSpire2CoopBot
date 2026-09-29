@@ -49,6 +49,8 @@ add_option encounter-id "FUZZY_WURM_CRAWLER_WEAK" string raw_string
 add_option sts2-game-root "$steam_root/steamapps/common/Slay the Spire 2" string none
 add_option ritsu-workshop-root "$steam_root/steamapps/workshop/content/2868840/3747602295" string none
 add_option combat-solver-build-dir "" string none
+add_option coop-bot-build-dir "" string none
+add_option include-coop-bot 0 switch none
 add_option headless-instance "" string none
 add_option runtime-profile default string none "default|server-generational"
 add_option stop-instance 0 switch none
@@ -480,6 +482,14 @@ else
     combat_solver_dll="$repo_root/.godot/mono/temp/bin/Release/CombatSolver.dll"
     combat_solver_manifest="$repo_root/CombatSolver.json"
 fi
+if [[ -n ${option_value[coop-bot-build-dir]} ]]; then
+    coop_bot_build_dir="$(realpath -m -- "${option_value[coop-bot-build-dir]}")"
+    coop_bot_dll="$coop_bot_build_dir/CoopBot.dll"
+    coop_bot_manifest="$coop_bot_build_dir/CoopBot.json"
+else
+    coop_bot_dll="$repo_root/coopbot/.godot/mono/temp/bin/Release/CoopBot.dll"
+    coop_bot_manifest="$repo_root/coopbot/CoopBot.json"
+fi
 ritsu_workshop_root="$(realpath -m -- "${option_value[ritsu-workshop-root]}")"
 ritsu_legacy_dll="$ritsu_workshop_root/lib/0.111.0/STS2-RitsuLib.dll"
 ritsu_bundle_dll="$ritsu_workshop_root/STS2-RitsuLib.dll"
@@ -521,6 +531,10 @@ if ((option_value[stop-instance] == 0 && option_value[reuse-only] == 0)); then
 [[ -x "$source_game_root/SlayTheSpire2" ]] || runtime_error "game executable not found: $source_game_root/SlayTheSpire2"
 [[ -f "$combat_solver_dll" && -f "$combat_solver_manifest" ]] || runtime_error \
     "built CombatSolver DLL/manifest not found; build with -p:CopyModOnBuild=false or supply --combat-solver-build-dir"
+if ((option_value[include-coop-bot] == 1)); then
+    [[ -f "$coop_bot_dll" && -f "$coop_bot_manifest" ]] || runtime_error \
+        "built CoopBot DLL/manifest not found; build CoopBot or supply --coop-bot-build-dir"
+fi
 [[ -e "$ritsu_source" && -f "$ritsu_manifest_source" ]] || \
     runtime_error "headless RitsuLib source not found under: $ritsu_workshop_root"
 fi
@@ -1111,7 +1125,11 @@ else
     combat_solver_dll_sha256="${combat_solver_dll_sha256%% *}"
     combat_solver_manifest_sha256="$(sha256sum -- "$combat_solver_manifest")"
     combat_solver_manifest_sha256="${combat_solver_manifest_sha256%% *}"
-    artifact_id="$(hr_snapshot_id "$source_game_root" "$combat_solver_dll" "$combat_solver_manifest" "$ritsu_source" "$ritsu_manifest_source")"
+    snapshot_identity_inputs=("$source_game_root" "$combat_solver_dll" "$combat_solver_manifest" "$ritsu_source" "$ritsu_manifest_source")
+    if ((option_value[include-coop-bot] == 1)); then
+        snapshot_identity_inputs+=("$coop_bot_dll" "$coop_bot_manifest")
+    fi
+    artifact_id="$(hr_snapshot_id "${snapshot_identity_inputs[@]}")"
 fi
 
 runtime_profile="${option_value[runtime-profile]}"
@@ -1196,7 +1214,15 @@ if ((option_value[reuse-only] == 1)) && [[ -z "$process_pid" ]]; then
 fi
 hr_acquire "$process_pid" "$process_identity_start_time" || runtime_error 'headless host admission failed'
 if [[ -z $process_pid ]]; then
-    hr_prepare_snapshot "$source_game_root" "$combat_solver_dll" "$combat_solver_manifest" "$ritsu_source" "$ritsu_manifest_source" "$artifact_id" || runtime_error 'could not prepare frozen game snapshot'
+    snapshot_coop_dll=""
+    snapshot_coop_manifest=""
+    if ((option_value[include-coop-bot] == 1)); then
+        snapshot_coop_dll="$coop_bot_dll"
+        snapshot_coop_manifest="$coop_bot_manifest"
+    fi
+    hr_prepare_snapshot "$source_game_root" "$combat_solver_dll" "$combat_solver_manifest" \
+        "$ritsu_source" "$ritsu_manifest_source" "$snapshot_coop_dll" "$snapshot_coop_manifest" \
+        "$artifact_id" || runtime_error 'could not prepare frozen game snapshot'
 fi
 
 # Publish only after every process-safety check. An already-running protocol

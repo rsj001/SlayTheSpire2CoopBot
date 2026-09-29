@@ -125,7 +125,9 @@ function Get-HeadlessSnapshotPlan(
     [string]$CombatSolverManifest,
     [string]$MemoryCleaner,
     [string]$RitsuRoot,
-    [string]$RitsuManifest
+    [string]$RitsuManifest,
+    [string]$CoopBotDll = '',
+    [string]$CoopBotManifest = ''
 ) {
     # Every payload is bound, including other mods and non-DLL mod assets. No
     # hardlinks/junctions: a build in another worktree must not mutate this image.
@@ -151,13 +153,26 @@ function Get-HeadlessSnapshotPlan(
             throw "Cannot freeze a game tree containing a reparse point: $($item.FullName)"
         }
         if (-not $item.PSIsContainer) {
-            $sources[[IO.Path]::GetRelativePath($Context.SourceGameRoot, $item.FullName)] = $item.FullName
+            $relativeSource = [IO.Path]::GetRelativePath($Context.SourceGameRoot, $item.FullName)
+            if ($relativeSource.StartsWith('mods\CoopBot\', [StringComparison]::OrdinalIgnoreCase)) {
+                continue
+            }
+            $sources[$relativeSource] = $item.FullName
             [void]$enumeratedSources.Add($item.FullName)
         }
     }
     $sources['mods\CombatSolver\CombatSolver.dll'] = $CombatSolverDll
     $sources['mods\CombatSolver\CombatSolver.json'] = $CombatSolverManifest
     $sources['mods\CombatSolver\CombatSolver.MemoryCleaner.exe'] = $MemoryCleaner
+    if (-not [string]::IsNullOrWhiteSpace($CoopBotDll) -or
+        -not [string]::IsNullOrWhiteSpace($CoopBotManifest)) {
+        if ([string]::IsNullOrWhiteSpace($CoopBotDll) -or
+            [string]::IsNullOrWhiteSpace($CoopBotManifest)) {
+            throw 'CoopBot DLL and manifest must be supplied together.'
+        }
+        $sources['mods\CoopBot\CoopBot.dll'] = $CoopBotDll
+        $sources['mods\CoopBot\CoopBot.json'] = $CoopBotManifest
+    }
     $sources['mods\.combatsolver-headless-ritsulib\STS2-RitsuLib.json'] = $RitsuManifest
     $variantManifest = Join-Path $RitsuRoot 'ritsulib-variants.manifest'
     if (Test-Path -LiteralPath $variantManifest -PathType Leaf) {

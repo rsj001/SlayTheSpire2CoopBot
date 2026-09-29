@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CoopBot.Protocol;
 using CoopBot.Session;
+using CoopBot.Capture;
 
 int checks = 0;
 void Check(bool condition, string name)
@@ -98,5 +99,23 @@ catch (InvalidOperationException)
     illegalTransitionRejected = true;
 }
 Check(illegalTransitionRejected, "illegal state transition rejected");
+
+var stableGate = new StableRootGate();
+RootStabilitySample stableA = new(
+    "combat-1", "fingerprint-a", true, true, true, true, true, true, true);
+Check(stableGate.Observe(stableA).Disposition == StableRootGateDisposition.Candidate, "stable root needs consecutive observation");
+StableRootGateResult firstPublished = stableGate.Observe(stableA);
+Check(firstPublished.Disposition == StableRootGateDisposition.Publish && firstPublished.RootRevision == 1, "stable root publishes revision one");
+Check(stableGate.Observe(stableA).Disposition == StableRootGateDisposition.Unchanged, "unchanged root does not increment revision");
+RootStabilitySample busy = stableA with { NativeExecutorIdle = false };
+Check(stableGate.Observe(busy).Reason == "native_executor_active", "active executor resets candidate");
+RootStabilitySample stableB = stableA with { Fingerprint = "fingerprint-b" };
+Check(stableGate.Observe(stableB).Disposition == StableRootGateDisposition.Candidate, "changed root starts new candidate");
+StableRootGateResult secondPublished = stableGate.Observe(stableB);
+Check(secondPublished.Disposition == StableRootGateDisposition.Publish && secondPublished.RootRevision == 2, "changed stable root increments revision");
+RootStabilitySample choiceBusy = stableB with { ChoiceTransactionsIdle = false };
+Check(stableGate.Observe(choiceBusy).Reason == "choice_transaction_active", "choice transaction blocks root");
+RootStabilitySample rosterChanged = stableB with { RosterStable = false };
+Check(stableGate.Observe(rosterChanged).Reason == "roster_changed", "roster change blocks root");
 
 Console.WriteLine($"Passed {checks} CoopBot protocol and session contracts.");

@@ -2471,6 +2471,37 @@ foreach ($jointFile in Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'sr
         }
     }
 }
+$coopRecorderPath = Join-Path $repositoryRoot 'coopbot/Capture/HostCombatRecorder.cs'
+$coopVisibilityPath = Join-Path $repositoryRoot 'coopbot/Capture/HostVisibilityAudit.cs'
+$coopStableGatePath = Join-Path $repositoryRoot 'coopbot/Capture/StableRootGate.cs'
+$coopProbePath = Join-Path $repositoryRoot 'coopbot/Diagnostics/CoopBotHeadlessProbe.cs'
+foreach ($check in @(
+    @{ Path = $combatSolverProjectPath; Text = '<InternalsVisibleTo Include="CoopBot" />' },
+    @{ Path = $coopBotProjectPath; Text = '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' },
+    @{ Path = $coopRecorderPath; Text = 'RunManager.Instance.ActionQueueSet.IsEmpty' },
+    @{ Path = $coopRecorderPath; Text = 'RunManager.Instance.ActionExecutor.CurrentlyRunningAction is null' },
+    @{ Path = $coopRecorderPath; Text = 'CombatRootSnapshot.Capture(_combat)' },
+    @{ Path = $coopVisibilityPath; Text = 'rngStreams == 9' },
+    @{ Path = $coopStableGatePath; Text = 'RequiredMatchingObservations' },
+    @{ Path = $coopProbePath; Text = 'AuditSyntheticRoot(CombatState combat)' },
+    @{ Path = (Join-Path $repositoryRoot 'tools/run-unattended-test.ps1'); Text = '[switch]$IncludeCoopBot' },
+    @{ Path = (Join-Path $repositoryRoot 'tools/run-unattended-test.sh'); Text = 'add_option include-coop-bot 0 switch none' })) {
+    if (-not (Select-String -LiteralPath $check.Path -SimpleMatch $check.Text -Quiet)) {
+        $violations.Add("$($check.Path): missing CoopBot C2 boundary '$($check.Text)'")
+    }
+}
+foreach ($forbiddenMutation in @(
+    'SetCurrentHpInternal(',
+    '.Energy =',
+    '.Stars =',
+    'AddInternal(',
+    'RemoveInternal(',
+    'PowerCmd.',
+    'CardPileCmd.')) {
+    if (Select-String -LiteralPath $coopRecorderPath -SimpleMatch $forbiddenMutation -Quiet) {
+        $violations.Add("${coopRecorderPath}: read-only recorder mutates live combat via '$forbiddenMutation'")
+    }
+}
 
 if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Error $_ }

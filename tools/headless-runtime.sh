@@ -303,7 +303,7 @@ hr_snapshot_id() {
     } | sha256sum | cut -d ' ' -f 1
 }
 hr_prepare_snapshot() {
-    local source="$1" dll="$2" manifest="$3" ritsu="$4" ritsu_manifest="$5" expected="$6" staging old directory actual id_temp
+    local source="$1" dll="$2" manifest="$3" ritsu="$4" ritsu_manifest="$5" coop_dll="$6" coop_manifest="$7" expected="$8" staging old directory actual id_temp
     [[ $HR_ROOT != "$source" && $HR_ROOT != "$source/"* && $source != "$HR_ROOT/"* ]] || { hr_error 'source and runtime must be disjoint'; return 1; }
     local candidate
     for candidate in /proc/[0-9]*/exe; do
@@ -312,12 +312,18 @@ hr_prepare_snapshot() {
     if [[ -f $HR_ROOT/snapshot-id && $(<"$HR_ROOT/snapshot-id") == "$expected" && -d $HR_ROOT/game ]]; then return 0; fi
     staging="$(mktemp -d --tmpdir="$HR_ROOT" snapshot.XXXXXX)" || return 1
     cp -aL --reflink=auto -- "$source/." "$staging/" || return 1
-    for directory in "$staging/mods/CombatSolver" "$staging/mods/CombatSolverHeadlessRitsuLib"; do
+    for directory in "$staging/mods/CombatSolver" "$staging/mods/CombatSolverHeadlessRitsuLib" "$staging/mods/CoopBot"; do
         [[ ! -e $directory ]] || rm -rf -- "$directory" || return 1
-        mkdir -p -- "$directory" || return 1
     done
+    mkdir -p -- "$staging/mods/CombatSolver" "$staging/mods/CombatSolverHeadlessRitsuLib" || return 1
     cp -- "$dll" "$staging/mods/CombatSolver/CombatSolver.dll" || return 1
     cp -- "$manifest" "$staging/mods/CombatSolver/CombatSolver.json" || return 1
+    if [[ -n $coop_dll || -n $coop_manifest ]]; then
+        [[ -n $coop_dll && -n $coop_manifest ]] || { hr_error 'CoopBot DLL and manifest must be supplied together'; return 1; }
+        mkdir -p -- "$staging/mods/CoopBot" || return 1
+        cp -- "$coop_dll" "$staging/mods/CoopBot/CoopBot.dll" || return 1
+        cp -- "$coop_manifest" "$staging/mods/CoopBot/CoopBot.json" || return 1
+    fi
     if [[ -d $ritsu ]]; then
         cp -a -- "$ritsu/." "$staging/mods/CombatSolverHeadlessRitsuLib/" || return 1
         rm -f -- "$staging/mods/CombatSolverHeadlessRitsuLib/mod_manifest.json" \
@@ -327,7 +333,9 @@ hr_prepare_snapshot() {
     fi
     cp -- "$ritsu_manifest" "$staging/mods/CombatSolverHeadlessRitsuLib/STS2-RitsuLib.json" || return 1
     printf '%s\n' 'CombatSolver isolated headless dependency' >"$staging/mods/CombatSolverHeadlessRitsuLib/.combatsolver-headless-only" || return 1
-    actual="$(hr_snapshot_id "$source" "$dll" "$manifest" "$ritsu" "$ritsu_manifest")" || return 1
+    local -a identity_inputs=("$source" "$dll" "$manifest" "$ritsu" "$ritsu_manifest")
+    if [[ -n $coop_dll ]]; then identity_inputs+=("$coop_dll" "$coop_manifest"); fi
+    actual="$(hr_snapshot_id "${identity_inputs[@]}")" || return 1
     [[ $actual == "$expected" ]] || {
         hr_error "snapshot source changed while copying; unpublished snapshot retained at $staging"; return 1;
     }

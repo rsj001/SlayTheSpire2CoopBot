@@ -1941,6 +1941,37 @@ while IFS= read -r -d '' file; do
         forbid_fixed "$file" "$forbidden" 'offline joint search references live CoopBot boundary:'
     done
 done < <(find "$repository_root/src/Search/Coop" -maxdepth 1 -type f -name '*.cs' -print0)
+coop_recorder="$repository_root/coopbot/Capture/HostCombatRecorder.cs"
+coop_visibility="$repository_root/coopbot/Capture/HostVisibilityAudit.cs"
+coop_stable_gate="$repository_root/coopbot/Capture/StableRootGate.cs"
+coop_probe="$repository_root/coopbot/Diagnostics/CoopBotHeadlessProbe.cs"
+require_fixed "$repository_root/CombatSolver.csproj" '<InternalsVisibleTo Include="CoopBot" />' \
+    'CombatSolver missing narrow CoopBot internal bridge:'
+require_fixed "$coopbot_project" '<ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />' \
+    'CoopBot missing non-copying CombatSolver reference:'
+for token in \
+    'RunManager.Instance.ActionQueueSet.IsEmpty' \
+    'RunManager.Instance.ActionExecutor.CurrentlyRunningAction is null' \
+    'CombatRootSnapshot.Capture(_combat)'; do
+    require_fixed "$coop_recorder" "$token" 'CoopBot recorder missing C2 stable root boundary:'
+done
+require_fixed "$coop_visibility" 'rngStreams == 9' 'CoopBot visibility audit no longer checks nine RNG streams:'
+require_fixed "$coop_stable_gate" 'RequiredMatchingObservations' 'CoopBot stable root gate missing repeated observation contract:'
+require_fixed "$coop_probe" 'AuditSyntheticRoot(CombatState combat)' 'CoopBot headless visibility probe missing:'
+require_fixed "$repository_root/tools/run-unattended-test.ps1" '[switch]$IncludeCoopBot' \
+    'Windows unattended launcher missing optional CoopBot snapshot:'
+require_fixed "$repository_root/tools/run-unattended-test.sh" 'add_option include-coop-bot 0 switch none' \
+    'Linux unattended launcher missing optional CoopBot snapshot:'
+for forbidden in \
+    'SetCurrentHpInternal(' \
+    '.Energy =' \
+    '.Stars =' \
+    'AddInternal(' \
+    'RemoveInternal(' \
+    'PowerCmd.' \
+    'CardPileCmd.'; do
+    forbid_fixed "$coop_recorder" "$forbidden" 'read-only CoopBot recorder mutates live combat:'
+done
 
 if ((${#violations[@]} > 0)); then
     printf '%s\n' "${violations[@]}" >&2

@@ -293,6 +293,10 @@ F5a 将原先只有根级本地玩家视图的可搜索药水、Throwing Axe 可
 
 后续 Host/Capture/NativeAdapter/UI 只能依赖此合同层。Host 将主线程稳定 live 根显式转换成 `CombatRootSnapshot` 后才能调用 `src/Search/Coop`；离线联合 Search 反向引用 CoopBot、网络、RunManager、Godot 或 UI 均由双平台结构门禁拒绝。远端动作必须由 owner Client 的 LocalActorAgent 经原版 `ActionQueueSynchronizer.RequestEnqueue` 提交，Host 不替远端 owner 直接入队。
 
+`coopbot/Capture/HostCombatRecorder` 只在原版 Host 且 ActorCount>1 时工作。它从 RitsuLib 战斗生命周期取得并保存 live `CombatState` 引用；不使用 `CombatManager.DebugOnlyGetState()` 取得生产状态。每帧只读观察原版队列、执行器、选择页面、Mod 在途动作与 roster，连续至少两次完整 `ContinuationStamp` 指纹相同时才调用既有 `CombatRootSnapshot.Capture`。根捕获再次核对 live/projected 全文本，并由 `HostVisibilityAudit` 检查逐 Actor 五牌堆、资源、Power 身份、药水/遗物/球/宠物、怪物、九条 RNG 与回合阶段；任何缺口直接失败，不发布部分根。Recorder 不直接写 HP、资源、牌堆、Power 或 readiness。
+
+`tools/run-unattended-test.ps1/.sh` 的可选 CoopBot 参数只把已构建 DLL/manifest 加入私有游戏快照，默认测试仍不加载 CoopBot。`COOP-BOT-HOST-RECORDER` 通过测试编排反射调用独立 Mod 的公开诊断探针，生产 CombatSolver 不引用 CoopBot 程序集。该合成四 Actor 证据证明共享 `CombatState` 的字段覆盖；真实平台 Host 可见性仍需最终实机前置门禁确认。
+
 策略重构回归语料由 `tools/StrategyCorpus` 编排：玩家包使用 Testing 的严格 `combat_start` 无头恢复，仓库生成场景使用 `OfflineSearchHarness`。Search 在请求完成后提供只读质量和根戳记证据；Testing Writer 与离线宿主把它们写入独立证据文件，不参与候选裁决。原始玩家包与完整输出只留在 `.local`。对照器先核对根、政策和固定预算，再比较完整动作、续用、结果及非时序工作量；时间、分配和 GC 单列观察。
 
 本地策略迭代通过 `tools/CheckpointTool/StrategySessionRunner.cs` 持有 `start/run/status/stop` 会话和脚本单独编译。所有策略会话使用一个固定私有游戏副本；`start` 提交不建战斗的 `SessionStart` 就绪请求，`run` 直接复用其进程，`stop` 只结束进程和监控。Windows 启动器缓存稳定游戏文件的哈希，仅重算 Mod；停机后按差异替换私有副本。`run-unattended-test.ps1/.sh` 的复用入口跳过快照扫描，仍核对 PID、出生时间与可执行文件。`UnattendedTestRunner.ProtocolHost` 在每次请求开始加载冻结的脚本程序集和参数，`DevelopmentStrategyLoader` 持有可卸载加载上下文，在请求收尾释放。Search 只接收 `SearchPolicySnapshot.DevelopmentStrategy` 中的不可变策略引用和只读分支特征，不读取脚本文件或 live 设置。无脚本时保留既有候选顺序、Beam 评分和组合列表。脚本只接管中途优先级、评分、一个有界保路代表和既有组合成员编排；最终路线质量、预算、状态等价与战斗结算仍属原所有者。

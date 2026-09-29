@@ -50,6 +50,12 @@ internal sealed partial class UnattendedTestRunner
                 runner._completedChecks.Add(_coopWorkloadEvidence);
                 runner._completedChecks.Add("JointLifetime:Complete:Cancel:Fault:WeakReferencesReleased");
             }
+            if (request.ScenarioId == "COOP-BOT-HOST-RECORDER")
+            {
+                runner.SetStage("coop_bot_host_recorder");
+                string evidence = AssertCoopBotHostRecorder(scenario.CombatState);
+                runner._completedChecks.Add("CoopBotHostRecorder:StableGate:FourActorVisibility:" + evidence);
+            }
             if (request.ScenarioId == "COOP-MULTIPLAYER-NATIVE-DIFF")
             {
                 runner.SetStage("coop_multiplayer_native_diff");

@@ -10,6 +10,7 @@
     <RootNamespace>CoopBot</RootNamespace>
     <AssemblyName>CoopBot</AssemblyName>
     <Version>0.1.0</Version>
+    <NoWarn>$(NoWarn);CS0436</NoWarn>
     <SteamRoot Condition="'$(SteamRoot)' == '' and '$(OS)' == 'Windows_NT' and Exists('D:/Steam')">D:/Steam</SteamRoot>
     <SteamRoot Condition="'$(SteamRoot)' == '' and '$(OS)' == 'Windows_NT'">$(MSBuildProgramFiles32)/Steam</SteamRoot>
     <SteamRoot Condition="'$(SteamRoot)' == ''">$(HOME)/.local/share/Steam</SteamRoot>
@@ -27,6 +28,7 @@
   <Import Project="$(RitsuLibReferencesProps)" Condition="Exists('$(RitsuLibReferencesProps)')" />
 
   <ItemGroup>
+    <ProjectReference Include="../CombatSolver.csproj" Private="false" AdditionalProperties="CopyModOnBuild=false" />
     <PackageReference Include="Krafs.Publicizer" Version="2.3.0" PrivateAssets="all" />
     <Publicize Include="sts2" IncludeVirtualMembers="false" IncludeCompilerGeneratedMembers="false" />
   </ItemGroup>

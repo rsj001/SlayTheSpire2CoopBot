@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## Co-op Bot C2 只读 Recorder（2026-09-29）
+
+- `CoopBot.ContractChecks`：Passed；累计 40 项，其中 8 项新增稳定根合同，覆盖必须连续观察、状态不变不增 revision、执行器/选择/roster 阻断和变化后递增 revision。
+- `COOP-BOT-HOST-RECORDER` / `6ef8cb07a6574394b19e9fc95c111efb`：Passed；真实 Godot 无头进程同时加载 CombatSolver 与独立 CoopBot，对合成四 Actor 根完成情况 A 字段审计，证据为 `actors=4;rng=9;fingerprint_fields=110`；1 CPU / 1536 MiB，实例已删除。
+- CoopBot Release 构建 0 warning / 0 error。PowerShell 与 Bash 启动器语法通过；Linux/WSL 运行门禁未执行，因为本机 WSL 服务不可用。未启动可见 Steam，也未把合成四 Actor 结果外推为真实平台 Host 已经完成联机观测。
+
 ## Co-op Bot C1 协议与会话（2026-09-29）
 
 - `dotnet run --project tools/CoopBot.ContractChecks/CoopBot.ContractChecks.csproj -c Release`：Passed；32 项覆盖四个协议实例的 Actor 映射一致性、每端本地 Actor 派生、DTO/未知字段、重复与乱序、版本/Host/sender 冲突、ActionId 幂等、非法状态迁移、停止和失败清理。

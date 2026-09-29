@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## Co-op Bot C2 只读 Recorder（开发中，2026-09-29）
+
+独立 CoopBot 新增 Host-only Recorder：保存生命周期事件提供的 `CombatState`，要求原版动作队列为空、executor idle、无原生选择、无 Bot 在途动作、roster 未变，并在连续两次完整指纹一致后才发布递增 RootRevision。发布时复用 CombatSolver 已验证的多 Actor 根捕获和 live/projected 严格对账，再逐类检查四人资源、五牌堆、Power 身份、药水/遗物/球/宠物、怪物、九条 RNG 与回合阶段。Recorder 不修改任何 live 战斗字段。
+
+无人启动器两端新增显式可选 CoopBot 快照输入，默认场景不加载它。`COOP-BOT-HOST-RECORDER` 在真实 Godot 无头进程内加载两个 Mod，以合成四 Actor `CombatState` 调用独立程序集探针；最终 `runId=6ef8cb07a6574394b19e9fc95c111efb` Passed，得到 `actors=4`、`rng=9`、`fingerprint_fields=110`，实例已删除。纯合同累计 40 项通过。该证据证明共享状态模型覆盖，不把它写成真实平台联机 Host 可见性已经实测；后者留给实机前置门禁。
+
 ## Co-op Bot C1 协议与会话（开发中，2026-09-29）
 
 新增独立 `CoopBot.dll` 工程和 gameplay Mod manifest，不把联机控制加入 CombatSolver 生产 Runtime。C1 以单一原版 `INetMessage` envelope 承载版本化 payload，固定战斗会话、真实 transport sender、逐 sender 严格序号、ActorAssignment、心跳和 ActionId 幂等合同；四端从同一稳定 roster 派生一致 Actor 顺序，只把各自 `NetId` 映射为本地 Actor。协议/会话核心不引用 Godot、live 原版对象或 CombatSolver，原版序列化仅存在于 envelope 适配器。
