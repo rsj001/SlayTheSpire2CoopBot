@@ -1,10 +1,10 @@
 # CombatSolver 开发笔记与未来构想
 
-## 原版多人语义 M1 原生根差分底座（进行中，2026-09-29）
+## 原版多人语义 M1 原生动作差分底座（2026-09-29）
 
 离线联合建局现在除预测根外还保留 2/3/4 Actor 的原生 `CombatState`、稳定玩家顺序和敌人实例。新增的独立无人 fixture 从同一原生根捕获预测根并建立两个 prediction Fork，逐 Actor 对账 HP/格挡/资源、牌堆与卡牌状态、Power 与私有状态、药水、球、Osty、敌人/AI、九条 RNG 和完整 continuation；同时证明远端 Actor 状态进入联合状态键且兄弟 Fork 不污染原生根。`COOP-MULTIPLAYER-NATIVE-DIFF` 的 `runId=6baf957036cb4e7da22ef768b5d2841a` Passed，实例已删除。
 
-这只是 M1 的根与观察器底座：尚未把原版 `GameAction` 与 `JointActionTransition` 从同根分别执行，也尚未建立 `BelieveInYou`、`Knockdown`、`TheBall` 的预期失败，因此 M1 仍为进行中，不能称为原版多人动作差分完成。
+actual 侧新增测试专用原版公开 `PlayCardAction` 执行器，只隔离合成卡缺失资源导致的 Power 飞行动画，不跳过牌堆、费用、OnPlay、Hook、Command、历史与清理。`OneForAll` 在两人根上与 `JointActionTransition` 完整一致；`BelieveInYou` 原版使 Recipient 能量增加 2，`Knockdown` 同时改变敌人 HP 与 Knockdown Power，`TheBall` 同时造成伤害、移交队友抽牌堆并把实例伤害成长至 20，三者预测侧分别在 M4/M5/M6 明确拒绝。最终同源码 `runId=3bbf9c123b664b8ebcf2e9ed8857ec39` Passed，实例已删除；M1 完成，但这三张牌仍属于后续阶段的已知缺口，不是已支持。
 
 ## 原版多人语义 M0 目录与失败边界（2026-09-29）
 

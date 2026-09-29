@@ -797,11 +797,15 @@ internal sealed partial class UnattendedTestRunner
             || !DictionaryEqual(predicted.RngCounters, actual.RngCounters)
             || predicted.ExactContinuationState != actual.ExactContinuationState)
         {
-            string firstDifference = new ContinuationStamp(predicted.ExactContinuationState)
-                .DescribeFirstDifference(new ContinuationStamp(actual.ExactContinuationState));
+            ContinuationStamp predictedContinuation = new(predicted.ExactContinuationState);
+            ContinuationStamp actualContinuation = new(actual.ExactContinuationState);
+            IReadOnlyList<string> continuationDifferences = predictedContinuation
+                .DescribeDifferences(actualContinuation, maximumDifferences: 64);
+            string firstDifference = continuationDifferences.FirstOrDefault() ?? "non-continuation snapshot field";
             Entry.Logger.Info(
                 $"[CombatSolver/Unattended] MOVE_DIFF_MISMATCH run_id={_request.RunId} " +
                 $"monster={monsterId} move={moveId} first_difference={firstDifference} " +
+                $"continuation_differences={JsonSerializer.Serialize(continuationDifferences)} " +
                 $"predicted={Serialize(predicted)} actual={Serialize(actual)}");
             throw new InvalidOperationException(
                 $"{monsterId}.{moveId} 一步模拟与真实行动不一致；首个差异：{firstDifference}");

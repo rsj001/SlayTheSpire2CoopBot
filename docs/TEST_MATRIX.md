@@ -1,9 +1,10 @@
 # CombatSolver 测试清单
 
-## 原版多人语义 M1 原生根差分底座（进行中，2026-09-29）
+## 原版多人语义 M1 原生动作差分底座（2026-09-29）
 
 - `COOP-MULTIPLAYER-NATIVE-DIFF`：分别建立 2/3/4 Actor 原生 `CombatState`，从同根捕获两个独立 prediction Fork；逐 Actor 对账完整 `MoveStateSnapshot`，远端 Actor 增加 1 能量后联合状态键变化，原生 continuation 不变。`runId=6baf957036cb4e7da22ef768b5d2841a` Passed，fixture 阶段 334 ms，实例已删除。
-- Windows Release 构建 0 警告/0 错误。首次显式 build-dir 启动因该目录不含 manifest/MemoryCleaner 在游戏前停止；第二次 2 GiB 主机准入因可用内存不足在游戏前超时并清理；降至 1.5 GiB 后通过。尚未执行原版卡牌/药水/EndTurn 动作差分，也未运行可见 Steam 或 Linux/WSL。
+- 同 fixture 的最终同源码 `runId=3bbf9c123b664b8ebcf2e9ed8857ec39` Passed：`OneForAll` 同根原版 `PlayCardAction` / `JointActionTransition` 完整一致；`BelieveInYou` 绑定 `RecipientActor.Energy`、`Knockdown` 绑定 `Enemy.Hp/Power`、`TheBall` 绑定 `Enemy.Hp/CardOwner/Pile/DynamicVars.Damage` 后，在各自后续阶段门禁稳定拒绝。只跳过合成 Power 卡缺失资源的飞行动画，结算路径未跳过。
+- Windows Release 构建 0 警告/0 错误。开发期 `6d19ed694f0c4bcd8715c7e40b29e37a`、`f29c061b0edf4a028aa6e1aa0c0ddd32` 分别定位远端 Creature UI 和合成 Power 飞行动画前置失败，实例均删除；未运行可见 Steam 或 Linux/WSL。
 
 ## 原版多人语义 M0 目录与失败边界（2026-09-29）
 

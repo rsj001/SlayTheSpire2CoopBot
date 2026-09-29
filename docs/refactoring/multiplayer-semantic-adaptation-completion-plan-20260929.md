@@ -1,6 +1,6 @@
 # 原版多人战斗语义适配补齐计划
 
-> 状态：执行中；M0 已完成，下一阶段为 M1 原生多人差分底座<br>
+> 状态：执行中；M0-M1 已完成，下一阶段为 M2 跨玩家身份与私有状态<br>
 > 日期：2026-09-29<br>
 > 规划基线：`bae3f5ea`<br>
 > 原版语义基线：当前游戏 `v0.111.0` 的只读反编译 Core 源码；wiki 只用于发现内容，不作为最终结算依据<br>
@@ -229,7 +229,7 @@ F 阶段已经完成的是：把 CombatSolver 当前支持的**单人战斗语�
 
 ### M1：建立原生多人 actual/simulated 差分底座
 
-> 进度：进行中。已完成 2/3/4 Actor 原生建局对象保留、同根双 prediction Fork、逐 Actor 完整根投影对账、远端状态键与根隔离，证据为 `COOP-MULTIPLAYER-NATIVE-DIFF` / `6baf957036cb4e7da22ef768b5d2841a`。待完成原版公开 `GameAction` 执行器、同动作 `JointActionTransition`、完整差异集合，以及一个通过动作和三个稳定预期缺口。
+> 进度：已完成。2/3/4 Actor 原生建局保留同根双 prediction Fork，逐 Actor 完整根投影、远端状态键和根隔离通过；`OneForAll` 从同根分别走原版公开 `PlayCardAction` 与 `JointActionTransition` 后完整一致。`BelieveInYou`、`Knockdown`、`TheBall` 先由原版动作分别证明 Recipient 能量、敌人 HP/Power、卡牌 Owner/牌堆/成长字段，再由预测侧在 M4/M5/M6 门禁稳定拒绝。最终同源码证据为 `COOP-MULTIPLAYER-NATIVE-DIFF` / `3bbf9c123b664b8ebcf2e9ed8857ec39`。
 
 目标：把原版多人执行结果变成语义真值，而不是继续用模拟器自证。
 

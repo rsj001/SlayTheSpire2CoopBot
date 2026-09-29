@@ -54,8 +54,9 @@ internal sealed partial class UnattendedTestRunner
             {
                 runner.SetStage("coop_multiplayer_native_diff");
                 runner.AssertMultiplayerNativeDifferentialSubstrate(scenario.CombatState);
+                await runner.AssertMultiplayerNativeSimpleActionDifferentialAsync(scenario.CombatState);
                 runner._completedChecks.Add(
-                    "MultiplayerNativeDiff:ActorCount2:ActorCount3:ActorCount4:AllActorRootProjection:IndependentForks:RootIsolation");
+                    "MultiplayerNativeDiff:ActorCount2:ActorCount3:ActorCount4:AllActorRootProjection:IndependentForks:RootIsolation:NativeOneForAllGameAction:BelieveInYouRecipientEnergyGap:KnockdownEnemyHpPowerGap:TheBallOwnerPileDamageGap");
             }
             if (request.ScenarioId == "COOP-JOINT-OBJECTIVE")
             {

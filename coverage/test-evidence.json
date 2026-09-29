@@ -1,10 +1,10 @@
 {
   "MULTIPLAYER-SEMANTIC-M1-ROOT-20260929": {
-    "status": "PassedWithDocumentedBoundaries",
-    "level": "HeadlessNativeMultiplayerRootDifferentialSubstrate",
-    "procedure": "COOP-MULTIPLAYER-NATIVE-DIFF；2/3/4 Actor 原生根；同根双 prediction Fork；逐 Actor 完整状态投影与根隔离",
-    "expected": "原生多人根与预测根在动作前逐字段一致；两个 Fork 一致且互相隔离；远端状态进入联合键；预测变更不污染原生根",
-    "observed": "runId=6baf957036cb4e7da22ef768b5d2841a Passed，fixture 阶段 334ms，实例已删除。尚未执行原版 GameAction 与 JointActionTransition 的同动作差分，M1 仍在进行中。",
+    "status": "Passed",
+    "level": "HeadlessNativeMultiplayerActionDifferentialSubstrate",
+    "procedure": "COOP-MULTIPLAYER-NATIVE-DIFF；2/3/4 Actor 原生根；同根双 prediction Fork；OneForAll 原版 PlayCardAction/JointActionTransition；三个字段化预期缺口",
+    "expected": "根逐字段一致且隔离；一个已知简单多人动作完整一致；BelieveInYou、Knockdown、TheBall 分别稳定暴露 Recipient 能量、敌人 HP/Power、卡牌 Owner/牌堆/成长缺口",
+    "observed": "最终同源码 runId=3bbf9c123b664b8ebcf2e9ed8857ec39 Passed，fixture 阶段 1407ms，实例已删除。Power 飞行动画因合成资源缺失被测试专用隔离，牌堆、费用、OnPlay、Hook、Command、历史与清理仍走原版。",
     "evidence": "src/Testing/UnattendedTestRunner.MultiplayerNativeDifferential.cs; docs/TEST_MATRIX.md; docs/refactoring/multiplayer-semantic-adaptation-completion-plan-20260929.md"
   },
   "MULTIPLAYER-SEMANTIC-M0-20260929": {
