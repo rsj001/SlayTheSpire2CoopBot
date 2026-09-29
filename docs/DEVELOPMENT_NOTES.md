@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线联合敌方移除与召唤（2026-09-29）
+
+联合敌方 mixed 分派扩展为一次性前置、逐 Actor 攻击、一次性后置三个阶段：Gas Bomb 的爆炸对两名 Actor 分别造成同额伤害，owner 只自杀一次；Living Fog 的 Bloat 在原版 Living Fog 遭遇槽位中只召唤一批炸弹，再分别攻击两名 Actor。前两次夹具因无 Encounter 和对 mutable Encounter 重复克隆而失败，`runId=e9b8f48f148445c68fe6f981949b3a10`、`a9bc1c0d8af74f5b8cb334938d693688`；复制当前单槽遭遇仍无法提供 bomb 槽，`runId=d02e2fd3507f4d55abcc7d4ed56327ef`。改用 canonical `LivingFogNormal` 后 `COOP-MULTI-ACTOR-ROOT` 的 `runId=c717de439cfa43d5bad9a88032f80b41` Passed，全部实例已删除。
+
 ## 离线联合敌方 mixed 行动（2026-09-29）
 
 联合敌方侧新增首个 mixed 分类：Sludge Spinner 的 Rage 按稳定 Actor 顺序执行各自攻击段，再只执行一次怪物自身 Strength 后效。两 Actor 夹具得到同额 HP 损失，怪物 Strength 精确增加 3；`COOP-MULTI-ACTOR-ROOT` 的 `runId=3fc13dbaf76143998c1dd7905d4af88a` Passed，实例已删除。死亡/召唤和其余未分类特殊行动仍保持明确拒绝。

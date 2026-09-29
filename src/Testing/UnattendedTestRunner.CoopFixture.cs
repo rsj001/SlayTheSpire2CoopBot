@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Encounters;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Potions;
@@ -34,6 +35,8 @@ internal sealed partial class UnattendedTestRunner
         AssertThirdPartySubscriberBoundary();
         AssertTargetOnlyEnemyMove(source);
         AssertMixedEnemyMove(source);
+        AssertOwnerRemovalEnemyMove(source);
+        AssertPreAttackSummonEnemyMove(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -645,6 +648,76 @@ internal sealed partial class UnattendedTestRunner
             throw new InvalidOperationException(
                 $"联合 mixed 敌方行动未拆分逐 Actor 攻击与一次性后效：" +
                 $"strength={strengthBefore}->{strengthAfter} " +
+                $"hp={string.Join(',', hpBefore)}->{string.Join(',', hpAfter)}。");
+        }
+    }
+
+    private static void AssertOwnerRemovalEnemyMove(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            2,
+            enemyModel: ModelDb.Monster<GasBomb>());
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Creature enemy = combat.Enemies.Single();
+        combat.ForceMonsterMove(enemy, "EXPLODE_MOVE");
+        int[] hpBefore = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+        int[] hpAfter = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        if (simulator.State.GetCreature(enemy).IsAlive
+            || hpAfter.Where((hp, index) => hp >= hpBefore[index]).Any()
+            || hpBefore[0] - hpAfter[0] != hpBefore[1] - hpAfter[1])
+        {
+            throw new InvalidOperationException(
+                $"联合 owner-removal 行动未逐 Actor 攻击并只移除 owner：" +
+                $"enemyAlive={simulator.State.GetCreature(enemy).IsAlive} " +
+                $"hp={string.Join(',', hpBefore)}->{string.Join(',', hpAfter)}。");
+        }
+    }
+
+    private static void AssertPreAttackSummonEnemyMove(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            2,
+            enemyModel: ModelDb.Monster<LivingFog>(),
+            encounterModel: ModelDb.Encounter<LivingFogNormal>());
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Creature enemy = combat.Enemies.Single();
+        combat.ForceMonsterMove(enemy, "BLOAT_MOVE");
+        int expectedSpawnCount = combat.GetMonsterStaticInt(enemy, "BloatAmount");
+        int bombsBefore = combat.Enemies.Count(creature => creature.Monster is GasBomb);
+        int[] hpBefore = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+        int bombsAfter = combat.Enemies.Count(creature => creature.Monster is GasBomb);
+        int[] hpAfter = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        if (bombsAfter - bombsBefore != expectedSpawnCount
+            || hpAfter.Where((hp, index) => hp >= hpBefore[index]).Any()
+            || hpBefore[0] - hpAfter[0] != hpBefore[1] - hpAfter[1])
+        {
+            throw new InvalidOperationException(
+                $"联合 pre-attack summon 行动重复或漏结算：" +
+                $"bombs={bombsBefore}->{bombsAfter} expected={expectedSpawnCount} " +
                 $"hp={string.Join(',', hpBefore)}->{string.Join(',', hpAfter)}。");
         }
     }
@@ -1614,7 +1687,8 @@ internal sealed partial class UnattendedTestRunner
         bool includeCharacterMechanismFixture = false,
         IReadOnlyList<CharacterModel>? characterRoster = null,
         PotionModel? localPotion = null,
-        MonsterModel? enemyModel = null)
+        MonsterModel? enemyModel = null,
+        EncounterModel? encounterModel = null)
     {
         if (actorCount is < 1 or > 4)
             throw new ArgumentOutOfRangeException(nameof(actorCount));
@@ -1642,7 +1716,12 @@ internal sealed partial class UnattendedTestRunner
         }
 
         RunState run = RunState.CreateForTest(players, seed: $"COOP-OFFLINE-{actorCount}");
+        EncounterModel? encounterSource = encounterModel ?? source.Encounter;
+        EncounterModel? encounter = encounterSource == null
+            ? null
+            : ModelDb.GetById<EncounterModel>(encounterSource.Id).ToMutable();
         CombatState state = new(
+            encounter: encounter,
             runState: run,
             modifiers: run.Modifiers,
             badgeModels: run.BadgeModels,
@@ -1697,7 +1776,8 @@ internal sealed partial class UnattendedTestRunner
         MonsterModel sourceMonster = enemyModel ?? source.Enemies.FirstOrDefault()?.Monster
             ?? throw new InvalidOperationException("当前测试战斗没有可复用的怪物模型。");
         MonsterModel monster = ModelDb.GetById<MonsterModel>(sourceMonster.Id).ToMutable();
-        Creature enemy = state.CreateCreature(monster, CombatSide.Enemy, slot: null);
+        string? enemySlot = encounterModel == null ? null : encounter?.Slots.LastOrDefault();
+        Creature enemy = state.CreateCreature(monster, CombatSide.Enemy, enemySlot);
         state.AddCreature(enemy);
         monster.SetUpForCombat();
         monster.RollMove(players.Select(static player => player.Creature));

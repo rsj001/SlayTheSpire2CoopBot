@@ -2267,8 +2267,12 @@ foreach ($text in @(
     '("FuzzyWurmCrawler", "INHALE")',
     'IsJointTargetOnlyMove(',
     '("SludgeSpinner", "OIL_SPRAY_MOVE")',
-    'IsJointMixedMove(',
+    'IsJointPostAttackMixedMove(',
     '("SludgeSpinner", "RAGE_MOVE")',
+    '("GasBomb", "EXPLODE_MOVE")',
+    'IsJointPreAttackMixedMove(',
+    '("LivingFog", "BLOAT_MOVE")',
+    'applyBeforeAttack: false',
     'applyMoveEffect: false'
 )) {
     if (-not (Select-String -LiteralPath $monsterMoveSemanticsPath -SimpleMatch $text -Quiet)) {

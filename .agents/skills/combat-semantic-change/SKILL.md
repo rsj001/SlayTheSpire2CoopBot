@@ -144,4 +144,4 @@ writeLive 和 writePredicted，复用 store 的 Fork context。状态描述按�
 
 - 嵌套执行检查点保存纯数据帧与明确程序阶段/下一循环序号。所有CLR作用域退出后，核对领域事务、StateStore、活动CardPlay及延迟抽牌/生成历史的精确配对；普通Fork继续拒绝捕获/挂起/已准备种子。一次PredictionForkContext重映射状态、帧、候选、历史、CardPlay、Power来源及共享死亡集合，保留trace来源身份和抽牌深度限制；外层列表所持但已离开所有牌堆的wrapper也必须显式Fork，不能假设State已登记。未知派发必须拒绝整次捕获，继续原完整回放，不能默认缺失尾部已执行。已确认的抽牌、弃牌、Hook、重复子出牌与回合来源循环复用唯一普通执行体，恢复可以再次挂起。Search匹配同父完整动作及已消费选择前缀，只追加下一选择；选择层/frontier排空后释放全部图引用。不保存Task/闭包，不跨搜索缓存；严格增量基线禁用捕获。ExecutionChoiceCaptures/Reuses不扣选择预算，reuse替代一次原转移Fork，不能作为额外物理Fork从比较器扣除。源循环、深层选牌、DOP/取消/异常、有限预算耗尽与原生完整状态分别验证。
 - 离线联合卡牌候选不得在来源牌离手前从根手牌静态预建普通主选择；主选择与嵌套选择都由 `JointActionTransition` 实际执行到 pending 后返回的 spec 展开，避免 Decisions 等手牌选择包含已进入打出区的来源牌。仅原版要求的空选择可预填。
-- 离线联合敌方行动须把逐玩家目标效果与 owner/global 一次性效果显式分类；不能为每个 Actor 重复调用同时包含两类效果的完整 move。未分类特殊行动继续拒绝；owner-only 代表只执行一次，mixed 代表按稳定 Actor 顺序执行目标段后再执行一次 owner/global 段。
+- 离线联合敌方行动须把逐玩家目标效果与 owner/global 一次性前置或后置显式分类；不能为每个 Actor 重复调用同时包含两类效果的完整 move。未分类特殊行动继续拒绝；owner-only 代表只执行一次，mixed 必须保持原版前置→逐 Actor 目标→后置顺序，召唤、owner 自移除和 RNG 消耗不能按 Actor 倍增。

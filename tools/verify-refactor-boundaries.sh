@@ -1773,10 +1773,18 @@ require_fixed "$monster_move_semantics" 'IsJointTargetOnlyMove(' \
     'joint target-only monster move boundary missing:'
 require_fixed "$monster_move_semantics" '("SludgeSpinner", "OIL_SPRAY_MOVE")' \
     'joint target-only monster move boundary missing:'
-require_fixed "$monster_move_semantics" 'IsJointMixedMove(' \
-    'joint mixed monster move boundary missing:'
+require_fixed "$monster_move_semantics" 'IsJointPostAttackMixedMove(' \
+    'joint post-attack mixed monster move boundary missing:'
 require_fixed "$monster_move_semantics" '("SludgeSpinner", "RAGE_MOVE")' \
     'joint mixed monster move boundary missing:'
+require_fixed "$monster_move_semantics" '("GasBomb", "EXPLODE_MOVE")' \
+    'joint owner-removal monster move boundary missing:'
+require_fixed "$monster_move_semantics" 'IsJointPreAttackMixedMove(' \
+    'joint pre-attack mixed monster move boundary missing:'
+require_fixed "$monster_move_semantics" '("LivingFog", "BLOAT_MOVE")' \
+    'joint summon monster move boundary missing:'
+require_fixed "$monster_move_semantics" 'applyBeforeAttack: false' \
+    'joint mixed monster move pre-attack split missing:'
 require_fixed "$monster_move_semantics" 'applyMoveEffect: false' \
     'joint mixed monster move split missing:'
 joint_offline_search="$repository_root/src/Search/Coop/JointOfflineSearch.cs"

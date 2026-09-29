@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 联合敌方自移除与前置召唤（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：Gas Bomb 的 Explode 对两名 Actor 分别造成同额伤害，owner 最终死亡；Living Fog 的 Bloat 在原版多槽遭遇中新增数量恰等于 `BloatAmount`，没有按 Actor 倍增，并对两人造成同额伤害；`runId=c717de439cfa43d5bad9a88032f80b41`，Passed，实例已删除。
+- 夹具前提失败：`e9b8f48f148445c68fe6f981949b3a10` 无 Encounter，`a9bc1c0d8af74f5b8cb334938d693688` 重复克隆 mutable Encounter，`d02e2fd3507f4d55abcc7d4ed56327ef` 复制的单槽遭遇无 bomb 槽；实例均已删除。
+- 该证据不覆盖其余召唤/复活行动、完整 RNG 严格对照、Linux 或可见 Steam。
+
 ## 联合敌方 mixed Rage（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：两 Actor Sludge Spinner 根强制 Rage，攻击段按稳定 Actor 顺序分别结算且 HP 损失相同，怪物自身 Strength 后效只执行一次并精确增加 3；`runId=3fc13dbaf76143998c1dd7905d4af88a`，Passed，实例已删除。

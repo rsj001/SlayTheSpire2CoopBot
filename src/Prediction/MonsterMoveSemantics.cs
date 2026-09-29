@@ -33,7 +33,7 @@ internal static class MonsterMoveSemantics
                     processedEnemyDeaths);
             return;
         }
-        if (IsJointMixedMove(monster, move.Move.Id))
+        if (IsJointPostAttackMixedMove(monster, move.Move.Id))
         {
             Creature? representative = null;
             foreach (Creature player in players)
@@ -62,6 +62,38 @@ internal static class MonsterMoveSemantics
                     plannedChoices: null);
             return;
         }
+        if (IsJointPreAttackMixedMove(monster, move.Move.Id))
+        {
+            Creature? representative = players.FirstOrDefault(player =>
+                simulator.State.GetCreature(player).IsAlive);
+            if (representative == null)
+                return;
+            MonsterMoveEffects.ApplyBeforeAttack(simulator, combat, move, representative);
+            foreach (Creature player in players)
+            {
+                if (!simulator.State.GetCreature(player).IsAlive)
+                    continue;
+                _ = ApplyForecastMove(
+                    simulator,
+                    combat,
+                    move,
+                    player,
+                    processedEnemyDeaths,
+                    plannedChoices: null,
+                    applyBeforeAttack: false,
+                    applyMoveEffect: false);
+                if (simulator.HasPendingChoice || simulator.State.GetCreature(move.Owner).IsDead)
+                    return;
+            }
+            ApplyForecastMoveEffect(
+                simulator,
+                combat,
+                move,
+                representative,
+                processedEnemyDeaths,
+                plannedChoices: null);
+            return;
+        }
         bool targetOnly = IsJointTargetOnlyMove(monster, move.Move.Id);
         if (move.AttackHits.Count == 0 && !targetOnly
             || MonsterMoveEffects.Supports(monster, move.Move.Id) && !targetOnly)
@@ -84,8 +116,13 @@ internal static class MonsterMoveSemantics
     private static bool IsJointTargetOnlyMove(MonsterModel monster, string moveId)
         => (monster.GetType().Name, moveId) is ("SludgeSpinner", "OIL_SPRAY_MOVE");
 
-    private static bool IsJointMixedMove(MonsterModel monster, string moveId)
-        => (monster.GetType().Name, moveId) is ("SludgeSpinner", "RAGE_MOVE");
+    private static bool IsJointPostAttackMixedMove(MonsterModel monster, string moveId)
+        => (monster.GetType().Name, moveId) is
+            ("SludgeSpinner", "RAGE_MOVE") or
+            ("GasBomb", "EXPLODE_MOVE");
+
+    private static bool IsJointPreAttackMixedMove(MonsterModel monster, string moveId)
+        => (monster.GetType().Name, moveId) is ("LivingFog", "BLOAT_MOVE");
 
     public static bool ApplyForecastMove(
         CombatPredictionSimulator simulator,
@@ -94,10 +131,12 @@ internal static class MonsterMoveSemantics
         Creature player,
         ISet<uint> processedEnemyDeaths,
         IReadOnlyList<PlanCardChoice>? plannedChoices = null,
+        bool applyBeforeAttack = true,
         bool applyMoveEffect = true)
     {
         SimCreatureState simulatedPlayer = simulator.State.GetCreature(player);
-        MonsterMoveEffects.ApplyBeforeAttack(simulator, combat, move, player);
+        if (applyBeforeAttack)
+            MonsterMoveEffects.ApplyBeforeAttack(simulator, combat, move, player);
         if (simulator.HasPendingChoice)
             return simulatedPlayer.IsDead;
         bool fullyBlockedAttack = false;
