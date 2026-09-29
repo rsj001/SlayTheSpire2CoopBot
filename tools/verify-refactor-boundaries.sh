@@ -1769,6 +1769,10 @@ require_fixed "$monster_move_semantics" 'IsJointOwnerOnlyMove(' \
     'joint owner-only monster move boundary missing:'
 require_fixed "$monster_move_semantics" '("FuzzyWurmCrawler", "INHALE")' \
     'joint owner-only monster move boundary missing:'
+require_fixed "$monster_move_semantics" 'IsJointTargetOnlyMove(' \
+    'joint target-only monster move boundary missing:'
+require_fixed "$monster_move_semantics" '("SludgeSpinner", "OIL_SPRAY_MOVE")' \
+    'joint target-only monster move boundary missing:'
 joint_offline_search="$repository_root/src/Search/Coop/JointOfflineSearch.cs"
 for token in \
     'internal sealed record JointOfflineSearchRequest(' \

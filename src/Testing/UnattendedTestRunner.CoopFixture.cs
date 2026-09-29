@@ -32,6 +32,7 @@ internal sealed partial class UnattendedTestRunner
         AssertRemoteActorRelicConsumption(source);
         AssertCharacterOwnedGeneratedState(source);
         AssertThirdPartySubscriberBoundary();
+        AssertTargetOnlyEnemyMove(source);
 
         void AssertActorCount(int actorCount)
         {
@@ -569,6 +570,45 @@ internal sealed partial class UnattendedTestRunner
         {
             throw new InvalidOperationException(
                 $"联合 owner-only 敌方行动重复或漏结算：strength={strengthBefore}->{strengthAfter} " +
+                $"hp={string.Join(',', hpBefore)}->{string.Join(',', hpAfter)}。");
+        }
+    }
+
+    private static void AssertTargetOnlyEnemyMove(CombatState source)
+    {
+        CombatRootSnapshot root = CreateOfflineJointRoot(
+            source,
+            2,
+            enemyModel: ModelDb.Monster<SludgeSpinner>());
+        CombatPredictionSimulator simulator = root.ForkSimulator();
+        SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
+        Creature enemy = combat.Enemies.Single();
+        combat.ForceMonsterMove(enemy, "OIL_SPRAY_MOVE");
+        int[] hpBefore = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        int[] weakBefore = simulator.State.Players
+            .Select(player => combat.GetAmount<WeakPower>(player.Creature))
+            .ToArray();
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber)
+            .EndTurn(new CombatActorId(0))
+            .EndTurn(new CombatActorId(1));
+        ForkableSet<uint> deaths = JointActionTransition.CaptureProcessedEnemyDeaths(root, simulator);
+        JointRoundTransition.CompletePlayerSide(simulator, turns, deaths);
+        JointRoundTransition.CompleteBasicEnemySide(simulator, deaths);
+        int[] hpAfter = simulator.State.Players
+            .Select(player => simulator.State.GetCreature(player.Creature).CurrentHp)
+            .ToArray();
+        int[] weakAfter = simulator.State.Players
+            .Select(player => combat.GetAmount<WeakPower>(player.Creature))
+            .ToArray();
+        if (weakAfter.Where((amount, index) => amount - weakBefore[index] != 1).Any()
+            || hpAfter.Where((hp, index) => hp >= hpBefore[index]).Any()
+            || hpBefore[0] - hpAfter[0] != hpBefore[1] - hpAfter[1])
+        {
+            throw new InvalidOperationException(
+                $"联合 target-only 敌方行动未逐 Actor 精确结算：" +
+                $"weak={string.Join(',', weakBefore)}->{string.Join(',', weakAfter)} " +
                 $"hp={string.Join(',', hpBefore)}->{string.Join(',', hpAfter)}。");
         }
     }
@@ -1537,7 +1577,8 @@ internal sealed partial class UnattendedTestRunner
         bool includeRelicConsumptionFixture = false,
         bool includeCharacterMechanismFixture = false,
         IReadOnlyList<CharacterModel>? characterRoster = null,
-        PotionModel? localPotion = null)
+        PotionModel? localPotion = null,
+        MonsterModel? enemyModel = null)
     {
         if (actorCount is < 1 or > 4)
             throw new ArgumentOutOfRangeException(nameof(actorCount));
@@ -1617,7 +1658,7 @@ internal sealed partial class UnattendedTestRunner
                 combat.Hand.AddInternal(state.CreateCard(ModelDb.Card<Afterlife>(), player), silent: true);
         }
 
-        MonsterModel sourceMonster = source.Enemies.FirstOrDefault()?.Monster
+        MonsterModel sourceMonster = enemyModel ?? source.Enemies.FirstOrDefault()?.Monster
             ?? throw new InvalidOperationException("当前测试战斗没有可复用的怪物模型。");
         MonsterModel monster = ModelDb.GetById<MonsterModel>(sourceMonster.Id).ToMutable();
         Creature enemy = state.CreateCreature(monster, CombatSide.Enemy, slot: null);

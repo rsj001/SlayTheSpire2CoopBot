@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线联合敌方 target-only 行动（2026-09-29）
+
+联合敌方侧新增首个 target-only 分类：Sludge Spinner 的 Oil Spray 按稳定 Actor 顺序分别执行攻击和 Weak 后效。两 Actor 夹具得到同额 HP 损失且每人精确增加 1 Weak，`COOP-MULTI-ACTOR-ROOT` 的 `runId=db2f7a0869974ed491f7495775d4331d` Passed，实例已删除。混合 owner+target 行动仍不进入该白名单。
+
 ## 离线联合敌方 owner-only 行动（2026-09-29）
 
 联合敌方侧新增显式 owner-only 行动分类，首个代表是 Fuzzy Wurm Crawler 的 Inhale：完整 move 语义只执行一次，不按玩家目标数量重复怪物自身后效。两 Actor 夹具强制 Inhale 后怪物精确增加 7 Strength、两名玩家 HP 均不变，`COOP-MULTI-ACTOR-ROOT` 的 `runId=d49efb75554f47a1a1047b6b38a6c38c` Passed，实例已删除。其他玩家目标、攻击后效、召唤与移除行动仍保持明确拒绝。

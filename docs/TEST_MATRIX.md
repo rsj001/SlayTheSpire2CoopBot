@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 联合敌方 target-only Oil Spray（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：两 Actor Sludge Spinner 根强制 Oil Spray，两名 Actor 受到相同 HP 损失并各增加 1 Weak；`runId=db2f7a0869974ed491f7495775d4331d`，Passed，实例已删除。
+- 该证据不覆盖混合 owner+target 后效、Linux 或可见 Steam。
+
 ## 联合敌方 owner-only Inhale（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：强制 Fuzzy Wurm Crawler 执行 Inhale，怪物 Strength 恰好 `+7`，两个 Actor HP 均不变；`runId=d49efb75554f47a1a1047b6b38a6c38c`，Passed，实例已删除。

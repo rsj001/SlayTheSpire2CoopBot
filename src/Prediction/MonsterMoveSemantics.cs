@@ -33,7 +33,9 @@ internal static class MonsterMoveSemantics
                     processedEnemyDeaths);
             return;
         }
-        if (move.AttackHits.Count == 0 || MonsterMoveEffects.Supports(monster, move.Move.Id))
+        bool targetOnly = IsJointTargetOnlyMove(monster, move.Move.Id);
+        if (move.AttackHits.Count == 0 && !targetOnly
+            || MonsterMoveEffects.Supports(monster, move.Move.Id) && !targetOnly)
         {
             throw new PredictionUnsupportedException(
                 $"联合敌方轮尚未登记 move={move.Owner.Monster?.Id.Entry}/{move.Move.Id} 的多人后效。");
@@ -49,6 +51,9 @@ internal static class MonsterMoveSemantics
 
     private static bool IsJointOwnerOnlyMove(MonsterModel monster, string moveId)
         => (monster.GetType().Name, moveId) is ("FuzzyWurmCrawler", "INHALE");
+
+    private static bool IsJointTargetOnlyMove(MonsterModel monster, string moveId)
+        => (monster.GetType().Name, moveId) is ("SludgeSpinner", "OIL_SPRAY_MOVE");
 
     public static bool ApplyForecastMove(
         CombatPredictionSimulator simulator,

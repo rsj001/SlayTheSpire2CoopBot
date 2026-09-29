@@ -2264,7 +2264,9 @@ if (-not (Select-String -LiteralPath $jointTransitionPath `
 $monsterMoveSemanticsPath = Join-Path $repositoryRoot 'src/Prediction/MonsterMoveSemantics.cs'
 foreach ($text in @(
     'IsJointOwnerOnlyMove(',
-    '("FuzzyWurmCrawler", "INHALE")'
+    '("FuzzyWurmCrawler", "INHALE")',
+    'IsJointTargetOnlyMove(',
+    '("SludgeSpinner", "OIL_SPRAY_MOVE")'
 )) {
     if (-not (Select-String -LiteralPath $monsterMoveSemanticsPath -SimpleMatch $text -Quiet)) {
         $violations.Add("Joint owner-only monster move boundary missing: $text")

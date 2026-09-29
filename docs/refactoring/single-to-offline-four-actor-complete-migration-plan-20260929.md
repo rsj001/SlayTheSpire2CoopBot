@@ -284,7 +284,7 @@
 
 - F7a（已完成）：`JointRoundTransition.CompletePlayerSide` 只接受已到达屏障的状态，在任何 PhaseOne 前冻结全体 Actor 的虚无牌总数，再按 Actor 固定顺序运行 PhaseOne/手牌清理，最后对全部存活参与者运行一次共享 PhaseTwo；单 Actor EndTurn 不提前改变 live phase，基础屏障 `runId=92d774c3b3f341c8a11472a246c717ec` Passed。共享 PhaseTwo 的选择按请求 owner 归属并消费 `PlayerTurnEnd` 前缀，Power 代表见 `runId=9bc79f5cdc9548db8f287189f993d54f`，Joss Paper 遗物代表见 `runId=7d629eea37754cdfb240a1d6580bf041`。
 - F7b（进行中）：远端 Actor 强制死亡后不再产生候选、不阻塞屏障，玩家侧只处理存活参与者且死者保持死亡，`runId=672c2a82f07e41d2a73c5538e5f3fd1d` Passed；复活/逃跑/额外回合待补。
-- F7c（进行中）：F7c1 已按冻结敌方行动名单执行敌方侧开始、纯攻击行动、侧结束、毒与下一行动准备；Fuzzy Wurm Crawler 的纯攻击对两个 Actor 同序结算，`runId=3f9a5c67effa42c5b10791292be1309b` Passed。F7c2 建立首个 owner-only 分类：Inhale 只执行一次完整 move 语义，怪物精确增加 7 Strength 且两名 Actor HP 不变，`runId=d49efb75554f47a1a1047b6b38a6c38c` Passed。其余玩家目标后效、攻击后效、死亡/召唤和 RNG 严格对照待补，未分类行动继续明确拒绝。
+- F7c（进行中）：F7c1 已按冻结敌方行动名单执行敌方侧开始、纯攻击行动、侧结束、毒与下一行动准备；Fuzzy Wurm Crawler 的纯攻击对两个 Actor 同序结算，`runId=3f9a5c67effa42c5b10791292be1309b` Passed。F7c2 已建立 owner-only 与 target-only 分类：Inhale 只执行一次，怪物精确增加 7 Strength，`runId=d49efb75554f47a1a1047b6b38a6c38c` Passed；Oil Spray 对两名 Actor 各造成同额伤害并各施加 1 Weak，`runId=db2f7a0869974ed491f7495775d4331d` Passed。混合 owner+target 后效、死亡/召唤和 RNG 严格对照待补，未分类行动继续明确拒绝。
 - F7d（进行中）：F7d1 按原版多人顺序对全体存活 Actor 只触发一次共享 side hook，并逐 Actor 重置资源、抽牌、执行玩家开始 hook、球与自动阶段；两 Actor 的轮数/能量/手牌和共享 round 推进通过，`runId=9ad70ea00a2d493ead5c090991c9d263` Passed。F7d2 已让 Actor1 的 `ToolsOfTheTradePower` 在回合开始挂起后从稳定父状态按前缀恢复，`runId=2cf1ac4368ab4ad58ac2c056708b6842` Passed；其他开始阶段选择来源随 F6b 继续补齐。
 
 ### F8：联合终局目标和政策
