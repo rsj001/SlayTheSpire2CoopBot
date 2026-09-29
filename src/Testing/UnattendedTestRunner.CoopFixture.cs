@@ -784,6 +784,85 @@ internal sealed partial class UnattendedTestRunner
         }
     }
 
+    private static string AssertCoopBotC10Evidence(CombatState source)
+    {
+        CombatState synthetic = CreateOfflineJointCombat(
+            source,
+            actorCount: 4,
+            enemyCurrentHp: 1).State;
+        Assembly coopBot = AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault(assembly =>
+                string.Equals(assembly.GetName().Name, "CoopBot", StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("COOP-BOT-C10-EVIDENCE requires the CoopBot assembly.");
+        Type probe = coopBot.GetType("CoopBot.Diagnostics.CoopBotHeadlessProbe", throwOnError: true)
+            ?? throw new InvalidOperationException("CoopBot headless probe type is missing.");
+        MethodInfo method = probe.GetMethod(
+                "ExportSyntheticEvidence",
+                BindingFlags.Public | BindingFlags.Static,
+                [typeof(CombatState)])
+            ?? throw new MissingMethodException(probe.FullName, "ExportSyntheticEvidence");
+        try
+        {
+            return method.Invoke(null, [synthetic]) as string
+                ?? throw new InvalidOperationException("CoopBot C10 evidence probe returned no evidence.");
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            throw new InvalidOperationException("CoopBot C10 evidence export failed.", exception.InnerException);
+        }
+    }
+
+    private static async Task<string> AssertCoopBotC10FaultsAsync(CombatState source)
+    {
+        CombatState synthetic = CreateOfflineJointCombat(source, actorCount: 4).State;
+        Assembly coopBot = AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault(assembly =>
+                string.Equals(assembly.GetName().Name, "CoopBot", StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("COOP-BOT-C10-FAULTS requires the CoopBot assembly.");
+        Type probe = coopBot.GetType("CoopBot.Diagnostics.CoopBotHeadlessProbe", throwOnError: true)
+            ?? throw new InvalidOperationException("CoopBot headless probe type is missing.");
+        MethodInfo method = probe.GetMethod(
+                "AuditC10ProtocolAndFaultsAsync",
+                BindingFlags.Public | BindingFlags.Static,
+                [typeof(CombatState)])
+            ?? throw new MissingMethodException(probe.FullName, "AuditC10ProtocolAndFaultsAsync");
+        try
+        {
+            Task<string> task = method.Invoke(null, [synthetic]) as Task<string>
+                ?? throw new InvalidOperationException("CoopBot C10 fault probe returned no task.");
+            return await task;
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            throw new InvalidOperationException("CoopBot C10 protocol/fault probe failed.", exception.InnerException);
+        }
+    }
+
+    private static string AssertCoopBotC10TerminalDemo(CombatState source)
+    {
+        CombatState synthetic = CreateOfflineJointCombat(
+            source,
+            actorCount: 4,
+            enemyCurrentHp: 1).State;
+        Assembly coopBot = AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault(assembly =>
+                string.Equals(assembly.GetName().Name, "CoopBot", StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("COOP-BOT-C10-DEMO requires the CoopBot assembly.");
+        Type probe = coopBot.GetType("CoopBot.Diagnostics.CoopBotHeadlessProbe", throwOnError: true)
+            ?? throw new InvalidOperationException("CoopBot headless probe type is missing.");
+        MethodInfo method = probe.GetMethod(
+                "AuditC10TerminalDemo",
+                BindingFlags.Public | BindingFlags.Static,
+                [typeof(CombatState)])
+            ?? throw new MissingMethodException(probe.FullName, "AuditC10TerminalDemo");
+        try
+        {
+            return method.Invoke(null, [synthetic]) as string
+                ?? throw new InvalidOperationException("CoopBot C10 terminal demo returned no evidence.");
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            throw new InvalidOperationException("CoopBot C10 terminal demo failed.", exception.InnerException);
+        }
+    }
+
     private static void AssertAllActorsDeadTerminal(CombatState source)
     {
         OfflineJointCombat offline = CreateOfflineJointCombat(

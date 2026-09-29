@@ -31,6 +31,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
     private readonly HostRemoteActionTracker _remote = new();
     private readonly HostObserverBarrier _observers = new();
     private readonly HostPlanLease _planLease = new();
+    private readonly HostFailureCircuitBreaker _failureCircuit = new();
     private readonly PlannedChoiceDriver _choiceDriver;
     private TaskCompletionSource? _observerCompletion;
     private long _remoteDeadlineMilliseconds;
@@ -70,6 +71,8 @@ internal sealed class HostDeploymentCoordinator : IDisposable
     internal void SetMode(CoopAutomationMode mode)
     {
         Mode = mode;
+        if (_peer.Session is { IsHost: true, State: CoopSessionState.Active })
+            _peer.PublishAutomationMode(mode);
         if (mode == CoopAutomationMode.Auto)
             ExecuteNext();
     }
@@ -85,6 +88,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
             or RemoteActionState.Rejected or RemoteActionState.Failed or RemoteActionState.TimedOut)
             return;
         _remote.Timeout(current.ActionId, "remote response timeout");
+        RecordFailure(_remotePlan?.RecordedRoot.RootRevision ?? -1, "remote_timeout", current.ActionId);
         CancelPlan(current.ActionId, _remotePlan, "remote response timeout");
         _remotePlan = null;
         EventPublished?.Invoke(new HostDeploymentEvent(
@@ -93,7 +97,8 @@ internal sealed class HostDeploymentCoordinator : IDisposable
 
     internal void ExecuteNext()
     {
-        if (_disposed || _starting || _awaiting is not null)
+        if (_disposed || _starting || _awaiting is not null
+            || Mode is CoopAutomationMode.Observe or CoopAutomationMode.Suggest)
             return;
         _ = ExecuteNextAsync();
     }
@@ -180,6 +185,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         }
         catch (Exception exception)
         {
+            RecordFailure(result?.RecordedRoot.RootRevision ?? -1, "local_action_failed", actionId);
             if (actionId != "-")
                 CancelPlan(actionId, result, exception.Message);
             if (_agent.State is LocalActorAgentState.Prepared or LocalActorAgentState.Reporting)
@@ -230,6 +236,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         _awaiting = null;
         if (difference is null)
         {
+            _failureCircuit.Reset();
             if (awaiting.LocalAgentOwnsReport)
                 _agent.FinishReport(awaiting.ActionId);
             EventPublished?.Invoke(new HostDeploymentEvent(
@@ -238,6 +245,7 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         }
         if (awaiting.LocalAgentOwnsReport)
             _agent.Cancel();
+        RecordFailure(awaiting.SourceRootRevision, "actual_simulated_diverged", awaiting.ActionId);
         EventPublished?.Invoke(new HostDeploymentEvent(
             "diverged", awaiting.PlanId, awaiting.ActionId, difference));
     }
@@ -253,6 +261,16 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         if (current is null
             || !string.Equals(current.ActionId, envelope.Header.ActionId, StringComparison.Ordinal))
             return;
+        if (current.State is RemoteActionState.Completed or RemoteActionState.Rejected
+            or RemoteActionState.Failed or RemoteActionState.TimedOut)
+        {
+            EventPublished?.Invoke(new HostDeploymentEvent(
+                "duplicate_terminal_response",
+                envelope.Header.PlanId ?? "-",
+                current.ActionId,
+                envelope.Kind.ToString()));
+            return;
+        }
         try
         {
             switch (envelope.Kind)
@@ -294,6 +312,10 @@ internal sealed class HostDeploymentCoordinator : IDisposable
                     CancelRemoteTimeout();
                     CancelPlan(current.ActionId, _remotePlan, "owner rejected action");
                     ActionRejectedPayload rejected = envelope.ReadPayload<ActionRejectedPayload>();
+                    RecordFailure(
+                        _remotePlan?.RecordedRoot.RootRevision ?? -1,
+                        "owner_rejected:" + rejected.Code,
+                        current.ActionId);
                     _remote.Reject(current.ActionId, senderNetworkPlayerId, rejected.Detail);
                     _remotePlan = null;
                     EventPublished?.Invoke(new HostDeploymentEvent(
@@ -304,6 +326,10 @@ internal sealed class HostDeploymentCoordinator : IDisposable
                     CancelRemoteTimeout();
                     CancelPlan(current.ActionId, _remotePlan, "owner failed action");
                     ActionFailedPayload failed = envelope.ReadPayload<ActionFailedPayload>();
+                    RecordFailure(
+                        _remotePlan?.RecordedRoot.RootRevision ?? -1,
+                        "owner_failed:" + failed.FailureCode,
+                        current.ActionId);
                     _remote.Fail(current.ActionId, senderNetworkPlayerId, failed.Detail);
                     _remotePlan = null;
                     EventPublished?.Invoke(new HostDeploymentEvent(
@@ -314,6 +340,10 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         }
         catch (Exception exception)
         {
+            RecordFailure(
+                _remotePlan?.RecordedRoot.RootRevision ?? -1,
+                "remote_protocol_failed",
+                current.ActionId);
             CancelRemoteTimeout();
             CancelPlan(current.ActionId, _remotePlan, exception.Message);
             _remotePlan = null;
@@ -429,6 +459,24 @@ internal sealed class HostDeploymentCoordinator : IDisposable
         _planLease.Publish(result.Published.PlanId, result.RecordedRoot.RootRevision);
         if (Mode == CoopAutomationMode.Auto)
             ExecuteNext();
+    }
+
+    private void RecordFailure(long rootRevision, string failureCode, string actionId)
+    {
+        HostFailureObservation observed = _failureCircuit.Record(rootRevision, failureCode);
+        EventPublished?.Invoke(new HostDeploymentEvent(
+            "failure_observed",
+            _availablePlan?.Published.PlanId ?? _remotePlan?.Published.PlanId ?? "-",
+            actionId,
+            $"root={rootRevision};code={failureCode};count={observed.ConsecutiveCount}"));
+        if (!observed.Tripped || Mode != CoopAutomationMode.Auto)
+            return;
+        SetMode(CoopAutomationMode.ConfirmEach);
+        EventPublished?.Invoke(new HostDeploymentEvent(
+            "auto_paused",
+            _availablePlan?.Published.PlanId ?? _remotePlan?.Published.PlanId ?? "-",
+            actionId,
+            $"same failure reached {HostFailureCircuitBreaker.TripThreshold}: {failureCode}"));
     }
 
     private static bool HasChoices(CoopPlanActionSnapshot action)

@@ -37,6 +37,7 @@ public record struct CoopBotEnvelopeMessage : INetMessage
         writer.WriteLong(Header.RootRevision);
         WriteNullableString(writer, Header.PlanId);
         WriteNullableString(writer, Header.ActionId);
+        WriteNullableString(writer, Header.SessionNonce);
         writer.WriteString(PayloadJson);
     }
 
@@ -49,6 +50,7 @@ public record struct CoopBotEnvelopeMessage : INetMessage
             reader.ReadLong(),
             reader.ReadULong(),
             reader.ReadLong(),
+            ReadNullableString(reader),
             ReadNullableString(reader),
             ReadNullableString(reader));
         PayloadJson = reader.ReadString();

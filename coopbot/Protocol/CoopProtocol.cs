@@ -4,8 +4,18 @@ namespace CoopBot.Protocol;
 
 public static class CoopProtocol
 {
-    public const int Version = 1;
+    public const int Version = 2;
     public const int MaximumPayloadBytes = 1_048_576;
+    public const int HeartbeatIntervalMilliseconds = 2_000;
+    public const int PeerTimeoutMilliseconds = 10_000;
+
+    public static readonly IReadOnlyList<string> RequiredCapabilities =
+    [
+        "actor-assignment-v1",
+        "single-action-commit-v1",
+        "strict-checkpoint-v1",
+        "client-consent-v1",
+    ];
 
     public static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -30,6 +40,7 @@ public enum CoopMessageKind
     Heartbeat = 14,
     ActionObserveCommit = 15,
     ActionObservePrepared = 16,
+    ClientControlRequest = 17,
 }
 
 public readonly record struct CoopMessageHeader(
@@ -39,7 +50,8 @@ public readonly record struct CoopMessageHeader(
     ulong SenderNetworkPlayerId,
     long RootRevision,
     string? PlanId = null,
-    string? ActionId = null);
+    string? ActionId = null,
+    string? SessionNonce = null);
 
 public sealed record CoopWireEnvelope(
     CoopMessageKind Kind,
@@ -63,8 +75,11 @@ public sealed record HelloPayload(
     IReadOnlyList<string> Capabilities);
 
 public sealed record SessionAcceptedPayload(
+    int ProtocolVersion,
+    string ModVersion,
     ulong HostNetworkPlayerId,
-    string SessionNonce);
+    string SessionNonce,
+    IReadOnlyList<string> Capabilities);
 
 public sealed record ActorBinding(
     int ActorId,
@@ -78,9 +93,23 @@ public sealed record ActorAssignmentPayload(IReadOnlyList<ActorBinding> Actors)
         => Actors.Single(actor => actor.NetworkPlayerId == localNetworkPlayerId);
 }
 
+public sealed record RootPublishedPayload(
+    long RootRevision,
+    string RootFingerprint,
+    IReadOnlyList<string> ActorFingerprints);
+
 public sealed record HeartbeatPayload(
     long LastReceivedSequence,
     string SessionState);
+
+public sealed record AutomationModeChangedPayload(CoopAutomationMode Mode);
+
+public enum CoopClientControl
+{
+    PauseAutomation,
+}
+
+public sealed record ClientControlRequestPayload(CoopClientControl Control);
 
 public enum CoopAutomationMode
 {
@@ -102,4 +131,6 @@ public enum CoopActionRejectionCode
     ActionInFlight,
     DuplicateAction,
     ProtocolMismatch,
+    UserDeclined,
+    UserPaused,
 }

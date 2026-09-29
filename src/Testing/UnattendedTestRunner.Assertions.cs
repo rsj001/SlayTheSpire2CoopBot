@@ -105,6 +105,27 @@ internal sealed partial class UnattendedTestRunner
                 runner._completedChecks.Add(
                     "CoopBotCrossRound:EnemySide:NextPlayerRoot:SingleDeathSubset:StableBarrier:" + evidence);
             }
+            if (request.ScenarioId == "COOP-BOT-C10-EVIDENCE")
+            {
+                runner.SetStage("coop_bot_c10_evidence");
+                string evidence = AssertCoopBotC10Evidence(scenario.CombatState);
+                runner._completedChecks.Add(
+                    "CoopBotC10:StructuredEvidence:VersionHashes:Redaction:NoDuplicateExecution:Cleanup:" + evidence);
+            }
+            if (request.ScenarioId == "COOP-BOT-C10-FAULTS")
+            {
+                runner.SetStage("coop_bot_c10_faults");
+                string evidence = await AssertCoopBotC10FaultsAsync(scenario.CombatState);
+                runner._completedChecks.Add(
+                    "CoopBotC10:FourPeerNegotiation:Consent:Heartbeat:FaultInjection:Cleanup:" + evidence);
+            }
+            if (request.ScenarioId == "COOP-BOT-C10-DEMO")
+            {
+                runner.SetStage("coop_bot_c10_terminal_demo");
+                string evidence = AssertCoopBotC10TerminalDemo(scenario.CombatState);
+                runner._completedChecks.Add(
+                    "CoopBotC10:FourActorRoute:EnemySide:Victory:ExactlyOnce:SessionCleanup:" + evidence);
+            }
             if (request.ScenarioId == "COOP-MULTIPLAYER-NATIVE-DIFF")
             {
                 runner.SetStage("coop_multiplayer_native_diff");

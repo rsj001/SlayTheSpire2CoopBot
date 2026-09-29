@@ -14,6 +14,8 @@
     <Compile Include="../../coopbot/Session/HostRemoteActionTracker.cs" Link="Session/HostRemoteActionTracker.cs" />
     <Compile Include="../../coopbot/Session/HostObserverBarrier.cs" Link="Session/HostObserverBarrier.cs" />
     <Compile Include="../../coopbot/Session/HostPlanLease.cs" Link="Session/HostPlanLease.cs" />
+    <Compile Include="../../coopbot/Session/PeerLivenessTracker.cs" Link="Session/PeerLivenessTracker.cs" />
+    <Compile Include="../../coopbot/Session/HostFailureCircuitBreaker.cs" Link="Session/HostFailureCircuitBreaker.cs" />
     <Compile Include="../../coopbot/Capture/StableRootGate.cs" Link="Capture/StableRootGate.cs" />
   </ItemGroup>
 </Project>

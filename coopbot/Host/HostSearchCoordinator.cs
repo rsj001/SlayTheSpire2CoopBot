@@ -46,6 +46,7 @@ internal sealed class HostSearchCoordinator : IDisposable
     }
 
     internal HostCombatRecorder Recorder { get; }
+    internal HostSearchPolicy Policy => _policy;
     internal HostSearchResult? Current { get; private set; }
     internal bool IsSearching { get; private set; }
     internal event Action<HostSearchResult>? PlanPublished;

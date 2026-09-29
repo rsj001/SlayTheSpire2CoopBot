@@ -4,6 +4,7 @@ using CoopBot.Protocol;
 using CoopBot.Session;
 using CoopBot.UI;
 using CoopBot.NativeAdapter;
+using CoopBot.Runtime;
 using CombatSolver;
 using CombatSolver.Engine.InCombat.Simulation;
 using Godot;
@@ -24,11 +25,111 @@ using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using System.Reflection;
 using System.Text.Json;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CoopBot.Diagnostics;
 
 public static class CoopBotHeadlessProbe
 {
+    public static string ExportSyntheticEvidence(CombatState combat)
+    {
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(combat);
+        string sessionId = "C10-EVIDENCE-" + Guid.NewGuid().ToString("N");
+        string output = Path.Combine(
+            Godot.OS.GetUserDataDir(),
+            "CoopBotHeadlessEvidence",
+            Guid.NewGuid().ToString("N"));
+        CoopEvidenceRecorder evidence = new(sessionId, output);
+        ulong host = root.Actors.Single(actor => actor.Id == root.LocalActorId).PlayerIdentity.NetId;
+        ActorAssignmentPayload assignment = CoopSession.BuildActorAssignment(
+            root.Actors.Select(actor => (
+                actor.PlayerIdentity.NetId,
+                actor.PlayerIdentity.Character.Id.Entry)).ToArray(),
+            host);
+        CoopSession session = new(sessionId, host, host);
+        session.AcceptAsHost("not-recorded-test-nonce", CoopProtocol.RequiredCapabilities);
+        session.AcceptAssignment(assignment);
+        evidence.RecordSession(session);
+        evidence.RecordPolicy(HostSearchPolicy.Default);
+        string rootFingerprint = Convert.ToHexString(SHA256.HashData(
+            Encoding.UTF8.GetBytes(root.ContinuationStamp.StateText)));
+        HostVisibilityAuditResult visibility = HostVisibilityAudit.Inspect(combat, root);
+        RecordedCombatRoot recorded = new(
+            1,
+            rootFingerprint,
+            root,
+            visibility,
+            root.Actors.Select(actor => LocalActorAgent.Fingerprint(
+                ContinuationStamp.CaptureLiveForPlayer(combat, actor.PlayerIdentity).StateText)).ToArray());
+        evidence.RecordRoot(recorded);
+        JointOfflineSearchResult searched = JointOfflineSearch.SolveBeam(
+            root,
+            JointOfflineSearchRequest.Default(maximumActions: 1, maximumStates: 128),
+            beamWidth: 64,
+            degreeOfParallelism: 1);
+        JointReplayResult replay = JointStrictReplayVerifier.Verify(root, searched);
+        PlanPublishedPayload plan = CoopPlanSnapshotFactory.Create(
+            1,
+            rootFingerprint,
+            root,
+            searched,
+            replay);
+        evidence.RecordPlan(plan);
+        ulong remote = assignment.Actors.First(actor => !actor.IsHost).NetworkPlayerId;
+        evidence.RecordProtocol(new CoopProtocolEvent(
+            "outbound",
+            CoopMessageKind.PlanPublished,
+            3,
+            remote,
+            1,
+            plan.PlanId,
+            null,
+            "Sent"));
+        evidence.RecordDeployment(new HostDeploymentEvent(
+            "verified",
+            plan.PlanId,
+            plan.PlanId + ":0",
+            "actual/simulated identical"));
+        evidence.RecordLocalExecution(plan.PlanId + ":0");
+        session.BeginStopping();
+        session.FinishStopping();
+        string path = evidence.Complete(
+            "headless_complete",
+            session.State,
+            LocalActorAgentState.Idle.ToString(),
+            noResidualSessionState: true);
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllBytes(path));
+        JsonElement rootElement = document.RootElement;
+        JsonElement cleanup = rootElement.GetProperty("cleanup");
+        if (rootElement.GetProperty("schemaVersion").GetInt32() != 1
+            || rootElement.GetProperty("assemblies").GetArrayLength() != 4
+            || rootElement.GetProperty("session").GetProperty("actors").GetArrayLength() != 4
+            || rootElement.GetProperty("roots").GetArrayLength() != 1
+            || rootElement.GetProperty("plans").GetArrayLength() != 1
+            || rootElement.GetProperty("protocol").GetArrayLength() != 1
+            || rootElement.GetProperty("deployment").GetArrayLength() != 1
+            || !cleanup.GetProperty("noResidualSessionState").GetBoolean()
+            || cleanup.GetProperty("duplicateLocalExecutionCount").GetInt32() != 0)
+        {
+            throw new InvalidOperationException("C10 evidence document is missing required structured fields.");
+        }
+        foreach (JsonElement assembly in rootElement.GetProperty("assemblies").EnumerateArray())
+        {
+            if (assembly.GetProperty("sha256").GetString()?.Length != 64)
+                throw new InvalidOperationException("C10 evidence contains an invalid assembly hash.");
+        }
+        string json = File.ReadAllText(path);
+        if (json.Contains("sessionNonce", StringComparison.OrdinalIgnoreCase)
+            || json.Contains("networkPlayerId", StringComparison.OrdinalIgnoreCase)
+            || json.Contains("not-recorded-test-nonce", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("C10 evidence leaked a session nonce or raw network identity.");
+        }
+        return $"schema=1;assemblies=4;actors=4;roots=1;plans=1;" +
+               "protocol=1;deploy=1;duplicate_execution=0;cleanup=clean";
+    }
+
     public static string AuditSyntheticRoot(CombatState combat)
     {
         CombatRootSnapshot root = CombatRootSnapshot.Capture(combat);
@@ -37,6 +138,284 @@ public static class CoopBotHeadlessProbe
             throw new InvalidOperationException(
                 "Synthetic Host visibility audit failed: " + string.Join(',', audit.Failures));
         return $"actors={root.Actors.Count};rng=9;fingerprint_fields={root.ContinuationStamp.StateText.Split(';').Length}";
+    }
+
+    public static async Task<string> AuditC10ProtocolAndFaultsAsync(CombatState combat)
+    {
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(combat);
+        if (root.Actors.Count != 4)
+            throw new InvalidOperationException($"C10 protocol probe expected four actors, got {root.Actors.Count}.");
+        ulong hostId = root.Actors[root.LocalActorId.Index].PlayerIdentity.NetId;
+        string sessionId = "C10-LOOPBACK-" + Guid.NewGuid().ToString("N");
+        ActorAssignmentPayload assignment = CoopSession.BuildActorAssignment(
+            root.Actors.Select(actor => (
+                actor.PlayerIdentity.NetId,
+                actor.PlayerIdentity.Character.Id.Entry)).ToArray(),
+            hostId);
+        CoopLoopbackHub hub = new(hostId);
+        PlannedChoiceDriver[] choices = Enumerable.Range(0, 4)
+            .Select(_ => new PlannedChoiceDriver())
+            .ToArray();
+        LocalActorAgent[] agents = choices.Select(choice => new LocalActorAgent(choice)).ToArray();
+        CoopPeerController[] peers = assignment.Actors
+            .Select(actor => new CoopPeerController(
+                combat,
+                hub.Add(actor.NetworkPlayerId),
+                actor.IsHost ? sessionId : $"CLIENT-LOCAL-{actor.ActorId}",
+                hostId,
+                agents[actor.ActorId],
+                choices[actor.ActorId]))
+            .ToArray();
+        CoopPeerController host = peers.Single(peer => peer.Session.IsHost);
+        List<CoopWireEnvelope> hostResponses = [];
+        List<CoopProtocolEvent> protocol = [];
+        int receivedPlans = 0;
+        int pauseRequests = 0;
+        host.HostResponseReceived += (envelope, _) => hostResponses.Add(envelope);
+        host.ClientPauseRequested += _ => pauseRequests++;
+        foreach (CoopPeerController peer in peers)
+        {
+            peer.ProtocolEventObserved += protocol.Add;
+            if (!peer.Session.IsHost)
+                peer.PlanReceived += _ => receivedPlans++;
+        }
+        try
+        {
+            host.StartHost(assignment);
+            foreach (CoopPeerController client in peers.Where(peer => !peer.Session.IsHost))
+                client.StartClient();
+            if (peers.Any(peer => peer.Session.State != CoopSessionState.Active)
+                || peers.Select(peer => peer.Session.SessionNonce).Distinct(StringComparer.Ordinal).Count() != 1)
+            {
+                throw new InvalidOperationException("C10 four-peer Hello/SessionAccepted negotiation did not converge.");
+            }
+            host.PublishAutomationMode(CoopAutomationMode.ConfirmEach);
+            if (peers.Where(peer => !peer.Session.IsHost)
+                .Any(peer => peer.AutomationMode != CoopAutomationMode.ConfirmEach))
+            {
+                throw new InvalidOperationException("C10 ConfirmEach mode did not reach all Clients.");
+            }
+
+            JointOfflineSearchResult searched = JointOfflineSearch.SolveBeam(
+                root,
+                JointOfflineSearchRequest.Default(maximumActions: 1, maximumStates: 128),
+                beamWidth: 64,
+                degreeOfParallelism: 1);
+            JointReplayResult searchedReplay = JointStrictReplayVerifier.Verify(root, searched);
+            PlanPublishedPayload published = CoopPlanSnapshotFactory.Create(
+                1,
+                LocalActorAgent.Fingerprint(root.ContinuationStamp.StateText),
+                root,
+                searched,
+                searchedReplay);
+            host.PublishRoot(new RootPublishedPayload(
+                1,
+                published.RootFingerprint,
+                root.Actors.Select(actor => LocalActorAgent.Fingerprint(
+                    ContinuationStamp.CaptureLiveForPlayer(combat, actor.PlayerIdentity).StateText)).ToArray()));
+            host.PublishPlan(published);
+            if (receivedPlans != 3)
+                throw new InvalidOperationException($"C10 plan reached {receivedPlans}/3 Clients.");
+
+            PlanAction remoteEnd = new(
+                PlanActionKind.EndTurn,
+                root.StartTurnNumber,
+                Actor: new CombatActorId(1));
+            ActionPreparePayload remoteCommand = CreateActorCommand(combat, root, remoteEnd, actionIndex: 0);
+            ActorBinding remoteOwner = assignment.Actors.Single(actor => actor.ActorId == 1);
+            host.SendPrepare(remoteOwner.NetworkPlayerId, 1, published.PlanId, "C10-ALLOW", remoteCommand);
+            if (peers[1].PendingClientAction is null || hostResponses.Count != 0)
+                throw new InvalidOperationException("C10 ConfirmEach did not hold Prepare for local consent.");
+            peers[1].AllowPendingClientAction();
+            if (hostResponses.Count != 1 || hostResponses[0].Kind != CoopMessageKind.ActionPrepared)
+                throw new InvalidOperationException("C10 AllowOnce did not release exactly one ActionPrepared.");
+            host.PublishPlanCancelled(1, published.PlanId, "C10-ALLOW", "fault probe cleanup");
+            host.PublishPlan(published);
+
+            host.SendPrepare(
+                remoteOwner.NetworkPlayerId,
+                1,
+                published.PlanId,
+                "C10-ROOT-CHANGE",
+                remoteCommand);
+            if (peers[1].PendingClientAction is null)
+                throw new InvalidOperationException("C10 root-change probe did not reach pending Prepare.");
+            RootPublishedPayload secondRoot = new(
+                2,
+                published.RootFingerprint,
+                root.Actors.Select(actor => LocalActorAgent.Fingerprint(
+                    ContinuationStamp.CaptureLiveForPlayer(combat, actor.PlayerIdentity).StateText)).ToArray());
+            host.PublishRoot(secondRoot);
+            if (hostResponses.Count != 2
+                || hostResponses[1].Kind != CoopMessageKind.ActionRejected
+                || hostResponses[1].ReadPayload<ActionRejectedPayload>().Code
+                    != CoopActionRejectionCode.StaleRoot
+                || peers[1].PendingClientAction is not null)
+            {
+                throw new InvalidOperationException("C10 root change after Prepare did not reject stale authorization.");
+            }
+            PlanPublishedPayload secondPlan = published with
+            {
+                PlanId = "C10-ROOT-2",
+                RootRevision = 2,
+            };
+            host.PublishPlan(secondPlan);
+
+            PlanAction remoteTwoEnd = remoteEnd with { Actor = new CombatActorId(2) };
+            ActionPreparePayload rejectedCommand = CreateActorCommand(combat, root, remoteTwoEnd, actionIndex: 0);
+            ActorBinding rejectedOwner = assignment.Actors.Single(actor => actor.ActorId == 2);
+            host.SendPrepare(
+                rejectedOwner.NetworkPlayerId,
+                2,
+                secondPlan.PlanId,
+                "C10-REJECT",
+                rejectedCommand);
+            peers[2].RejectPendingClientAction();
+            if (hostResponses.Count != 3
+                || hostResponses[2].Kind != CoopMessageKind.ActionRejected
+                || hostResponses[2].ReadPayload<ActionRejectedPayload>().Code
+                    != CoopActionRejectionCode.UserDeclined)
+            {
+                throw new InvalidOperationException("C10 explicit Client rejection did not reach Host.");
+            }
+            peers[3].PauseClientAutomation();
+            if (pauseRequests != 1)
+                throw new InvalidOperationException("C10 Client pause request did not reach Host.");
+
+            long heartbeatAt = System.Environment.TickCount64 + CoopProtocol.HeartbeatIntervalMilliseconds;
+            host.Poll(heartbeatAt);
+            foreach (CoopPeerController client in peers.Where(peer => !peer.Session.IsHost))
+                client.Poll(heartbeatAt);
+            if (!protocol.Any(item => item.Kind == CoopMessageKind.Heartbeat))
+                throw new InvalidOperationException("C10 heartbeat did not traverse the negotiated session.");
+
+            await AssertC10LocalRejectionsAsync(combat, root);
+
+            ulong disconnectedId = assignment.Actors.Single(actor => actor.ActorId == 3).NetworkPlayerId;
+            hub.Disconnect(disconnectedId);
+            if (peers[3].Session.State != CoopSessionState.Failed
+                || peers[3].Session.FailureCode != "disconnected")
+            {
+                throw new InvalidOperationException("C10 disconnect did not stop the Client session.");
+            }
+            bool reconnectRequiresNewSession = false;
+            try
+            {
+                peers[3].StartClient();
+            }
+            catch (InvalidOperationException)
+            {
+                reconnectRequiresNewSession = true;
+            }
+            if (!reconnectRequiresNewSession)
+                throw new InvalidOperationException("C10 disconnected Client reused a failed session.");
+        }
+        finally
+        {
+            foreach (CoopPeerController peer in peers.Reverse())
+                peer.Dispose();
+            foreach (PlannedChoiceDriver choice in choices)
+                choice.Dispose();
+        }
+        if (peers.Any(peer => peer.HasResidualSessionState))
+            throw new InvalidOperationException("C10 loopback peers retained session state after disposal.");
+        string kinds = string.Join(',', protocol.Select(item => item.Kind).Distinct().Order());
+        return $"peers=4;negotiated=v{CoopProtocol.Version};plan_receivers=3;" +
+               "consent=allow,reject,pause;heartbeat=ok;disconnect=new_session_required;" +
+               $"protocol={kinds};cleanup=4_stopped";
+    }
+
+    public static string AuditC10TerminalDemo(CombatState combat)
+    {
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(combat);
+        if (root.Actors.Count != 4)
+            throw new InvalidOperationException($"C10 terminal demo expected four actors, got {root.Actors.Count}.");
+        int[] ownerOrder = [2, 0, 3, 1];
+        PlanAction[] prefix = ownerOrder.Select(actor => new PlanAction(
+            PlanActionKind.EndTurn,
+            root.StartTurnNumber,
+            Actor: new CombatActorId(actor))).ToArray();
+        JointOfflineSearchRequest request = new(
+            prefix,
+            MaximumActions: 6,
+            MaximumStates: 20_000);
+        JointOfflineSearchResult searched = JointOfflineSearch.SolveBeam(
+            root,
+            request,
+            beamWidth: 512,
+            degreeOfParallelism: 4);
+        JointReplayResult replay = JointStrictReplayVerifier.Verify(root, searched);
+        if (searched.Score.Outcome != CombatTerminalOutcome.Victory
+            || replay.Snapshot.Simulator.TerminalStamp?.Outcome != CombatTerminalOutcome.Victory)
+        {
+            throw new InvalidOperationException(
+                $"C10 terminal demo did not win: score={searched.Score.Outcome} " +
+                $"replay={replay.Snapshot.Simulator.TerminalStamp?.Outcome}.");
+        }
+        if (!searched.Actions.Take(4).Select(action => action.Actor.Index).SequenceEqual(ownerOrder))
+            throw new InvalidOperationException("C10 terminal demo changed the four-owner prefix.");
+        JointStrictCheckpoint barrier = replay.Checkpoints.Single(checkpoint =>
+            checkpoint.Stage == "barrier" && checkpoint.AppliedActionCount == 4);
+        if (barrier.Turn != root.StartTurnNumber + 1)
+            throw new InvalidOperationException("C10 terminal demo did not cross the enemy side.");
+
+        ActionIdempotencyLedger[] ledgers = Enumerable.Range(0, 4)
+            .Select(_ => new ActionIdempotencyLedger())
+            .ToArray();
+        HashSet<string> executions = new(StringComparer.Ordinal);
+        for (int index = 0; index < searched.Actions.Count; index++)
+        {
+            PlanAction action = searched.Actions[index];
+            string actionId = $"C10-DEMO:{index}";
+            ActionIdempotencyLedger ledger = ledgers[action.Actor.Index];
+            if (!ledger.TryPrepare(actionId)
+                || !ledger.TryCommit(actionId)
+                || !executions.Add(actionId)
+                || !ledger.TryComplete(actionId)
+                || ledger.TryCommit(actionId))
+            {
+                throw new InvalidOperationException($"C10 action {actionId} violated exactly-once execution.");
+            }
+        }
+
+        ulong hostId = root.Actors[root.LocalActorId.Index].PlayerIdentity.NetId;
+        ActorAssignmentPayload assignment = CoopSession.BuildActorAssignment(
+            root.Actors.Select(actor => (
+                actor.PlayerIdentity.NetId,
+                actor.PlayerIdentity.Character.Id.Entry)).ToArray(),
+            hostId);
+        string sessionId = "C10-TERMINAL-" + Guid.NewGuid().ToString("N");
+        CoopSession[] sessions = assignment.Actors.Select(actor =>
+            new CoopSession(sessionId, actor.NetworkPlayerId, hostId)).ToArray();
+        const string nonce = "C10-TERMINAL-NONCE";
+        foreach (CoopSession session in sessions)
+        {
+            if (session.IsHost)
+                session.AcceptAsHost(nonce, CoopProtocol.RequiredCapabilities);
+            else
+                session.AcceptSession(new SessionAcceptedPayload(
+                    CoopProtocol.Version,
+                    "0.1.0.0",
+                    hostId,
+                    nonce,
+                    CoopProtocol.RequiredCapabilities));
+            session.AcceptAssignment(assignment);
+            session.BeginStopping();
+            session.FinishStopping();
+        }
+        if (sessions.Any(session => session.State != CoopSessionState.Stopped
+                || session.Actors.Count != 0))
+            throw new InvalidOperationException("C10 terminal demo retained session state after exit.");
+
+        PlanPublishedPayload published = CoopPlanSnapshotFactory.Create(
+            1,
+            LocalActorAgent.Fingerprint(root.ContinuationStamp.StateText),
+            root,
+            searched,
+            replay);
+        return $"outcome={published.Score.Outcome};actors=4;owners={string.Join(',', ownerOrder)};" +
+               $"actions={searched.Actions.Count};barrier_turn={barrier.Turn};" +
+               $"checkpoints={replay.Checkpoints.Count};duplicate_execution=0;sessions=4_stopped";
     }
 
     public static string SearchSyntheticRoot(CombatState combat)
@@ -101,6 +480,11 @@ public static class CoopBotHeadlessProbe
             root,
             searched,
             replay);
+        ActorBinding[] bindings = root.Actors.Select(actor => new ActorBinding(
+            actor.Id.Index,
+            actor.PlayerIdentity.NetId,
+            actor.PlayerIdentity.Character.Id.Entry,
+            actor.Id == root.LocalActorId)).ToArray();
         CoopUiSnapshot[] chinese = Enumerable.Range(0, 4)
             .Select(actor => CoopUiSnapshot.Capture(
                 plan,
@@ -109,7 +493,11 @@ public static class CoopBotHeadlessProbe
                 CoopAutomationMode.ConfirmEach,
                 "计划就绪",
                 currentActionIndex: 0,
-                locale: "zhs"))
+                locale: "zhs",
+                bindings,
+                root.LocalActorId.Index,
+                "已连接",
+                "ack:ok"))
             .ToArray();
         CoopUiSnapshot[] english = Enumerable.Range(0, 4)
             .Select(actor => CoopUiSnapshot.Capture(
@@ -119,7 +507,11 @@ public static class CoopBotHeadlessProbe
                 CoopAutomationMode.ConfirmEach,
                 "计划就绪",
                 currentActionIndex: 0,
-                locale: "eng"))
+                locale: "eng",
+                bindings,
+                root.LocalActorId.Index,
+                "已连接",
+                "ack:ok"))
             .ToArray();
         foreach (CoopUiSnapshot snapshot in chinese.Concat(english))
         {
@@ -139,12 +531,19 @@ public static class CoopBotHeadlessProbe
         if (chinese[0].Title == english[0].Title
             || !english[0].Title.Contains("Co-op Bot", StringComparison.Ordinal)
             || !chinese[0].StatusLine.Contains("逐步确认", StringComparison.Ordinal)
-            || !english[0].StatusLine.Contains("Confirm each", StringComparison.Ordinal))
+            || !english[0].StatusLine.Contains("Confirm each", StringComparison.Ordinal)
+            || !chinese[0].SessionLine.Contains($"协议 v{CoopProtocol.Version}", StringComparison.Ordinal)
+            || !english[0].SessionLine.Contains($"Protocol v{CoopProtocol.Version}", StringComparison.Ordinal)
+            || chinese.Any(snapshot => !snapshot.Actors.Any(actor =>
+                actor.Text.Contains("已连接", StringComparison.Ordinal)))
+            || english.Any(snapshot => !snapshot.DetailLine.Contains("Latest result", StringComparison.Ordinal))
+            || chinese[0].ObserveLabel != "观察"
+            || english[0].AutoLabel != "Auto")
         {
             throw new InvalidOperationException("CoopBot zhs/eng UI projection is incomplete.");
         }
         return $"endpoints=4;plan={plan.PlanId};route={plan.Actions.Count};locales=zhs,eng;" +
-               "host_controls=1;client_controls=3";
+               "host_controls=1;client_controls=3;modes=4;protocol_status=1;recent_result=1";
     }
 
     public static async Task<string> ExecuteLocalCardAndEndTurnAsync(CombatState combat)
@@ -530,6 +929,133 @@ public static class CoopBotHeadlessProbe
             expectation.EnergyCost,
             expectation.StarCost,
             IsIrreversible: true);
+
+    private static ActionPreparePayload CreateActorCommand(
+        CombatState combat,
+        CombatRootSnapshot root,
+        PlanAction action,
+        int actionIndex)
+    {
+        JointReplayResult replay = JointPlanReplayer.Replay(
+            root,
+            new JointPlan(root.Actors.Count, [action]));
+        JointActionExpectation expectation = replay.ActionExpectations[0];
+        return new ActionPreparePayload(
+            CoopPlanSnapshotFactory.CaptureAction(action, actionIndex),
+            LocalActorAgent.Fingerprint(
+                ContinuationStamp.CaptureLiveForPlayer(
+                    combat,
+                    root.Actors[action.Actor.Index].PlayerIdentity).StateText),
+            expectation.Turn,
+            expectation.Phase.ToString(),
+            expectation.EnergyCost,
+            expectation.StarCost,
+            IsIrreversible: true);
+    }
+
+    private static async Task AssertC10LocalRejectionsAsync(
+        CombatState combat,
+        CombatRootSnapshot root)
+    {
+        Player local = root.Actors[root.LocalActorId.Index].PlayerIdentity;
+        PlanAction playable = JointActionExpander.Expand(
+                root.ForkSimulator(),
+                JointTurnState.FromRoot(root))
+            .Select(candidate => candidate.Action)
+            .First(action => action.Actor == root.LocalActorId
+                && action.Kind == PlanActionKind.PlayCard
+                && action.CardId.Contains("STRIKE", StringComparison.Ordinal)
+                && action.Choice is null
+                && (action.NestedChoices?.Count ?? 0) == 0);
+        ActionPreparePayload valid = CreateActorCommand(combat, root, playable, 0);
+
+        LocalActorAgent staleAgent = new();
+        LocalPrepareResult stale = staleAgent.Prepare(
+            "C10-STALE",
+            valid with { ExpectedRootFingerprint = "STALE" },
+            combat,
+            root.LocalActorId.Index,
+            local);
+        if (stale.Rejected?.Code != CoopActionRejectionCode.StaleRoot)
+            throw new InvalidOperationException("C10 changed root was not rejected as StaleRoot.");
+
+        LocalActorAgent missingAgent = new();
+        CoopPlanActionSnapshot missingAction = valid.Action with
+        {
+            CardId = "C10_MISSING_CARD",
+            CardStateKey = "",
+            CardStateOccurrence = 0,
+        };
+        LocalPrepareResult missing = missingAgent.Prepare(
+            "C10-MISSING",
+            valid with { Action = missingAction },
+            combat,
+            root.LocalActorId.Index,
+            local);
+        if (missing.Rejected?.Code != CoopActionRejectionCode.MissingInstance)
+            throw new InvalidOperationException("C10 transferred/missing card was not rejected.");
+
+        LocalActorAgent targetAgent = new();
+        LocalPrepareResult target = targetAgent.Prepare(
+            "C10-TARGET",
+            valid with { Action = valid.Action with { TargetCombatId = uint.MaxValue } },
+            combat,
+            root.LocalActorId.Index,
+            local);
+        if (target.Rejected?.Code != CoopActionRejectionCode.InvalidTarget)
+            throw new InvalidOperationException("C10 missing/dead target was not rejected.");
+
+        PlanAction localEnd = new(
+            PlanActionKind.EndTurn,
+            root.StartTurnNumber,
+            Actor: root.LocalActorId);
+        ActionPreparePayload choiceBase = CreateActorCommand(combat, root, localEnd, 0);
+        CoopPlanChoiceSnapshot changedChoice = new(
+            "SelectFromDrawPile",
+            "Draw",
+            root.LocalActorId.Index,
+            "C10",
+            "C10",
+            "DuringAction",
+            []);
+        LocalActorAgent choiceAgent = new();
+        LocalPrepareResult choice = choiceAgent.Prepare(
+            "C10-CHOICE",
+            choiceBase with { Action = choiceBase.Action with { Choice = changedChoice } },
+            combat,
+            root.LocalActorId.Index,
+            local);
+        if (choice.Rejected?.Code != CoopActionRejectionCode.ChoiceChanged)
+            throw new InvalidOperationException("C10 changed choice contract was not rejected.");
+
+        LocalActorAgent nativeRejectAgent = new();
+        LocalPrepareResult prepared = nativeRejectAgent.Prepare(
+            "C10-NATIVE-REJECT",
+            valid,
+            combat,
+            root.LocalActorId.Index,
+            local);
+        if (!prepared.Accepted)
+            throw new InvalidOperationException($"C10 native rejection setup failed: {prepared.Rejected}.");
+        local.PlayerCombatState!.Energy = 0;
+        bool nativeRejected = false;
+        try
+        {
+            using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(5));
+            _ = await nativeRejectAgent.CommitAsync(
+                "C10-NATIVE-REJECT",
+                new ActionCommitPayload("C10-NATIVE-REJECT"),
+                combat,
+                timeout.Token);
+        }
+        catch (InvalidOperationException exception) when (
+            exception.Message.Contains("lost playability", StringComparison.Ordinal))
+        {
+            nativeRejected = true;
+        }
+        if (!nativeRejected || nativeRejectAgent.State != LocalActorAgentState.Idle)
+            throw new InvalidOperationException("C10 Commit-time native rejection did not reset the Agent.");
+    }
 
     private static async Task WaitForStablePlayerRootAsync(
         CombatState combat,

@@ -11,6 +11,7 @@ public enum CoopActionLedgerState
 public sealed class ActionIdempotencyLedger
 {
     private readonly Dictionary<string, CoopActionLedgerState> _states = new(StringComparer.Ordinal);
+    public int Count => _states.Count;
 
     public bool TryPrepare(string actionId)
     {

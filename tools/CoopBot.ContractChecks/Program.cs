@@ -27,8 +27,19 @@ Check(assignment.Actors.Single(actor => actor.IsHost).NetworkPlayerId == hostId,
 CoopSession[] instances = roster
     .Select(player => new CoopSession(sessionId, player.NetworkPlayerId, hostId))
     .ToArray();
+const string nonce = "AABBCCDDEEFF00112233445566778899";
 foreach (CoopSession instance in instances)
 {
+    if (instance.IsHost)
+        instance.AcceptAsHost(nonce, CoopProtocol.RequiredCapabilities);
+    else
+        instance.AcceptSession(new SessionAcceptedPayload(
+            CoopProtocol.Version,
+            "0.1.0.0",
+            hostId,
+            nonce,
+            CoopProtocol.RequiredCapabilities));
+    Check(instance.State == CoopSessionState.Accepted, $"instance {instance.LocalNetworkPlayerId} negotiated");
     instance.AcceptAssignment(assignment);
     Check(instance.State == CoopSessionState.Active, $"instance {instance.LocalNetworkPlayerId} active");
     Check(instance.LocalActor.NetworkPlayerId == instance.LocalNetworkPlayerId, "local actor derived per instance");
@@ -72,6 +83,77 @@ CoopWireEnvelope falseHost = hello with
     Header = header with { MessageSequence = 1, SenderNetworkPlayerId = 202 },
 };
 Check(gate.Inspect(falseHost, 202, mustComeFromHost: true).Code == "host_mismatch", "host conflict rejected");
+
+var nonceGate = new CoopInboundGate(sessionId, hostId);
+nonceGate.BindSessionNonce(nonce);
+var heartbeat = CoopWireEnvelope.Create(
+    CoopMessageKind.Heartbeat,
+    header with { SessionNonce = nonce },
+    new HeartbeatPayload(0, CoopSessionState.Active.ToString()));
+Check(nonceGate.Inspect(heartbeat, hostId, mustComeFromHost: true).Disposition
+    == CoopInboundDisposition.Accepted, "negotiated nonce accepted");
+Check(nonceGate.Inspect(
+        heartbeat with { Header = heartbeat.Header with { MessageSequence = 2, SessionNonce = "wrong" } },
+        hostId,
+        mustComeFromHost: true).Code == "session_nonce_mismatch", "wrong nonce rejected");
+var unboundGate = new CoopInboundGate(sessionId, hostId);
+Check(unboundGate.Inspect(heartbeat, hostId, mustComeFromHost: true).Code == "session_nonce_unbound",
+    "action traffic rejected before negotiation");
+
+bool missingCapabilityRejected = false;
+try
+{
+    var incompatible = new CoopSession(sessionId, 202, hostId);
+    incompatible.AcceptSession(new SessionAcceptedPayload(
+        CoopProtocol.Version,
+        "0.1.0.0",
+        hostId,
+        nonce,
+        ["actor-assignment-v1"]));
+}
+catch (InvalidOperationException)
+{
+    missingCapabilityRejected = true;
+}
+Check(missingCapabilityRejected, "missing required capability rejected");
+
+const string clientLocalSessionId = "client-local-combat-id";
+var clientNegotiation = new CoopSession(clientLocalSessionId, 202, hostId);
+var acceptedHeader = new CoopMessageHeader(
+    CoopProtocol.Version,
+    sessionId,
+    1,
+    hostId,
+    0);
+var acceptedEnvelope = CoopWireEnvelope.Create(
+    CoopMessageKind.SessionAccepted,
+    acceptedHeader,
+    new SessionAcceptedPayload(
+        CoopProtocol.Version,
+        "0.1.0.0",
+        hostId,
+        nonce,
+        CoopProtocol.RequiredCapabilities));
+Check(clientNegotiation.Inbound.Inspect(acceptedEnvelope, hostId, mustComeFromHost: true).Disposition
+    == CoopInboundDisposition.Accepted, "Client accepts Host session ID during negotiation");
+clientNegotiation.AdoptHostCombatSessionId(sessionId);
+clientNegotiation.AcceptSession(acceptedEnvelope.ReadPayload<SessionAcceptedPayload>());
+Check(clientNegotiation.CombatSessionId == sessionId
+    && clientNegotiation.Inbound.CombatSessionId == sessionId,
+    "Client binds authoritative Host session ID");
+var postNegotiationWrongSession = heartbeat with
+{
+    Header = heartbeat.Header with
+    {
+        MessageSequence = 2,
+        CombatSessionId = clientLocalSessionId,
+    },
+};
+Check(clientNegotiation.Inbound.Inspect(
+        postNegotiationWrongSession,
+        hostId,
+        mustComeFromHost: true).Code == "session_mismatch",
+    "Client rejects old local session ID after negotiation");
 
 var ledger = new ActionIdempotencyLedger();
 Check(ledger.TryPrepare("action-1"), "action first prepare");
@@ -196,5 +278,29 @@ planLease.Publish("plan-cancel", 12);
 planLease.BeginAction("plan-cancel", "action-cancel");
 planLease.Cancel("action-cancel");
 Check(planLease.PlanId is null && planLease.ActionId is null, "cancel clears plan lease");
+
+var liveness = new PeerLivenessTracker();
+liveness.Configure([202, 303, 404], nowMilliseconds: 1_000);
+Check(!liveness.HeartbeatDue(2_999, CoopProtocol.HeartbeatIntervalMilliseconds),
+    "heartbeat waits for interval");
+Check(liveness.HeartbeatDue(3_000, CoopProtocol.HeartbeatIntervalMilliseconds),
+    "heartbeat becomes due at interval");
+liveness.MarkHeartbeatSent(3_000);
+liveness.Observe(202, 9_000);
+Check(liveness.Expired(11_000, CoopProtocol.PeerTimeoutMilliseconds).SequenceEqual([303UL, 404UL]),
+    "silent peers expire deterministically");
+liveness.Clear();
+Check(liveness.Peers.Count == 0, "liveness cleanup clears peers");
+
+var breaker = new HostFailureCircuitBreaker();
+Check(!breaker.Record(7, "stale_root").Tripped, "first same-root failure does not trip");
+Check(!breaker.Record(7, "stale_root").Tripped, "second same-root failure does not trip");
+HostFailureObservation tripped = breaker.Record(7, "stale_root");
+Check(tripped.Tripped && tripped.ConsecutiveCount == HostFailureCircuitBreaker.TripThreshold,
+    "third same-root failure trips auto circuit");
+Check(!breaker.Record(8, "stale_root").Tripped, "new root resets failure circuit");
+Check(!breaker.Record(8, "invalid_target").Tripped, "different failure resets failure circuit");
+breaker.Reset();
+Check(!breaker.Record(8, "invalid_target").Tripped, "successful verification reset clears failure circuit");
 
 Console.WriteLine($"Passed {checks} CoopBot protocol and session contracts.");

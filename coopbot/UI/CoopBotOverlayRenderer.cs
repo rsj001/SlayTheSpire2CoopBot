@@ -10,6 +10,7 @@ internal partial class CoopBotOverlayRenderer : CanvasLayer
     private Label? _status;
     private Label? _score;
     private Label? _current;
+    private Label? _detail;
     private VBoxContainer? _actors;
     private VBoxContainer? _route;
     private HBoxContainer? _hostControls;
@@ -21,6 +22,10 @@ internal partial class CoopBotOverlayRenderer : CanvasLayer
     private Button? _allowButton;
     private Button? _rejectButton;
     private Button? _clientPauseButton;
+    private Button? _observeButton;
+    private Button? _suggestButton;
+    private Button? _confirmButton;
+    private Button? _autoButton;
 
     internal event Action? ReplanRequested;
     internal event Action? CancelSearchRequested;
@@ -28,6 +33,7 @@ internal partial class CoopBotOverlayRenderer : CanvasLayer
     internal event Action? PauseRequested;
     internal event Action? AllowOnceRequested;
     internal event Action? RejectRequested;
+    internal event Action<CoopBot.Protocol.CoopAutomationMode>? AutomationModeRequested;
 
     public override void _Ready()
     {
@@ -46,6 +52,7 @@ internal partial class CoopBotOverlayRenderer : CanvasLayer
         _status = AddLabel(body, string.Empty);
         _score = AddLabel(body, string.Empty);
         _current = AddLabel(body, string.Empty);
+        _detail = AddLabel(body, string.Empty);
         body.AddChild(new HSeparator());
         _actors = new VBoxContainer();
         body.AddChild(_actors);
@@ -60,6 +67,14 @@ internal partial class CoopBotOverlayRenderer : CanvasLayer
         _cancelButton = AddButton(_hostControls, () => CancelSearchRequested?.Invoke());
         _executeButton = AddButton(_hostControls, () => ExecuteNextRequested?.Invoke());
         _hostPauseButton = AddButton(_hostControls, () => PauseRequested?.Invoke());
+        _observeButton = AddButton(_hostControls, () =>
+            AutomationModeRequested?.Invoke(CoopBot.Protocol.CoopAutomationMode.Observe));
+        _suggestButton = AddButton(_hostControls, () =>
+            AutomationModeRequested?.Invoke(CoopBot.Protocol.CoopAutomationMode.Suggest));
+        _confirmButton = AddButton(_hostControls, () =>
+            AutomationModeRequested?.Invoke(CoopBot.Protocol.CoopAutomationMode.ConfirmEach));
+        _autoButton = AddButton(_hostControls, () =>
+            AutomationModeRequested?.Invoke(CoopBot.Protocol.CoopAutomationMode.Auto));
         _clientControls = new HBoxContainer();
         body.AddChild(_clientControls);
         _allowButton = AddButton(_clientControls, () => AllowOnceRequested?.Invoke());
@@ -70,10 +85,12 @@ internal partial class CoopBotOverlayRenderer : CanvasLayer
     internal void Render(CoopUiSnapshot snapshot)
     {
         if (_panel is null || _title is null || _session is null || _status is null
-            || _score is null || _current is null || _actors is null || _route is null
+            || _score is null || _current is null || _detail is null || _actors is null || _route is null
             || _hostControls is null || _clientControls is null || _replanButton is null
             || _cancelButton is null || _executeButton is null || _hostPauseButton is null
-            || _allowButton is null || _rejectButton is null || _clientPauseButton is null)
+            || _allowButton is null || _rejectButton is null || _clientPauseButton is null
+            || _observeButton is null || _suggestButton is null || _confirmButton is null
+            || _autoButton is null)
         {
             throw new InvalidOperationException("CoopBot overlay is not ready.");
         }
@@ -82,6 +99,7 @@ internal partial class CoopBotOverlayRenderer : CanvasLayer
         _status.Text = snapshot.StatusLine;
         _score.Text = snapshot.ScoreLine;
         _current.Text = snapshot.CurrentActionLine;
+        _detail.Text = snapshot.DetailLine;
         ReplaceLabels(_actors, snapshot.Actors.Select(static actor => actor.Text));
         ReplaceLabels(_route, snapshot.Route.Select(step => step.IsCurrent ? $"▶ {step.Text}" : step.Text));
         _hostControls.Visible = snapshot.ShowHostControls;
@@ -93,6 +111,10 @@ internal partial class CoopBotOverlayRenderer : CanvasLayer
         _allowButton.Text = snapshot.AllowOnceLabel;
         _rejectButton.Text = snapshot.RejectLabel;
         _clientPauseButton.Text = snapshot.PauseLabel;
+        _observeButton.Text = snapshot.ObserveLabel;
+        _suggestButton.Text = snapshot.SuggestLabel;
+        _confirmButton.Text = snapshot.ConfirmEachLabel;
+        _autoButton.Text = snapshot.AutoLabel;
         _panel.Visible = true;
     }
 
