@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 联合 Actor1 重复自动出牌选择（2026-09-29）
+
+- `COOP-MULTI-ACTOR-ROOT`：Actor1 的 `Decisions, Decisions` 选择 Prepared，并为每次重复自动出牌按原序消费 Actor1 owned 嵌套选择；两个父 Fork 得到同一完整状态键且无 pending，`runId=05ebefd640864595ae272ceae4ae8e37`，Passed，实例已删除。
+- 修复前静态主选择错误包含已离手的来源牌自身，`runId=3ee53c2a957b4fdaaba7d64e9db8873a`，Failed，实例已删除。
+- Release 构建 0 警告/0 错误；F6a-d 关闭；Linux 和可见 Steam 未运行。
+
 ## 联合 Actor1 回合结束遗物选择续执行（2026-09-29）
 
 - `COOP-MULTI-ACTOR-ROOT`：Actor1 的五张虚无牌在 PhaseOne 前统一计数，Joss Paper 于共享 PhaseTwo 抽到 Seeker Strike，Hellraiser 选择保持 Actor1 owner 并从稳定父状态恢复；`runId=7d629eea37754cdfb240a1d6580bf041`，Passed，实例已删除。

@@ -155,11 +155,16 @@ internal static class JointActionTransition
             ?? throw new InvalidOperationException(
                 $"联合动作挂起但没有选择请求：Actor {action.Actor} card={action.CardId}。");
         CardChoiceSpec spec = TurnStartChoiceSupport.BuildSpec(simulator, player, request);
+        JointPendingChoicePlacement placement = action.Choice == null
+            && string.IsNullOrEmpty(request.SourceId)
+                ? JointPendingChoicePlacement.Primary
+                : JointPendingChoicePlacement.Nested;
         return new JointPendingActionChoiceException(new(
             action.Actor,
             action,
             request.SourceId,
             spec,
+            placement,
             ContextId: request.ContextId,
             Timing: request.Timing));
     }

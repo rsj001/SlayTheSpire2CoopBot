@@ -261,7 +261,7 @@ F0 起的完整单人功能迁移范围由[离线四 Actor 单人功能迁移库
 
 `ModifyBlockMultiplicativeMirrors` 对多人缩放使用模拟状态冻结的玩家数、Encounter 和 Act：玩家目标或非 powered 格挡系数为 1，主/次敌人的 powered 格挡按原版人数及 Act/Boss 系数缩放。detached `MultiplayerScalingModel` 不读取 live RunState/CombatState。
 
-F3a 的 `JointActionExpander` 为卡牌动作保存与生产回放相同的 `ChoiceCardKey`、state occurrence、升级、附魔和 replay count；`JointActionTransition` 直接调用 `CombatBeamSolver.FindCardForReplay`，不维护第二套实例匹配。手动目标按原版 `TargetType` 区分 AnyEnemy、AnyPlayer 和排除自身的 AnyAlly；其余非手动目标交给 card mirror 解析，未知枚举值显式失败。基础动作选择分支复用 `CardChoiceSupport.BuildChoices` 的同一组合与排序算法，离线入口只把显示标题留空。
+F3a 的 `JointActionExpander` 为卡牌动作保存与生产回放相同的 `ChoiceCardKey`、state occurrence、升级、附魔和 replay count；`JointActionTransition` 直接调用 `CombatBeamSolver.FindCardForReplay`，不维护第二套实例匹配。手动目标按原版 `TargetType` 区分 AnyEnemy、AnyPlayer 和排除自身的 AnyAlly；其余非手动目标交给 card mirror 解析，未知枚举值显式失败。主选择与嵌套选择都从权威动作探针在来源牌离手后的 pending spec 展开并复用 `CardChoiceSupport.BuildChoices`；禁止从根手牌预建普通主选择，只有原版要求的空选择可随动作预填。
 
 F3b 对出牌后才出现的动作内选择使用确定性探测：从同一父模拟器 Fork 并调用权威 `JointActionTransition`；transition 以类型化 `JointPendingActionChoiceException` 交还 Actor、source 和精确 `CardChoiceSpec`，expander 复用 `CardChoiceSupport.BuildChoices` 追加分支并从父状态重放，直到动作稳定或达到 16 层明确上限。探针从不作为候选状态提交，兄弟选择不共享可变事务；该机制覆盖自动/重复子出牌产生的嵌套选择，但不替代 F6 的跨回合选择 continuation。
 

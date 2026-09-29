@@ -63,14 +63,11 @@ internal static class JointActionExpander
                     PlanAction targeted = target is null
                         ? action
                         : action with { TargetCombatId = target.CombatId };
-                    CardChoiceSpec? spec = CardChoiceSupport.GetSpec(simulator, card);
-                    if (spec == null)
-                    {
-                        AddResolvedCandidates(
-                            candidates,
-                            simulator,
-                            turnState,
-                            new JointActionCandidate(
+                    AddResolvedCandidates(
+                        candidates,
+                        simulator,
+                        turnState,
+                        new JointActionCandidate(
                             targeted with
                             {
                                 Choice = CardChoiceSupport.BuildRequiredEmptyChoice(card.Preview)
@@ -78,23 +75,6 @@ internal static class JointActionExpander
                             },
                             card,
                             target));
-                        continue;
-                    }
-                    foreach (PlanCardChoice choice in CardChoiceSupport.BuildChoices(
-                                 spec,
-                                 static _ => string.Empty,
-                                 maxPileBranches: 32,
-                                 maxHandBranches: 32))
-                    {
-                        AddResolvedCandidates(
-                            candidates,
-                            simulator,
-                            turnState,
-                            new JointActionCandidate(
-                            targeted with { Choice = choice with { Actor = actor } },
-                            card,
-                            target));
-                    }
                 }
             }
 

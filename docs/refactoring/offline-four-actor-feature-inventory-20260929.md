@@ -34,11 +34,11 @@
 | 普通出牌与 EndTurn | `CombatBeamSolver.Expansion*.cs` | `JointActionExpander`、`JointActionTransition` | 已迁移 | 搜索与回放同键、2/4 Actor 非本地动作 |
 | AnyEnemy、AnyAlly 基础目标 | `CombatBeamSolver.Expansion.cs` | `JointActionExpander.ResolveTargets` | 已迁移 | 目标顺序、队友目标与 Actor owner |
 | AnyPlayer、Self、全体、无目标及动态目标 | `CombatBeamSolver.Expansion*.cs`、card mirrors | F3a 已覆盖全部当前 TargetType；AnyPlayer/AnyAlly 显式枚举 | 已迁移 | 2/4 Actor 手动目标集合；非手动目标由 mirror 解析 |
-| 自动牌、重复牌、复制牌、生成牌、回手与临时牌 | `CombatBeamSolver.CardChoiceContinuation.cs`、`Prediction/*` | F3b 可探测并补全动作内动态/嵌套选择；完整跨回合 continuation 待 F6 | 待迁移 | Havoc→Second Wind 动态嵌套通过；其余代表集与跨回合仍待验证 |
+| 自动牌、重复牌、复制牌、生成牌、回手与临时牌 | `CombatBeamSolver.CardChoiceContinuation.cs`、`Prediction/*` | F3b 从权威出牌后 pending spec 补全动态选择；F6b 覆盖回合尾自动牌与 Decisions 重复选择链 | 已迁移 | Havoc→Second Wind、Hellraiser→Seeker Strike、Decisions→Prepared 多次选择及既有生成/复制代表通过 |
 | 卡牌实例 identity、升级、附魔和状态 occurrence | `PreparedCardAction`、`CombatPlan.cs` | F3a 使用同一 `ChoiceCardKey`/state occurrence 回放 | 已迁移 | Armaments/Strike 候选回放与搜索单步同键 |
 | 药水使用、目标、槽位、生成、复制和替换 | `CombatBeamSolver.*Potion*.cs`、`Prediction/Potion*` | F4a/F4b 按 Actor 枚举槽位/目标、九类主选择和 Entropic Brew 生成；F4d 跨回合槽位/消耗完成 | 已迁移 | 2/4 Actor 独立候选、九类选择、生成及第二轮药水严格回放通过 |
 | 主动遗物动作 | 原版无战斗内独立提交入口；遗物由 Hook 触发 | 不新增伪造动作；`PlanRelicEffect` 仍是路线注释 | 明确不支持 | F1 反编译检索无 `UseRelic`/`ActivateRelic` 战斗动作；遗物触发归 F5 |
-| 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | F6a frame 保存 owner/source；F6c 支持多 Actor 唯一帧与原序消费；Power 回合开始及 Power/遗物回合结束选择前缀已接通 | 部分迁移 | 动态嵌套、双 Actor 药水帧队列、Tools of the Trade、Actor1 Hellraiser 与 Joss Paper 回合尾恢复通过；重复出牌待 F6b |
+| 主选择、嵌套选择、回合开始/结束选择 | `PrimaryChoiceReplay`、`CardChoiceContinuation`、`PotionChoiceContinuation` | F6a-d 已覆盖 owner/source、主/嵌套 placement、多 Actor 原序、回合边界和重复出牌 | 已迁移 | 动态嵌套、双 Actor 药水帧、Tools of the Trade、Hellraiser/Joss Paper 与 Decisions 重复链通过 |
 | opening、fixed-prefix、cycle、cross-turn、plan continuation | `CombatSearchCoordinator.*`、`FrontierContinuationScheduler` | F3c 已接入同回合 fixed-prefix 请求并由 BFS/DFS 对照；opening/cycle/cross-turn 尚未接入 | 待迁移 | 单人候选序哨兵与 2/4 Actor 联合成员；跨回合待 F7 |
 
 ## 结算机制
@@ -92,4 +92,5 @@
 | F-ISSUE-005 | 多 Actor 远端玩家获得格挡时，multiplayer scaling mirror 直接按玩家数拒绝 | 按原版精确镜像：玩家目标/非 powered 不缩放；主次敌人按人数及 Act/Boss 系数缩放 | F2 已修复；失败 `e62462a1435d4bbbbe0c48965528985b`，通过 `34221092e12f40f5addc9fb89219ff94` |
 | F-ISSUE-006 | 同 ID 卡牌的 `CardOccurrence` 会在前一实例离开手牌后重编号；直接串联首态候选会使后续严格回放找不到实例 | 已明确为前缀相对地址：每步重枚举并记录动作，原根完整回放与增量状态同键/同续用文本 | F6d 已关闭；禁止拼接同一首态的多个候选 |
 | F-ISSUE-007 | 联合玩家侧在逐 Actor PhaseOne 循环内统计虚无牌时，较早 Actor 的共享参与者结算会先耗尽后续 Actor 手牌，导致 Joss Paper 等共享 PhaseTwo 来源少计 | 在任何 PhaseOne 前按稳定 Actor 顺序冻结全体虚无牌总数，再交给一次共享 PhaseTwo | F7a 已关闭；失败 `d8805dc2888c4b60988c4422a027a946`，通过 `7d629eea37754cdfb240a1d6580bf041` |
+| F-ISSUE-008 | 联合 expander 在来源牌离手前按根手牌静态建立主选择，`Decisions, Decisions` 会错误选择自身，实际 OnPlay spec 已不含来源牌 | 主选择与嵌套选择统一从权威动作探针的 pending spec 展开；仅原版必需空选择保留预填 | F6b 已关闭；失败 `3ee53c2a957b4fdaaba7d64e9db8873a`，通过 `05ebefd640864595ae272ceae4ae8e37` |
 

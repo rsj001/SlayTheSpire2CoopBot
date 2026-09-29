@@ -1,6 +1,6 @@
 # 从单人 CombatSolver 到离线四 Actor 完整自动规划开发计划
 
-> 状态：执行中；前置联合模型 P0-P12、F0-F2、F4-F5、F8-F9 已完成，F3、F6-F7 进行中，F10-F12 待完成
+> 状态：执行中；前置联合模型 P0-P12、F0-F2、F4-F6、F8-F9 已完成，F3、F7 进行中，F10-F12 待完成
 > 日期：2026-09-29  
 > 基线提交：`f14acea6`  
 > 目标：在不改变单人 CombatSolver 语义的前提下，建立一个可以控制最多四名 Actor、完整覆盖单人战斗机制的离线联合自动规划器。  
@@ -16,7 +16,7 @@
 | F3 完整卡牌与目标 | 进行中 | F3a/F3b 已接入目标/实例身份、基础及动态嵌套选择；F3c fixed-prefix 与 F3d cross-turn 前缀已通过；opening/cycle 和单人候选序仍待完成 |
 | F4 完整药水 | 已完成 | F4a/F4b 独立槽位/九类选择/生成、F4c 硬政策与完整 Smart 反事实、F4d 跨回合均通过 |
 | F5 Power/遗物/球/宠物/角色资源 | 已完成 | F5a-F5e：根元数据、Power/全队/Hook、遗物触发/消耗、五角色资源、真实召唤所有权及第三方拒绝边界均有动态证据 |
-| F6 选择与嵌套 continuation | 进行中 | F6a frame、F6c 多 Actor 原序队列、F6d 前缀相对同名实例回放已通过；F6b 已接通 Power 回合开始选择前缀，EndTurn、自动/重复出牌及遗物选择仍待补 |
+| F6 选择与嵌套 continuation | 已完成 | F6a frame、F6b 回合开始/结束 Power/遗物与自动重复出牌、F6c 多 Actor 原序队列、F6d 前缀相对同名实例回放均通过 |
 | F7 联合回合与敌方生命周期 | 进行中 | F7a 玩家侧屏障、F7b 死亡资格、F7c1 纯攻击敌方侧与 F7d1 无选择下一轮已通过；复活/逃跑/额外回合、特殊后效及回合选择待补 |
 | F8 联合终局目标 | 已完成 | 终局边界、存活、战损向量、药水/保命资源、成长、偷窃、回合、动作及稳定动作序通过；单人排序未改 |
 | F9 联合 Beam/BFWS | 已完成 | F9a Beam/转置、F9b 保路、F9c 固定 lane、F9d 有界 BFWS 与 2/4 Actor oracle 全部通过 |
@@ -256,7 +256,7 @@
 执行拆分：
 
 - F6a（已完成）：新增不可变 `JointPendingChoiceFrame`，明确保存 `OwnerActor`、完整 `SourceAction`、source/spec 与主/嵌套 placement；联合 expander 在生成分支前严格核对 frame owner/source action。Havoc → Second Wind → Defend 动态嵌套严格回放 `runId=78cfa14e6d98479fa14d2104166c5b95` Passed。
-- F6b（进行中）：回合开始阶段现在把 owner、EndTurn SourceAction、source/context/timing 与 spec 封装为 `TurnStart` frame，并可从稳定跨回合父状态以选择前缀重新执行。Actor1 的 `ToolsOfTheTradePower` 首次因 frame 未保存 `ContextId/Timing` 导致计划选择未消费，`runId=0a2554c9ae244ae7b0217ab67e7856c4` Failed；补齐后 `runId=2cf1ac4368ab4ad58ac2c056708b6842` Passed。回合尾请求新增稳定 owner，共享 PhaseTwo 不再把选择归给 Actor0；Actor1 的 Dark Embrace 抽到 Seeker Strike、由 Hellraiser 自动出牌产生的 `PlayerTurnEnd` 选择可从同一父状态恢复，首次夹具牌堆未隔离 `runId=abf2aa3488974e42a6365e7cb111c9f0` Failed，修正后 `runId=9bc79f5cdc9548db8f287189f993d54f` Passed。Joss Paper 的回合尾抽牌也以 Actor1 owner 挂起并恢复；诊断 `d8805dc2888c4b60988c4422a027a946` 暴露跨 Actor 虚无计数时点错误，修复并恢复测试根遗物后 `runId=7d629eea37754cdfb240a1d6580bf041` Passed。遗物代表和自动出牌代表已完成，重复出牌 continuation 仍待完成。
+- F6b（已完成）：回合开始阶段把 owner、EndTurn SourceAction、source/context/timing 与 spec 封装为 `TurnStart` frame，并可从稳定跨回合父状态以选择前缀重新执行。Actor1 的 `ToolsOfTheTradePower` 修复 frame 身份后 `runId=2cf1ac4368ab4ad58ac2c056708b6842` Passed；Dark Embrace/Hellraiser 的自动出牌回合尾选择 `runId=9bc79f5cdc9548db8f287189f993d54f` Passed；Joss Paper 遗物来源及全队虚无计数修复后 `runId=7d629eea37754cdfb240a1d6580bf041` Passed。重复出牌代表首次暴露 `Decisions, Decisions` 在来源牌离手前静态枚举主选择，产生不可回放的来源牌 token，`runId=3ee53c2a957b4fdaaba7d64e9db8873a` Failed；改为所有主选择从权威出牌后 pending spec 展开后，Actor1 的 Prepared 三次重复选择链确定性消费，`runId=05ebefd640864595ae272ceae4ae8e37` Passed。
 - F6c（已完成）：`JointChoiceContinuation` 为每个 Actor 最多保存一帧，并按插入原序及完整 SourceAction 消费；Actor0/1 的真实 Gambler's Brew 主选择帧验证同 Actor 重入和后置抢占稳定拒绝，`runId=ddf9af571fc24faba81fb18eccbd3805` Passed。
 - F6d（已完成）：明确 `CardOccurrence`/`CardStateOccurrence` 是相对于每个动作当前前缀状态的实例地址；三张同 ID/同状态 Strike 每步重新枚举后 occurrence 均为 0，增量执行与从原根严格回放整条计划得到同状态键/续用文本，`runId=b05b87d8492e48a391e785f18c419b7f` Passed，关闭 F-ISSUE-006。单人 replay helper 未分叉，最终等价哨兵归 F12。
 

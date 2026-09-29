@@ -2253,6 +2253,14 @@ foreach ($text in @(
         $violations.Add("Joint dynamic choice expansion missing F3b boundary: $text")
     }
 }
+if (Select-String -LiteralPath $jointExpanderPath `
+        -SimpleMatch 'CardChoiceSupport.GetSpec(simulator, card)' -Quiet) {
+    $violations.Add('Joint card expansion restored pre-play primary choice enumeration.')
+}
+if (-not (Select-String -LiteralPath $jointTransitionPath `
+        -SimpleMatch 'JointPendingChoicePlacement.Primary' -Quiet)) {
+    $violations.Add('Joint transition no longer classifies authoritative pending primary choices.')
+}
 $jointOfflineSearchPath = Join-Path $repositoryRoot 'src/Search/Coop/JointOfflineSearch.cs'
 foreach ($text in @(
     'internal sealed record JointOfflineSearchRequest(',

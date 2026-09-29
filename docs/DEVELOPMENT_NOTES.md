@@ -1,5 +1,9 @@
 # CombatSolver 开发笔记与未来构想
 
+## 离线四 Actor 重复出牌选择与 F6 完成（2026-09-29）
+
+联合卡牌主选择不再从来源牌尚在根手牌时静态预建，而与嵌套选择一样，由权威 transition 实际执行到 pending 后返回精确 spec 再展开；原版要求的空选择仍可预填。首次 Actor1 `Decisions, Decisions` 将来源牌自身列为可重复技能，实际 OnPlay 时该牌已进入打出区，`runId=3ee53c2a957b4fdaaba7d64e9db8873a` Failed；修复后 Actor1 选择 Prepared 并确定性消费每次重复自动出牌的选择链，`COOP-MULTI-ACTOR-ROOT` 的 `runId=05ebefd640864595ae272ceae4ae8e37` Passed，实例均已删除。F6a-d 至此关闭。
+
 ## 离线四 Actor 回合尾遗物选择与虚无计数（2026-09-29）
 
 Actor1 的 Joss Paper 现在能在共享 PhaseTwo 抽到 Seeker Strike，并通过 Hellraiser 产生保留 Actor1 owner 的回合尾选择，再从稳定父状态恢复。迁移中发现逐 Actor 循环内统计虚无牌会被较早 Actor 的共享参与者 PhaseOne 提前清空，导致后续 Actor 少计；现改为任何 PhaseOne 前冻结全队总数。`d8805dc2888c4b60988c4422a027a946` 首次精确显示五张牌已耗尽但 draw 未触发；修复后又发现测试替换的共享根遗物需要恢复，最终 `COOP-MULTI-ACTOR-ROOT` 的 `runId=7d629eea37754cdfb240a1d6580bf041` Passed，实例均已删除。F6b 仅余重复出牌 continuation 代表。

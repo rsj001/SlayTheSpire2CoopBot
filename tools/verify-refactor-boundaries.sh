@@ -1760,6 +1760,10 @@ require_fixed "$joint_transition" 'JointPendingActionChoiceException' \
 for token in 'MaximumNestedChoiceDepth = 16' 'AddResolvedCandidates(' 'AppendNestedChoice('; do
     require_fixed "$joint_expander" "$token" 'joint dynamic choice expansion missing F3b boundary:'
 done
+forbid_fixed "$joint_expander" 'CardChoiceSupport.GetSpec(simulator, card)' \
+    'joint card expansion restored pre-play primary choice enumeration:'
+require_fixed "$joint_transition" 'JointPendingChoicePlacement.Primary' \
+    'joint transition no longer classifies authoritative pending primary choices:'
 joint_offline_search="$repository_root/src/Search/Coop/JointOfflineSearch.cs"
 for token in \
     'internal sealed record JointOfflineSearchRequest(' \

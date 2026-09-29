@@ -102,6 +102,7 @@ internal sealed partial class UnattendedTestRunner
                 AssertTurnStartChoiceContinuation(root);
                 AssertEndTurnPowerChoiceContinuation(root);
                 AssertEndTurnRelicChoiceContinuation(root);
+                AssertRepeatedAutoPlayChoiceContinuation(root);
             }
             JointActionCandidate selected = candidates.First(candidate =>
                 candidate.Action.Actor.Index == actorCount - 1
@@ -834,6 +835,81 @@ internal sealed partial class UnattendedTestRunner
                 "联合 Actor1 回合结束遗物选择前缀未恢复到稳定屏障。");
         }
         rootRelics[owner] = originalRelics;
+    }
+
+    private static void AssertRepeatedAutoPlayChoiceContinuation(CombatRootSnapshot root)
+    {
+        CombatPredictionSimulator parent = root.ForkSimulator();
+        Player owner = parent.State.Players[1];
+        SimPlayerCombatState ownerState = parent.State.GetPlayerCombatState(owner);
+        parent.RemoveFromCombat(ownerState.AllCards.ToArray());
+        PredictedCard decisions = PredictedCard.Create(ModelDb.Card<DecisionsDecisions>(), owner);
+        PredictedCard prepared = PredictedCard.Create(ModelDb.Card<Prepared>(), owner);
+        parent.AddGeneratedCardToCombat(
+            decisions,
+            PileType.Hand,
+            owner,
+            resultKind: CardGenerationResultKind.Fixed);
+        parent.AddGeneratedCardToCombat(
+            prepared,
+            PileType.Hand,
+            owner,
+            resultKind: CardGenerationResultKind.Fixed);
+        for (int index = 0; index < 3; index++)
+        {
+            parent.AddGeneratedCardToCombat(
+                PredictedCard.Create(ModelDb.Card<DefendDefect>(), owner),
+                PileType.Hand,
+                owner,
+                resultKind: CardGenerationResultKind.Fixed);
+            parent.AddGeneratedCardToCombat(
+                PredictedCard.Create(ModelDb.Card<StrikeDefect>(), owner),
+                PileType.Draw,
+                owner,
+                resultKind: CardGenerationResultKind.Fixed);
+        }
+        ownerState.GainEnergy(20);
+        ownerState.GainStars(20);
+
+        JointTurnState turns = JointTurnState.Start(2, root.StartTurnNumber);
+        JointActionCandidate candidate = JointActionExpander.Expand(parent, turns)
+            .FirstOrDefault(item => item.Action.Actor == new CombatActorId(1)
+                && item.Action.CardId == decisions.Preview.Id.Entry
+                && item.Action.Choice?.Cards.Any(token =>
+                    token.CardId == prepared.Preview.Id.Entry) == true
+                && item.Action.NestedChoices is { Count: > 1 })
+            ?? throw new InvalidOperationException(
+                "联合重复自动出牌未展开 Actor1 Decisions/Prepared 的多层选择。");
+        int repeat = decisions.Preview.DynamicVars.Repeat.IntValue;
+        if (candidate.Action.NestedChoices!.Count < repeat
+            || candidate.Action.NestedChoices.Any(choice =>
+                choice.Actor != new CombatActorId(1)
+                || choice.SourceId != decisions.Preview.Id.Entry))
+        {
+            throw new InvalidOperationException(
+                "联合重复自动出牌的选择次数、owner 或 source 不正确。");
+        }
+
+        CombatPredictionSimulator first = parent.Fork();
+        JointTurnState firstTurns = JointActionTransition.Apply(
+            first,
+            turns,
+            candidate.Action,
+            JointActionTransition.CaptureProcessedEnemyDeaths(root, first));
+        CombatPredictionSimulator second = parent.Fork();
+        JointTurnState secondTurns = JointActionTransition.Apply(
+            second,
+            turns,
+            candidate.Action,
+            JointActionTransition.CaptureProcessedEnemyDeaths(root, second));
+        JointCombatSnapshot firstSnapshot = JointCombatSnapshot.Capture(root, first, firstTurns);
+        JointCombatSnapshot secondSnapshot = JointCombatSnapshot.Capture(root, second, secondTurns);
+        if (firstSnapshot.StateKey != secondSnapshot.StateKey
+            || ((SimulatedCombatState)first.State.CombatState).HasPendingChoice)
+        {
+            throw new InvalidOperationException(
+                "联合重复自动出牌未确定性消费完整选择链。");
+        }
     }
 
     private static void AssertDeadActorBarrier(CombatRootSnapshot root)
